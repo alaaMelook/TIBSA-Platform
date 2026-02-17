@@ -6,9 +6,9 @@ A full-stack cybersecurity platform built with **Next.js** (frontend) and **Fast
 
 | Layer | Technology | Deployment |
 |-------|-----------|------------|
-| Frontend | Next.js 14+ (TypeScript) | Vercel (Free) |
-| Backend | FastAPI (Python) | Render (Free) |
-| Database & Auth | Supabase | Free Tier |
+| Frontend | Next.js 14+ (TypeScript) | Vercel |
+| Backend | FastAPI (Python) | Render |
+| Database & Auth | Supabase |  |
 
 ## 📁 Project Structure
 
