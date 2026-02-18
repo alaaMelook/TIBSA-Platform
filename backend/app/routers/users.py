@@ -85,3 +85,34 @@ async def update_user_role(
     """Change a user's role (admin only). This is how admins promote users."""
     service = UserService(supabase)
     return await service.update_role(user_id, data.role)
+
+
+@router.get("/dashboard/stats")
+async def get_dashboard_stats(
+    current_user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase),
+):
+    """Get dashboard statistics for the current user."""
+    auth_user = current_user["auth_user"]
+    user_id = auth_user.id
+
+    # Get user's scan stats
+    scans = supabase.table("scans").select("id, status, threat_level").eq("user_id", user_id).execute()
+    scan_data = scans.data or []
+
+    total_scans = len(scan_data)
+    active_scans = len([s for s in scan_data if s.get("status") in ("pending", "running")])
+    threats_detected = len([s for s in scan_data if s.get("threat_level") and s.get("threat_level") not in ("safe", None)])
+    completed_scans = len([s for s in scan_data if s.get("status") == "completed"])
+
+    # Get recent scans
+    recent = supabase.table("scans").select("*").eq("user_id", user_id).order("created_at", desc=True).limit(5).execute()
+
+    return {
+        "total_scans": total_scans,
+        "active_scans": active_scans,
+        "threats_detected": threats_detected,
+        "completed_scans": completed_scans,
+        "recent_scans": recent.data or [],
+    }
+
