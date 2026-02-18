@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, Input } from "@/components/ui";
@@ -11,8 +11,17 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
+    const { login, isAuthenticated } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get("redirect") || "/dashboard";
+
+    // If already authenticated, redirect away
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push(redirect);
+        }
+    }, [isAuthenticated, redirect, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,10 +30,10 @@ export default function LoginPage() {
 
         try {
             await login({ email, password });
-            router.push("/dashboard");
+            // Don't router.push here — the useEffect above will
+            // handle the redirect once isAuthenticated becomes true.
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
-        } finally {
             setIsLoading(false);
         }
     };

@@ -18,10 +18,21 @@ async def get_my_profile(
     current_user: dict = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
 ):
-    """Get the current user's profile."""
+    """Get the current user's profile. Auto-creates it if not found."""
     service = UserService(supabase)
     auth_user = current_user["auth_user"]
-    return await service.get_profile(auth_user.id)
+    try:
+        return await service.get_profile(auth_user.id)
+    except Exception:
+        # Profile doesn't exist yet (e.g., email confirmation flow).
+        # Auto-create it from auth user data.
+        email = auth_user.email or ""
+        full_name = (auth_user.user_metadata or {}).get("full_name", email.split("@")[0])
+        return await service.create_profile(
+            user_id=auth_user.id,
+            email=email,
+            full_name=full_name,
+        )
 
 
 @router.post("/register")

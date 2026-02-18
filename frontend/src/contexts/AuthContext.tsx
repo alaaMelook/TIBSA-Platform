@@ -33,6 +33,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isAuthenticated: true,
             });
         } catch {
+            // Backend might be down or profile not ready yet.
+            // Still mark as authenticated with basic info from Supabase session.
+            try {
+                const { data: { user: authUser } } = await supabase.auth.getUser(token);
+                if (authUser) {
+                    setState({
+                        user: {
+                            id: authUser.id,
+                            email: authUser.email || "",
+                            full_name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "",
+                            role: "user",
+                            is_active: true,
+                            created_at: authUser.created_at || "",
+                            updated_at: "",
+                        },
+                        token,
+                        isLoading: false,
+                        isAuthenticated: true,
+                    });
+                    return;
+                }
+            } catch {
+                // Supabase call also failed
+            }
             setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
         }
     }, []);
