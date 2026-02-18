@@ -2,12 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy and install dependencies first (cache layer)
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy app code
-COPY . .
+COPY ./app /app/app
 
 # Expose port
 EXPOSE 8000
