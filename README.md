@@ -6,8 +6,8 @@ A full-stack cybersecurity platform built with **Next.js** (frontend) and **Fast
 
 | Layer | Technology | Deployment |
 |-------|-----------|------------|
-| Frontend | Next.js 14+ (TypeScript) | Vercel |
-| Backend | FastAPI (Python) | Render |
+| Frontend | Next.js 16 (TypeScript) | Vercel |
+| Backend | FastAPI (Python) | Railway |
 | Database & Auth | Supabase |  |
 
 ## 📁 Project Structure
@@ -31,8 +31,13 @@ TIBSA/
 │   │   ├── repositories/ # Data access
 │   │   └── middleware/ # Rate limiter, etc.
 │   ├── tests/         # pytest
-│   ├── Dockerfile     # For Render
+│   ├── Dockerfile     # For Railway
 │   └── requirements.txt
+│
+├── database/          # SQL schemas (split by module)
+│   ├── 01_users.sql   # Users & auth
+│   ├── 02_scans.sql   # Scanning engine
+│   └── 03_threats.sql # Threat intelligence
 │
 └── README.md
 ```
@@ -62,58 +67,31 @@ uvicorn app.main:app --reload      # → http://localhost:8000/docs
 - **User** — Default role for all new accounts
 - **Admin** — Assigned manually by existing admin via User Management page
 
-## 📦 Supabase Tables Needed
+## 📦 Database Setup
 
-```sql
--- Users table
-CREATE TABLE users (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  email TEXT NOT NULL,
-  full_name TEXT NOT NULL,
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
+SQL schemas are in the `database/` folder, split by module. Run them **in order** in the Supabase SQL Editor:
 
--- Scans table
-CREATE TABLE scans (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id),
-  scan_type TEXT NOT NULL,
-  target TEXT NOT NULL,
-  status TEXT DEFAULT 'pending',
-  threat_level TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  completed_at TIMESTAMPTZ
-);
+1. `01_users.sql` — User profiles & roles
+2. `02_scans.sql` — Scan engine tables
+3. `03_threats.sql` — Threat intelligence feeds & indicators
 
--- Scan Reports
-CREATE TABLE scan_reports (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  scan_id UUID REFERENCES scans(id),
-  summary TEXT,
-  details JSONB DEFAULT '{}',
-  indicators JSONB DEFAULT '[]',
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+> **Note:** The schema is modular and evolving — new modules can be added as separate files (e.g., `04_reports.sql`).
 
--- Threat Feeds
-CREATE TABLE threat_feeds (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  source_url TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT true,
-  last_updated TIMESTAMPTZ DEFAULT now()
-);
+## 🌐 Deployment
 
--- Threat Indicators (IOCs)
-CREATE TABLE threat_indicators (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  type TEXT NOT NULL,
-  value TEXT NOT NULL,
-  threat_level TEXT DEFAULT 'safe',
-  source TEXT,
-  last_seen TIMESTAMPTZ DEFAULT now()
-);
-```
+| Service | Platform | Config |
+|---------|----------|--------|
+| Frontend | Vercel | Root Directory: `frontend`, Framework: Next.js |
+| Backend | Railway | Root Directory: `backend`, Builder: Dockerfile |
+
+### Environment Variables
+
+**Frontend (Vercel):**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_API_URL` — Railway backend URL
+
+**Backend (Railway):**
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CORS_ORIGINS` — Vercel frontend URL
