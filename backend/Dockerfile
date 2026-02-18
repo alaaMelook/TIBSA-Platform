@@ -2,12 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
+# Install dependencies (paths relative to repo root)
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy everything
-COPY . .
+# Copy backend app code
+COPY backend/app ./app
 
 # Expose port
 EXPOSE 8000
