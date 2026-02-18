@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, Input } from "@/components/ui";
 
-export default function LoginPage() {
+function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -16,7 +16,6 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const redirect = searchParams.get("redirect") || "/dashboard";
 
-    // If already authenticated, redirect away
     useEffect(() => {
         if (isAuthenticated) {
             router.push(redirect);
@@ -30,8 +29,6 @@ export default function LoginPage() {
 
         try {
             await login({ email, password });
-            // Don't router.push here — the useEffect above will
-            // handle the redirect once isAuthenticated becomes true.
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
             setIsLoading(false);
@@ -39,9 +36,49 @@ export default function LoginPage() {
     };
 
     return (
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm space-y-4">
+            {error && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                    {error}
+                </div>
+            )}
+
+            <Input
+                label="Email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+            />
+
+            <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+            />
+
+            <Button type="submit" className="w-full" isLoading={isLoading}>
+                Sign In
+            </Button>
+
+            <p className="text-center text-sm text-gray-500">
+                Don&apos;t have an account?{" "}
+                <Link href="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+                    Register
+                </Link>
+            </p>
+        </form>
+    );
+}
+
+export default function LoginPage() {
+    return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md">
-                {/* Logo */}
                 <div className="text-center mb-8">
                     <div className="inline-flex h-12 w-12 rounded-xl bg-blue-600 items-center justify-center mb-4">
                         <span className="text-white font-bold text-lg">T</span>
@@ -50,43 +87,9 @@ export default function LoginPage() {
                     <p className="text-gray-500 mt-1">Sign in to your TIBSA account</p>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm space-y-4">
-                    {error && (
-                        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-                            {error}
-                        </div>
-                    )}
-
-                    <Input
-                        label="Email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-
-                    <Input
-                        label="Password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-
-                    <Button type="submit" className="w-full" isLoading={isLoading}>
-                        Sign In
-                    </Button>
-
-                    <p className="text-center text-sm text-gray-500">
-                        Don&apos;t have an account?{" "}
-                        <Link href="/register" className="text-blue-600 hover:text-blue-800 font-medium">
-                            Register
-                        </Link>
-                    </p>
-                </form>
+                <Suspense fallback={<div className="text-center text-gray-400">Loading...</div>}>
+                    <LoginForm />
+                </Suspense>
             </div>
         </div>
     );
