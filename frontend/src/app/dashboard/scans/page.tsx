@@ -146,21 +146,14 @@ function FileInfoPanel({ info, loading }: { info: FileInfo | null; loading: bool
 
 // ─── Types ───────────────────────────────────────────────────
 
-interface AntivirusResult {
-    engine: string;
-    result: "clean" | "infected" | "undetected" | "error";
-    verdict?: string;
-}
-
 interface Scan {
     id: string;
-    scan_type: "url" | "file";
+    scan_type: "url" | "file" | "file_upload";
     target: string;
-    status: "pending" | "running" | "completed" | "failed";
+    status: "pending" | "running" | "in_progress" | "completed" | "failed" | "cancelled";
     threat_level: string | null;
     created_at: string;
     completed_at: string | null;
-    antivirus_results?: AntivirusResult[];
 }
 
 interface ScanReport {
@@ -172,374 +165,201 @@ interface ScanReport {
     created_at: string;
 }
 
-// ─── Mock antivirus results for visual demonstration ─────────
-function generateMockAvResults(
-    threatLevel: string | null,
-    scanType: "url" | "file"
-): AntivirusResult[] {
-    const urlEngines = [
-        "Google Safe Browsing",
-        "VirusTotal",
-        "URLVoid",
-        "PhishTank",
-        "MalwareBytes",
-        "Kaspersky",
-        "Bitdefender",
-        "McAfee",
-    ];
-    const fileEngines = [
-        "Avast",
-        "AVG",
-        "ClamAV",
-        "Kaspersky",
-        "Bitdefender",
-        "ESET",
-        "Malwarebytes",
-        "Windows Defender",
-        "Symantec",
-        "McAfee",
-    ];
+// ─── VirusTotal Types ─────────────────────────────────────────────
 
-    const engines = scanType === "url" ? urlEngines : fileEngines;
-    const isInfected = ["high", "critical", "medium"].includes(
-        threatLevel || ""
-    );
-    const isLow = threatLevel === "low";
-
-    return engines.map((engine, i) => {
-        let result: "clean" | "infected" | "undetected" | "error";
-        if (isInfected) {
-            result =
-                i % 3 === 0 ? "infected" : i % 5 === 0 ? "undetected" : "clean";
-        } else if (isLow) {
-            result = i < 2 ? "infected" : i === 2 ? "undetected" : "clean";
-        } else {
-            result = i === engines.length - 1 ? "undetected" : "clean";
-        }
-        const verdicts: Record<string, string> = {
-            infected: isInfected ? "Malware.Generic" : "PUA.Unwanted",
-            clean: "Clean",
-            undetected: "Undetected",
-            error: "Scan Error",
-        };
-        return { engine, result, verdict: verdicts[result] };
-    });
+interface VTDetails {
+    found?: boolean | null;
+    status?: string;
+    threat_level?: string;
+    stats?: Record<string, number>;
+    total_engines?: number;
+    malicious?: number;
+    suspicious?: number;
+    analysis_id?: string;
+    file_name?: string;
+    file_type?: string;
 }
 
-// ─── SVG Bar Chart ────────────────────────────────────────────
+// ─── VirusTotal Stats Display ──────────────────────────────────────
 
-interface BarChartProps {
-    data: { label: string; clean: number; infected: number; total: number }[];
-    title: string;
-}
+function VTStatsDisplay({ details }: { details: VTDetails }) {
+    const stats = details.stats || {};
+    const total = details.total_engines || 0;
+    const malicious = details.malicious || 0;
+    const suspicious = details.suspicious || 0;
+    const harmless = stats.harmless || 0;
+    const undetected = stats.undetected || 0;
+    const timeout = stats.timeout || 0;
 
-function AntivirusBarChart({ data, title }: BarChartProps) {
-    const maxVal = Math.max(...data.map((d) => d.total), 1);
-    const chartH = 200;
-    const barW = 56;
-    const gap = 20;
-    const paddingLeft = 44;
-    const paddingBottom = 60;
-    const paddingTop = 20;
+    if (details.found === false) {
+        return (
+            <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
+                <p className="text-3xl mb-2">🔍</p>
+                <p className="font-medium text-gray-700">Not found in VirusTotal</p>
+                <p className="text-sm text-gray-400 mt-1">This hash has no previous reports in the database.</p>
+            </div>
+        );
+    }
 
-    const totalW = paddingLeft + data.length * (barW + gap) + gap;
-    const chartAreaH = chartH - paddingBottom - paddingTop;
+    const segments = [
+        { key: "malicious",  label: "Malicious",  count: malicious,  barColor: "bg-red-500",    textColor: "text-red-700",    bgColor: "bg-red-50",    borderColor: "border-red-200" },
+        { key: "suspicious", label: "Suspicious", count: suspicious, barColor: "bg-orange-400", textColor: "text-orange-700", bgColor: "bg-orange-50", borderColor: "border-orange-200" },
+        { key: "harmless",   label: "Harmless",   count: harmless,   barColor: "bg-green-500",  textColor: "text-green-700",  bgColor: "bg-green-50",  borderColor: "border-green-200" },
+        { key: "undetected", label: "Undetected", count: undetected, barColor: "bg-gray-300",   textColor: "text-gray-600",   bgColor: "bg-gray-50",   borderColor: "border-gray-200" },
+        ...(timeout > 0 ? [{ key: "timeout", label: "Timeout", count: timeout, barColor: "bg-yellow-400", textColor: "text-yellow-700", bgColor: "bg-yellow-50", borderColor: "border-yellow-200" }] : []),
+    ];
 
-    const gridLines = 5;
+    const emoji = malicious >= 5 ? "🔴" : malicious > 0 ? "🟠" : suspicious > 0 ? "🟡" : "🟢";
+    const vtUrl = details.analysis_id
+        ? `https://www.virustotal.com/gui/analysis/${details.analysis_id}`
+        : null;
 
     return (
-        <div>
-            <p className="text-sm font-semibold text-gray-700 mb-3">{title}</p>
-            <div className="flex items-center gap-4 mb-3 text-xs">
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-3 h-3 rounded bg-green-500" />
-                    Clean
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-3 h-3 rounded bg-red-500" />
-                    Infected
-                </span>
+        <div className="space-y-4">
+            {/* Detection Score */}
+            <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div>
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Detection Ratio</p>
+                    <p className="text-4xl font-bold mt-1">
+                        <span className={malicious > 0 ? "text-red-600" : "text-green-600"}>{malicious}</span>
+                        <span className="text-gray-300 text-2xl"> / {total}</span>
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">security vendors flagged this</p>
+                </div>
+                <span className="text-5xl select-none">{emoji}</span>
             </div>
-            <div className="overflow-x-auto">
-                <svg
-                    width={totalW}
-                    height={chartH}
-                    className="font-sans"
-                    aria-label={title}
-                >
-                    {/* Grid lines */}
-                    {Array.from({ length: gridLines + 1 }, (_, i) => {
-                        const y =
-                            paddingTop + (chartAreaH * (gridLines - i)) / gridLines;
-                        const val = Math.round((maxVal * i) / gridLines);
-                        return (
-                            <g key={i}>
-                                <line
-                                    x1={paddingLeft}
-                                    y1={y}
-                                    x2={totalW - 4}
-                                    y2={y}
-                                    stroke="#e5e7eb"
-                                    strokeWidth="1"
-                                />
-                                <text
-                                    x={paddingLeft - 6}
-                                    y={y + 4}
-                                    textAnchor="end"
-                                    fontSize="10"
-                                    fill="#9ca3af"
-                                >
-                                    {val}
-                                </text>
-                            </g>
-                        );
-                    })}
 
-                    {/* Bars */}
-                    {data.map((d, i) => {
-                        const x = paddingLeft + gap + i * (barW + gap);
-                        const halfW = (barW - 4) / 2;
+            {/* Stacked progress bar */}
+            {total > 0 && (
+                <div className="h-3 flex rounded-full overflow-hidden gap-px bg-gray-100">
+                    {segments.filter((s) => s.count > 0).map((s) => (
+                        <div
+                            key={s.key}
+                            className={`${s.barColor} transition-all`}
+                            style={{ width: `${(s.count / total) * 100}%` }}
+                            title={`${s.label}: ${s.count}`}
+                        />
+                    ))}
+                </div>
+            )}
 
-                        const cleanH = (d.clean / maxVal) * chartAreaH;
-                        const infH = (d.infected / maxVal) * chartAreaH;
-                        const baseY = paddingTop + chartAreaH;
-
-                        return (
-                            <g key={d.label}>
-                                {/* Clean bar */}
-                                <rect
-                                    x={x}
-                                    y={baseY - cleanH}
-                                    width={halfW}
-                                    height={Math.max(cleanH, 1)}
-                                    fill="#22c55e"
-                                    rx="2"
-                                />
-                                {/* Infected bar */}
-                                <rect
-                                    x={x + halfW + 4}
-                                    y={baseY - infH}
-                                    width={halfW}
-                                    height={Math.max(infH, 1)}
-                                    fill="#ef4444"
-                                    rx="2"
-                                />
-                                {/* Label */}
-                                <text
-                                    x={x + halfW + 2}
-                                    y={baseY + 12}
-                                    textAnchor="middle"
-                                    fontSize="9"
-                                    fill="#6b7280"
-                                    transform={`rotate(-35, ${x + halfW + 2}, ${baseY + 12})`}
-                                >
-                                    {d.label.length > 12 ? d.label.slice(0, 11) + "…" : d.label}
-                                </text>
-                            </g>
-                        );
-                    })}
-                </svg>
-            </div>
-        </div>
-    );
-}
-
-// ─── Antivirus Results Table ──────────────────────────────────
-
-function AvResultsTable({ results }: { results: AntivirusResult[] }) {
-    const summary = results.reduce(
-        (acc, r) => {
-            acc[r.result] = (acc[r.result] || 0) + 1;
-            return acc;
-        },
-        {} as Record<string, number>
-    );
-
-    const resultStyles: Record<string, string> = {
-        clean:
-            "bg-green-50 text-green-700 border border-green-200",
-        infected:
-            "bg-red-50 text-red-700 border border-red-200",
-        undetected:
-            "bg-gray-50 text-gray-600 border border-gray-200",
-        error:
-            "bg-yellow-50 text-yellow-700 border border-yellow-200",
-    };
-
-    const resultIcons: Record<string, string> = {
-        clean: "✅",
-        infected: "🦠",
-        undetected: "❓",
-        error: "⚠️",
-    };
-
-    return (
-        <div>
-            {/* Summary pills */}
-            <div className="flex flex-wrap gap-2 mb-4">
-                {Object.entries(summary).map(([k, v]) => (
-                    <span
-                        key={k}
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${resultStyles[k]}`}
-                    >
-                        {resultIcons[k]} {k.charAt(0).toUpperCase() + k.slice(1)}: {v}
-                    </span>
+            {/* Stat grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {segments.map((s) => (
+                    <div key={s.key} className={`rounded-xl border p-3 text-center ${s.bgColor} ${s.borderColor}`}>
+                        <p className={`text-2xl font-bold ${s.textColor}`}>{s.count}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+                    </div>
                 ))}
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                    🔬 Total Engines: {results.length}
-                </span>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="text-left px-4 py-2.5 font-medium text-gray-600">
-                                Antivirus Engine
-                            </th>
-                            <th className="text-left px-4 py-2.5 font-medium text-gray-600">
-                                Result
-                            </th>
-                            <th className="text-left px-4 py-2.5 font-medium text-gray-600">
-                                Verdict
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {results.map((r) => (
-                            <tr
-                                key={r.engine}
-                                className={`transition-colors ${r.result === "infected"
-                                        ? "bg-red-50/40 hover:bg-red-50"
-                                        : "hover:bg-gray-50"
-                                    }`}
-                            >
-                                <td className="px-4 py-2.5 font-medium text-gray-800">
-                                    {r.engine}
-                                </td>
-                                <td className="px-4 py-2.5">
-                                    <span
-                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${resultStyles[r.result]}`}
-                                    >
-                                        {resultIcons[r.result]}
-                                        {r.result.charAt(0).toUpperCase() + r.result.slice(1)}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">
-                                    {r.verdict}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {/* File metadata */}
+            {(details.file_name || details.file_type) && (
+                <div className="flex flex-wrap gap-4 text-xs bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    {details.file_name && (
+                        <span><span className="text-blue-600 font-semibold">File:</span> {details.file_name}</span>
+                    )}
+                    {details.file_type && (
+                        <span><span className="text-blue-600 font-semibold">Type:</span> {details.file_type}</span>
+                    )}
+                </div>
+            )}
+
+            {/* VT link */}
+            {vtUrl && (
+                <a
+                    href={vtUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                    🔗 View full analysis on VirusTotal →
+                </a>
+            )}
         </div>
     );
 }
 
-// ─── Scan Detail Modal ────────────────────────────────────────
+// ─── Scan Detail Modal ────────────────────────────────────────────
 
 function ScanDetailModal({
     scan,
+    token,
     onClose,
 }: {
     scan: Scan;
+    token?: string;
     onClose: () => void;
 }) {
-    const avResults =
-        scan.antivirus_results ||
-        (scan.status === "completed"
-            ? generateMockAvResults(scan.threat_level, scan.scan_type)
-            : []);
+    const [report, setReport] = useState<ScanReport | null>(null);
+    const [reportLoading, setReportLoading] = useState(false);
 
-    const chartData = avResults.reduce(
-        (acc, r) => {
-            const existing = acc.find((d) => d.label === r.engine);
-            if (existing) {
-                if (r.result === "clean") existing.clean++;
-                else if (r.result === "infected") existing.infected++;
-                existing.total++;
-            } else {
-                acc.push({
-                    label: r.engine,
-                    clean: r.result === "clean" ? 1 : 0,
-                    infected: r.result === "infected" ? 1 : 0,
-                    total: 1,
-                });
-            }
-            return acc;
-        },
-        [] as { label: string; clean: number; infected: number; total: number }[]
-    );
+    useEffect(() => {
+        if (scan.status !== "completed" || !token) return;
+        setReportLoading(true);
+        api.get<ScanReport>(`/api/v1/scans/${scan.id}`, token)
+            .then(setReport)
+            .catch(() => setReport(null))
+            .finally(() => setReportLoading(false));
+    }, [scan.id, scan.status, token]);
 
     const threatColors: Record<string, string> = {
-        safe: "text-green-600 bg-green-50 border-green-200",
-        low: "text-yellow-600 bg-yellow-50 border-yellow-200",
-        medium: "text-orange-600 bg-orange-50 border-orange-200",
-        high: "text-red-600 bg-red-50 border-red-200",
+        safe:     "text-green-600 bg-green-50 border-green-200",
+        clean:    "text-green-600 bg-green-50 border-green-200",
+        low:      "text-yellow-600 bg-yellow-50 border-yellow-200",
+        medium:   "text-orange-600 bg-orange-50 border-orange-200",
+        high:     "text-red-600 bg-red-50 border-red-200",
         critical: "text-red-700 bg-red-100 border-red-300",
+        unknown:  "text-gray-500 bg-gray-50 border-gray-200",
     };
-
-    const tClass =
-        threatColors[scan.threat_level || "safe"] ||
-        "text-gray-500 bg-gray-50 border-gray-200";
+    const tClass = threatColors[scan.threat_level || ""] || "text-gray-500 bg-gray-50 border-gray-200";
+    const vtDetails = report?.details as VTDetails | null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                {/* Modal Header */}
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <div>
                         <h2 className="text-lg font-semibold text-gray-900">
                             {scan.scan_type === "url" ? "🔗" : "📁"} Scan Report
                         </h2>
-                        <p className="text-xs text-gray-400 mt-0.5 font-mono">
-                            ID: {scan.id}
-                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5 font-mono">ID: {scan.id}</p>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path
-                                fillRule="evenodd"
-                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                            />
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                     </button>
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                    {/* Meta Info */}
+                <div className="overflow-y-auto flex-1 p-6 space-y-5">
+                    {/* Meta */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-xs text-gray-500">Type</p>
-                            <p className="font-semibold text-gray-800 mt-0.5 capitalize">
-                                {scan.scan_type}
-                            </p>
+                            <p className="font-semibold text-gray-800 mt-0.5 capitalize">{scan.scan_type.replace("_", " ")}</p>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-xs text-gray-500">Status</p>
-                            <p className="font-semibold text-gray-800 mt-0.5 capitalize">
-                                {scan.status}
-                            </p>
+                            <p className="font-semibold text-gray-800 mt-0.5 capitalize">{scan.status.replace("_", " ")}</p>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-xs text-gray-500">Threat Level</p>
-                            <span
-                                className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${tClass}`}
-                            >
-                                {scan.threat_level || "N/A"}
-                            </span>
+                            {scan.threat_level ? (
+                                <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${tClass}`}>
+                                    {scan.threat_level}
+                                </span>
+                            ) : (
+                                <p className="font-semibold text-gray-400 mt-0.5">—</p>
+                            )}
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-xs text-gray-500">Scanned</p>
-                            <p className="font-semibold text-gray-800 mt-0.5 text-xs">
-                                {new Date(scan.created_at).toLocaleString()}
-                            </p>
+                            <p className="font-semibold text-gray-800 mt-0.5 text-xs">{new Date(scan.created_at).toLocaleString()}</p>
                         </div>
                     </div>
 
@@ -553,50 +373,59 @@ function ScanDetailModal({
                         </div>
                     </div>
 
-                    {scan.status === "completed" && avResults.length > 0 ? (
-                        <>
-                            {/* Antivirus Results Table */}
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center text-blue-600 text-xs">
-                                        🔬
-                                    </span>
-                                    Antivirus Engine Results
-                                </h3>
-                                <AvResultsTable results={avResults} />
+                    {/* Results section */}
+                    {scan.status === "completed" ? (
+                        reportLoading ? (
+                            <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                <svg className="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                </svg>
+                                <p className="text-sm text-gray-400">Loading VirusTotal results…</p>
                             </div>
-
-                            {/* Bar Chart */}
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-md bg-purple-100 flex items-center justify-center text-purple-600 text-xs">
-                                        📊
-                                    </span>
-                                    Detection Comparison — Per Engine
+                        ) : vtDetails ? (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <span className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center text-blue-600 text-xs">🔬</span>
+                                    VirusTotal Analysis
                                 </h3>
-                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                                    <AntivirusBarChart
-                                        data={chartData}
-                                        title={`${scan.scan_type === "url" ? "URL" : "File"} Scan — Clean vs Infected per Engine`}
-                                    />
-                                </div>
+                                <VTStatsDisplay details={vtDetails} />
+                                {report?.summary && (
+                                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                        <p className="text-xs font-medium text-gray-500 mb-1">Summary</p>
+                                        <p className="text-sm text-gray-700">{report.summary}</p>
+                                    </div>
+                                )}
                             </div>
-                        </>
-                    ) : scan.status !== "completed" ? (
+                        ) : (
+                            <div className="text-center py-8 text-gray-400">
+                                <p className="text-3xl mb-2">📄</p>
+                                <p className="text-sm">Report details not available.</p>
+                            </div>
+                        )
+                    ) : scan.status === "cancelled" ? (
                         <div className="text-center py-10 text-gray-400">
-                            <div className="text-4xl mb-3">⏳</div>
-                            <p className="font-medium">Scan in progress...</p>
-                            <p className="text-sm mt-1">
-                                Results will appear once the scan is complete.
-                            </p>
+                            <p className="text-4xl mb-3">🚫</p>
+                            <p className="font-medium">Scan was cancelled</p>
                         </div>
-                    ) : null}
+                    ) : scan.status === "failed" ? (
+                        <div className="text-center py-10 text-red-400">
+                            <p className="text-4xl mb-3">❌</p>
+                            <p className="font-medium">Scan failed</p>
+                            <p className="text-sm mt-1 text-gray-400">Please try again.</p>
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-gray-400">
+                            <p className="text-4xl mb-3">⏳</p>
+                            <p className="font-medium">Scan in progress…</p>
+                            <p className="text-sm mt-1">Results will appear once the scan is complete.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
-
 // ─── Aggregate Chart (Scan History Overview) ──────────────────
 
 function HistoryBarChart({ scans }: { scans: Scan[] }) {
@@ -763,6 +592,7 @@ export default function ScansPage() {
     // History state
     const [activeTab, setActiveTab] = useState<"all" | "url" | "file">("all");
     const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
 
     // ─── Fetch scans ──────────────────────────────────────────
 
@@ -890,14 +720,33 @@ export default function ScansPage() {
         }
     };
 
+    // ─── Cancel scan ──────────────────────────────────────────
+
+    const handleCancelScan = async (scanId: string) => {
+        if (!token) return;
+        if (!confirm("Cancel this scan? This cannot be undone.")) return;
+        setCancellingId(scanId);
+        try {
+            await api.delete(`/api/v1/scans/${scanId}`, token);
+            fetchScans();
+        } catch (err) {
+            console.error("Cancel scan failed:", err);
+            alert("Failed to cancel scan. It may have already completed.");
+        } finally {
+            setCancellingId(null);
+        }
+    };
+
     // ─── Helpers ──────────────────────────────────────────────
 
     const statusBadge = (status: string) => {
         const styles: Record<string, string> = {
             pending: "bg-yellow-100 text-yellow-700 border border-yellow-200",
             running: "bg-blue-100 text-blue-700 border border-blue-200",
+            in_progress: "bg-blue-100 text-blue-700 border border-blue-200",
             completed: "bg-green-100 text-green-700 border border-green-200",
             failed: "bg-red-100 text-red-700 border border-red-200",
+            cancelled: "bg-gray-100 text-gray-500 border border-gray-200",
         };
         return styles[status] || "bg-gray-100 text-gray-600 border border-gray-200";
     };
@@ -1346,12 +1195,23 @@ export default function ScansPage() {
                                             {new Date(scan.created_at).toLocaleString()}
                                         </td>
                                         <td className="px-6 py-3.5">
-                                            <button
-                                                onClick={() => setSelectedScan(scan)}
-                                                className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                                            >
-                                                View Report →
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setSelectedScan(scan)}
+                                                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                >
+                                                    View Report →
+                                                </button>
+                                                {(scan.status === "pending" || scan.status === "in_progress" || scan.status === "running") && (
+                                                    <button
+                                                        onClick={() => handleCancelScan(scan.id)}
+                                                        disabled={cancellingId === scan.id}
+                                                        className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 hover:underline transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        {cancellingId === scan.id ? "⏳" : "❌"} Cancel
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -1365,6 +1225,7 @@ export default function ScansPage() {
             {selectedScan && (
                 <ScanDetailModal
                     scan={selectedScan}
+                    token={token ?? undefined}
                     onClose={() => setSelectedScan(null)}
                 />
             )}

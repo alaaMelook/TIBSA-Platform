@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: str = ""
 
+    # ─── VirusTotal ────────────────────────────────────────────
+    virustotal_api_key: str = ""
+
     # ─── CORS ─────────────────────────────────────────────────
     cors_origins: str = "http://localhost:3000"
 
