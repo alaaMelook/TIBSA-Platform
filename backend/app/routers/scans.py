@@ -101,7 +101,7 @@ async def get_scan_report(
     return await service.get_report(scan_id=scan_id, user_id=auth_user.id)
 
 
-@router.delete("/{scan_id}", response_model=ScanResponse, summary="Cancel a scan")
+@router.post("/{scan_id}/cancel", response_model=ScanResponse, summary="Cancel a scan")
 async def cancel_scan(
     scan_id: str,
     current_user: dict = Depends(get_current_user),
@@ -111,3 +111,16 @@ async def cancel_scan(
     service = ScanService(supabase)
     auth_user = current_user["auth_user"]
     return await service.cancel_scan(scan_id=scan_id, user_id=auth_user.id)
+
+
+@router.delete("/{scan_id}", summary="Delete a scan permanently")
+async def delete_scan(
+    scan_id: str,
+    current_user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase),
+):
+    """Permanently delete a scan and its report from the database."""
+    service = ScanService(supabase)
+    auth_user = current_user["auth_user"]
+    await service.delete_scan(scan_id=scan_id, user_id=auth_user.id)
+    return {"message": "Scan deleted successfully"}

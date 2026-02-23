@@ -123,7 +123,8 @@ function FileInfoPanel({ info, loading }: { info: FileInfo | null; loading: bool
     return (
         <div className="mt-3 rounded-xl border border-purple-200 bg-purple-50 p-4">
             <p className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1.5">
-                🔎 File Analysis
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                File Analysis
             </p>
             <div className="space-y-1.5">
                 {rows.map(([label, value]) => (
@@ -184,59 +185,129 @@ interface VTDetails {
 
 function VTStatsDisplay({ details }: { details: VTDetails }) {
     const stats = details.stats || {};
-    const total = details.total_engines || 0;
-    const malicious = details.malicious || 0;
+    const malicious  = details.malicious  || 0;
     const suspicious = details.suspicious || 0;
-    const harmless = stats.harmless || 0;
+    const harmless   = stats.harmless   || 0;
     const undetected = stats.undetected || 0;
-    const timeout = stats.timeout || 0;
+
+    // For files: harmless is always 0; undetected = engines that found nothing = CLEAN
+    // Combine both into one "Clean / Safe" green segment
+    const clean = harmless + undetected;
+
+    // Only count decisive results for the ratio denominator
+    const effectiveTotal = malicious + suspicious + clean;
+
+    // Non-decisive engines (informational only)
+    const nonDecisive =
+        (stats["timeout"]          || 0) +
+        (stats["confirmed-timeout"]|| 0) +
+        (stats["failure"]          || 0) +
+        (stats["type-unsupported"] || 0);
 
     if (details.found === false) {
         return (
-            <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
-                <p className="text-3xl mb-2">🔍</p>
-                <p className="font-medium text-gray-700">Not found in VirusTotal</p>
-                <p className="text-sm text-gray-400 mt-1">This hash has no previous reports in the database.</p>
+            <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-yellow-200 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-yellow-800">File not in threat database</p>
+                        <p className="text-sm text-yellow-700 mt-1">
+                            This file hash has never been submitted before — no analysis data is available.
+                        </p>
+                    </div>
+                </div>
+                <div className="bg-yellow-100 rounded-lg p-3 border border-yellow-200">
+                    <p className="text-xs font-semibold text-yellow-800 mb-1 flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> What to do?</p>
+                    <p className="text-xs text-yellow-700">
+                        Use <strong>Upload File</strong> mode instead of <strong>Enter Hash</strong>.
+                        Uploading the actual file will submit it for analysis and give you real results.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (details.found === null) {
+        return (
+            <div className="rounded-xl border border-orange-200 bg-orange-50 p-5 space-y-3">
+                <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-200 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-orange-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-orange-800">Analysis timed out</p>
+                        <p className="text-sm text-orange-700 mt-1">
+                            The scan engines took too long to respond. Your file was submitted successfully.
+                        </p>
+                    </div>
+                </div>
+                <div className="bg-orange-100 rounded-lg p-3 border border-orange-200">
+                    <p className="text-xs font-semibold text-orange-800 mb-1 flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> What to do?</p>
+                    <p className="text-xs text-orange-700">
+                        Try scanning the same file again — it has been submitted and results will be available faster next time.
+                    </p>
+                </div>
             </div>
         );
     }
 
     const segments = [
-        { key: "malicious",  label: "Malicious",  count: malicious,  barColor: "bg-red-500",    textColor: "text-red-700",    bgColor: "bg-red-50",    borderColor: "border-red-200" },
-        { key: "suspicious", label: "Suspicious", count: suspicious, barColor: "bg-orange-400", textColor: "text-orange-700", bgColor: "bg-orange-50", borderColor: "border-orange-200" },
-        { key: "harmless",   label: "Harmless",   count: harmless,   barColor: "bg-green-500",  textColor: "text-green-700",  bgColor: "bg-green-50",  borderColor: "border-green-200" },
-        { key: "undetected", label: "Undetected", count: undetected, barColor: "bg-gray-300",   textColor: "text-gray-600",   bgColor: "bg-gray-50",   borderColor: "border-gray-200" },
-        ...(timeout > 0 ? [{ key: "timeout", label: "Timeout", count: timeout, barColor: "bg-yellow-400", textColor: "text-yellow-700", bgColor: "bg-yellow-50", borderColor: "border-yellow-200" }] : []),
+        { key: "malicious",  label: "Malicious",    count: malicious,  barColor: "bg-red-500",   textColor: "text-red-700",   bgColor: "bg-red-50",   borderColor: "border-red-200" },
+        { key: "suspicious", label: "Suspicious",   count: suspicious, barColor: "bg-orange-400",textColor: "text-orange-700",bgColor: "bg-orange-50",borderColor: "border-orange-200" },
+        { key: "clean",      label: "Clean / Safe", count: clean,      barColor: "bg-green-500", textColor: "text-green-700", bgColor: "bg-green-50", borderColor: "border-green-200" },
     ];
-
-    const emoji = malicious >= 5 ? "🔴" : malicious > 0 ? "🟠" : suspicious > 0 ? "🟡" : "🟢";
-    const vtUrl = details.analysis_id
-        ? `https://www.virustotal.com/gui/analysis/${details.analysis_id}`
-        : null;
 
     return (
         <div className="space-y-4">
             {/* Detection Score */}
-            <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${
+                malicious >= 5 ? "bg-red-50 border-red-200" :
+                malicious > 0 ? "bg-orange-50 border-orange-200" :
+                suspicious > 0 ? "bg-yellow-50 border-yellow-200" :
+                "bg-green-50 border-green-200"
+            }`}>
                 <div>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Detection Ratio</p>
-                    <p className="text-4xl font-bold mt-1">
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
+                    <p className="text-5xl font-black mt-1 tabular-nums">
                         <span className={malicious > 0 ? "text-red-600" : "text-green-600"}>{malicious}</span>
-                        <span className="text-gray-300 text-2xl"> / {total}</span>
+                        <span className="text-gray-300 text-3xl font-light"> / {effectiveTotal}</span>
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">security vendors flagged this</p>
+                    <p className="text-xs text-gray-400 mt-1.5">
+                        {malicious === 0
+                            ? `File is clean — ${clean} engine${clean !== 1 ? "s" : ""} found no threats`
+                            : `${malicious} engine${malicious > 1 ? "s" : ""} flagged this as malicious`}
+                    </p>
+                    {nonDecisive > 0 && (
+                        <p className="text-[10px] text-gray-300 mt-1">
+                            +{nonDecisive} engine{nonDecisive > 1 ? "s" : ""} skipped (timeout / unsupported)
+                        </p>
+                    )}
                 </div>
-                <span className="text-5xl select-none">{emoji}</span>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${
+                    malicious >= 5 ? "bg-red-100" : malicious > 0 ? "bg-orange-100" : suspicious > 0 ? "bg-yellow-100" : "bg-green-100"
+                }`}>
+                    {malicious >= 5 ? (
+                        <svg className="w-7 h-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    ) : malicious > 0 ? (
+                        <svg className="w-7 h-7 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    ) : suspicious > 0 ? (
+                        <svg className="w-7 h-7 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    ) : (
+                        <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    )}
+                </div>
             </div>
 
             {/* Stacked progress bar */}
-            {total > 0 && (
+            {effectiveTotal > 0 && (
                 <div className="h-3 flex rounded-full overflow-hidden gap-px bg-gray-100">
                     {segments.filter((s) => s.count > 0).map((s) => (
                         <div
                             key={s.key}
                             className={`${s.barColor} transition-all`}
-                            style={{ width: `${(s.count / total) * 100}%` }}
+                            style={{ width: `${(s.count / effectiveTotal) * 100}%` }}
                             title={`${s.label}: ${s.count}`}
                         />
                     ))}
@@ -263,18 +334,6 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                         <span><span className="text-blue-600 font-semibold">Type:</span> {details.file_type}</span>
                     )}
                 </div>
-            )}
-
-            {/* VT link */}
-            {vtUrl && (
-                <a
-                    href={vtUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                    🔗 View full analysis on VirusTotal →
-                </a>
             )}
         </div>
     );
@@ -321,9 +380,24 @@ function ScanDetailModal({
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                            {scan.scan_type === "url" ? "🔗" : "📁"} Scan Report
-                        </h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                {scan.scan_type === "url"
+                                    ? <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                    : <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                }
+                                Scan Report
+                            </h2>
+                            {["pending", "in_progress", "running"].includes(scan.status) && (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+                                    </span>
+                                    Live
+                                </span>
+                            )}
+                        </div>
                         <p className="text-xs text-gray-400 mt-0.5 font-mono">ID: {scan.id}</p>
                     </div>
                     <button
@@ -381,13 +455,15 @@ function ScanDetailModal({
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                                 </svg>
-                                <p className="text-sm text-gray-400">Loading VirusTotal results…</p>
+                                <p className="text-sm text-gray-400">Loading scan results…</p>
                             </div>
                         ) : vtDetails ? (
                             <div className="space-y-4">
                                 <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center text-blue-600 text-xs">🔬</span>
-                                    VirusTotal Analysis
+                                    <span className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center text-blue-600">
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+                                    </span>
+                                    Threat Analysis Results
                                 </h3>
                                 <VTStatsDisplay details={vtDetails} />
                                 {report?.summary && (
@@ -399,26 +475,46 @@ function ScanDetailModal({
                             </div>
                         ) : (
                             <div className="text-center py-8 text-gray-400">
-                                <p className="text-3xl mb-2">📄</p>
+                                <div className="flex justify-center mb-2">
+                                    <svg className="w-10 h-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
                                 <p className="text-sm">Report details not available.</p>
                             </div>
                         )
                     ) : scan.status === "cancelled" ? (
-                        <div className="text-center py-10 text-gray-400">
-                            <p className="text-4xl mb-3">🚫</p>
-                            <p className="font-medium">Scan was cancelled</p>
+                        <div className="text-center py-12">
+                            <div className="flex justify-center mb-4">
+                                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                </div>
+                            </div>
+                            <p className="font-semibold text-gray-700 text-base">Scan was cancelled</p>
+                            <p className="text-sm text-gray-400 mt-1">This scan was stopped before it completed.</p>
                         </div>
                     ) : scan.status === "failed" ? (
-                        <div className="text-center py-10 text-red-400">
-                            <p className="text-4xl mb-3">❌</p>
-                            <p className="font-medium">Scan failed</p>
-                            <p className="text-sm mt-1 text-gray-400">Please try again.</p>
+                        <div className="text-center py-12">
+                            <div className="flex justify-center mb-4">
+                                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                </div>
+                            </div>
+                            <p className="font-semibold text-red-600 text-base">Scan failed</p>
+                            <p className="text-sm text-gray-400 mt-1">Something went wrong. Please try again.</p>
                         </div>
                     ) : (
-                        <div className="text-center py-10 text-gray-400">
-                            <p className="text-4xl mb-3">⏳</p>
-                            <p className="font-medium">Scan in progress…</p>
-                            <p className="text-sm mt-1">Results will appear once the scan is complete.</p>
+                        <div className="text-center py-12">
+                            <div className="flex justify-center mb-5">
+                                <span className="relative flex h-16 w-16">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-30" />
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20" style={{ animationDelay: "0.5s" }} />
+                                    <span className="relative inline-flex items-center justify-center rounded-full h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200">
+                                        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                    </span>
+                                </span>
+                            </div>
+                            <p className="font-semibold text-gray-800 text-base">Scanning in progress…</p>
+                            <p className="text-sm text-gray-400 mt-2">Analyzing your target across multiple security engines.</p>
+                            <p className="text-xs text-gray-300 mt-1">Results will update automatically when ready.</p>
                         </div>
                     )}
                 </div>
@@ -429,136 +525,120 @@ function ScanDetailModal({
 // ─── Aggregate Chart (Scan History Overview) ──────────────────
 
 function HistoryBarChart({ scans }: { scans: Scan[] }) {
-    const urlScans = scans.filter((s) => s.scan_type === "url");
-    const fileScans = scans.filter((s) => s.scan_type === "file");
+    const completed = scans.filter(s => s.status === "completed");
+    const active    = scans.filter(s => ["pending","in_progress","running"].includes(s.status));
+    const failed    = scans.filter(s => ["failed","cancelled"].includes(s.status));
 
-    const countByThreat = (list: Scan[]) => {
-        const infected = list.filter((s) =>
-            ["high", "critical", "medium"].includes(s.threat_level || "")
-        ).length;
-        const clean = list.filter((s) =>
-            ["safe", "low"].includes(s.threat_level || "")
-        ).length;
-        const pending = list.filter((s) => !s.threat_level).length;
-        return { infected, clean, pending };
+    const threats = {
+        high:   completed.filter(s => ["high","critical"].includes(s.threat_level || "")).length,
+        medium: completed.filter(s => s.threat_level === "medium").length,
+        low:    completed.filter(s => s.threat_level === "low").length,
+        clean:  completed.filter(s => ["clean","safe"].includes(s.threat_level || "")).length,
+        unknown:completed.filter(s => !s.threat_level || s.threat_level === "unknown").length,
     };
 
-    const urlStats = countByThreat(urlScans);
-    const fileStats = countByThreat(fileScans);
-
-    const groups = [
-        { label: "URL Scans", ...urlStats, total: urlScans.length },
-        { label: "File Scans", ...fileStats, total: fileScans.length },
-    ];
-
-    const maxVal = Math.max(...groups.map((g) => g.total), 1);
-    const chartH = 180;
-    const barGroupW = 120;
-    const gap = 40;
-    const paddingLeft = 44;
-    const paddingBottom = 48;
-    const paddingTop = 16;
-    const totalW = paddingLeft + groups.length * (barGroupW + gap) + gap;
-    const chartAreaH = chartH - paddingBottom - paddingTop;
-    const subBarW = 32;
-    const subGap = 6;
-    const gridLines = 4;
+    const urlScans  = scans.filter(s => s.scan_type === "url").length;
+    const fileScans = scans.filter(s => s.scan_type !== "url").length;
+    const total     = scans.length || 1;
 
     return (
-        <div>
-            <div className="flex items-center gap-4 mb-3 text-xs">
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-3 h-3 rounded bg-green-500" />
-                    Clean / Low
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-3 h-3 rounded bg-red-500" />
-                    Infected / High
-                </span>
-                <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-3 h-3 rounded bg-gray-400" />
-                    Pending
-                </span>
+        <div className="space-y-6">
+            {/* ── Top stat cards ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {([
+                    { label: "Completed",   value: completed.length, color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200", iconColor: "text-green-600",
+                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> },
+                    { label: "In Progress", value: active.length,    color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200",  iconColor: "text-blue-600",
+                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+                    { label: "URL Scans",   value: urlScans,         color: "text-indigo-700", bg: "bg-indigo-50", border: "border-indigo-200", iconColor: "text-indigo-600",
+                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg> },
+                    { label: "File Scans",  value: fileScans,        color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200", iconColor: "text-purple-600",
+                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> },
+                ] as Array<{label:string;value:number;color:string;bg:string;border:string;iconColor:string;icon:React.ReactNode}>).map(c => (
+                    <div key={c.label} className={`rounded-xl border ${c.border} ${c.bg} px-4 py-3 flex items-center gap-3`}>
+                        <span className={c.iconColor}>{c.icon}</span>
+                        <div>
+                            <p className={`text-xl font-black ${c.color}`}>{c.value}</p>
+                            <p className="text-xs text-gray-500 font-medium">{c.label}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div className="overflow-x-auto">
-                <svg width={totalW} height={chartH} className="font-sans">
-                    {Array.from({ length: gridLines + 1 }, (_, i) => {
-                        const y =
-                            paddingTop + (chartAreaH * (gridLines - i)) / gridLines;
-                        const val = Math.round((maxVal * i) / gridLines);
-                        return (
-                            <g key={i}>
-                                <line
-                                    x1={paddingLeft}
-                                    y1={y}
-                                    x2={totalW - 4}
-                                    y2={y}
-                                    stroke="#e5e7eb"
-                                    strokeWidth="1"
-                                />
-                                <text
-                                    x={paddingLeft - 6}
-                                    y={y + 4}
-                                    textAnchor="end"
-                                    fontSize="10"
-                                    fill="#9ca3af"
-                                >
-                                    {val}
-                                </text>
-                            </g>
-                        );
-                    })}
 
-                    {groups.map((g, i) => {
-                        const groupX = paddingLeft + gap + i * (barGroupW + gap);
-                        const baseY = paddingTop + chartAreaH;
+            {/* ── Threat breakdown ── */}
+            {completed.length > 0 && (() => {
+                const chartBars = [
+                    { label: "High / Critical", value: threats.high,   barColor: "#ef4444", trackColor: "#fef2f2", textColor: "#dc2626" },
+                    { label: "Medium",           value: threats.medium, barColor: "#f97316", trackColor: "#fff7ed", textColor: "#ea580c" },
+                    { label: "Low",              value: threats.low,    barColor: "#eab308", trackColor: "#fefce8", textColor: "#ca8a04" },
+                    { label: "Clean / Safe",     value: threats.clean,  barColor: "#22c55e", trackColor: "#f0fdf4", textColor: "#16a34a" },
+                    ...(threats.unknown > 0
+                        ? [{ label: "Unknown", value: threats.unknown, barColor: "#9ca3af", trackColor: "#f9fafb", textColor: "#6b7280" }]
+                        : []),
+                ];
+                const maxVal = Math.max(...chartBars.map(b => b.value), 1);
 
-                        const bars = [
-                            { val: g.clean, color: "#22c55e" },
-                            { val: g.infected, color: "#ef4444" },
-                            { val: g.pending, color: "#9ca3af" },
-                        ];
+                return (
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Threat Breakdown</p>
+                            <p className="text-xs text-gray-400">{completed.length} completed scan{completed.length !== 1 ? "s" : ""}</p>
+                        </div>
 
-                        return (
-                            <g key={g.label}>
-                                {bars.map((b, j) => {
-                                    const barH = (b.val / maxVal) * chartAreaH;
-                                    const bx = groupX + j * (subBarW + subGap);
-                                    return (
-                                        <rect
-                                            key={j}
-                                            x={bx}
-                                            y={baseY - barH}
-                                            width={subBarW}
-                                            height={Math.max(barH, 1)}
-                                            fill={b.color}
-                                            rx="3"
-                                        />
-                                    );
-                                })}
-                                <text
-                                    x={groupX + (3 * (subBarW + subGap)) / 2 - subGap / 2}
-                                    y={baseY + 16}
-                                    textAnchor="middle"
-                                    fontSize="11"
-                                    fontWeight="600"
-                                    fill="#374151"
-                                >
-                                    {g.label}
-                                </text>
-                                <text
-                                    x={groupX + (3 * (subBarW + subGap)) / 2 - subGap / 2}
-                                    y={baseY + 30}
-                                    textAnchor="middle"
-                                    fontSize="9"
-                                    fill="#9ca3af"
-                                >
-                                    ({g.total} total)
-                                </text>
-                            </g>
-                        );
-                    })}
-                </svg>
+                        <div className="space-y-3">
+                            {chartBars.map(b => {
+                                const widthPct = maxVal > 0 ? (b.value / maxVal) * 100 : 0;
+                                const pct = Math.round((b.value / completed.length) * 100);
+                                return (
+                                    <div key={b.label} className="flex items-center gap-3">
+                                        {/* Label */}
+                                        <div className="flex items-center gap-2 w-28 flex-shrink-0">
+                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.barColor }} />
+                                            <span className="text-xs text-gray-600 font-medium truncate">{b.label}</span>
+                                        </div>
+
+                                        {/* Bar */}
+                                        <div className="flex-1 h-5 rounded-md overflow-hidden" style={{ background: b.trackColor }}>
+                                            <div
+                                                className="h-full rounded-md transition-all duration-700 ease-out flex items-center justify-end pr-2"
+                                                style={{
+                                                    width: b.value > 0 ? `${Math.max(widthPct, 8)}%` : "0%",
+                                                    background: b.value > 0 ? `linear-gradient(to right, ${b.barColor}cc, ${b.barColor})` : "transparent",
+                                                }}
+                                            >
+                                                {b.value > 0 && widthPct > 15 && (
+                                                    <span className="text-[10px] font-bold text-white">{pct}%</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Count + % */}
+                                        <div className="flex items-center gap-1.5 w-14 flex-shrink-0 justify-end">
+                                            <span className="text-sm font-bold tabular-nums" style={{ color: b.value > 0 ? b.textColor : "#d1d5db" }}>
+                                                {b.value}
+                                            </span>
+                                            <span className="text-[10px] text-gray-300 tabular-nums">
+                                                {b.value > 0 ? `${pct}%` : "—"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* ── URL vs File donut-style split ── */}
+            <div className="flex items-center gap-4">
+                <div className="flex-1 h-2.5 rounded-full overflow-hidden bg-gray-100 flex">
+                    <div className="bg-indigo-500 h-full rounded-l-full transition-all duration-700" style={{ width: `${(urlScans / total) * 100}%` }} />
+                    <div className="bg-purple-400 h-full rounded-r-full transition-all duration-700" style={{ width: `${(fileScans / total) * 100}%` }} />
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0">
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />URLs</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block" />Files</span>
+                </div>
             </div>
         </div>
     );
@@ -591,8 +671,10 @@ export default function ScansPage() {
 
     // History state
     const [activeTab, setActiveTab] = useState<"all" | "url" | "file">("all");
-    const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
+    const [selectedScanId, setSelectedScanId] = useState<string | null>(null);
+    const selectedScan = selectedScanId ? (scans.find(s => s.id === selectedScanId) ?? null) : null;
     const [cancellingId, setCancellingId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     // ─── Fetch scans ──────────────────────────────────────────
 
@@ -611,6 +693,17 @@ export default function ScansPage() {
     useEffect(() => {
         fetchScans();
     }, [fetchScans]);
+
+    // ─── Auto-refresh every 5 s when scans are active ─────────
+
+    useEffect(() => {
+        const hasActive = scans.some(s =>
+            ["pending", "in_progress", "running"].includes(s.status)
+        );
+        if (!hasActive) return;
+        const timer = setInterval(fetchScans, 5000);
+        return () => clearInterval(timer);
+    }, [scans, fetchScans]);
 
     // ─── URL Scan submit ──────────────────────────────────────
 
@@ -678,17 +771,13 @@ export default function ScansPage() {
         e.preventDefault();
         if (!token) return;
 
-        // Prefer SHA-256 from computed info; fall back to filename / typed hash
-        const target =
-            fileMode === "hash"
-                ? fileHash.trim()
-                : fileInfo?.sha256 || selectedFile?.name || "";
-        if (!target) {
-            setFileError(
-                fileMode === "hash"
-                    ? "Please enter a file hash (SHA-256)."
-                    : "Please select a file to scan."
-            );
+        // In upload mode, validate file selection; in hash mode, validate hash text
+        if (fileMode === "upload" && !selectedFile) {
+            setFileError("Please select a file to scan.");
+            return;
+        }
+        if (fileMode === "hash" && !fileHash.trim()) {
+            setFileError("Please enter a file hash (SHA-256).");
             return;
         }
 
@@ -697,12 +786,18 @@ export default function ScansPage() {
         setFileSuccess("");
 
         try {
-            // Send SHA-256 as target so the backend can look it up in threat feeds
-            await api.post(
-                "/api/v1/scans/file",
-                { target, scan_type: "file" },
-                token
-            );
+            if (fileMode === "upload" && selectedFile) {
+                // Upload the actual file bytes to VirusTotal via the backend
+                await api.uploadFile("/api/v1/scans/file/upload", selectedFile, token);
+            } else {
+                // Hash-only lookup (MD5 / SHA-1 / SHA-256)
+                const target = fileHash.trim();
+                await api.post(
+                    "/api/v1/scans/file",
+                    { target, scan_type: "file" },
+                    token
+                );
+            }
             setFileSuccess(
                 "File scan submitted! Results will appear in history below."
             );
@@ -727,13 +822,33 @@ export default function ScansPage() {
         if (!confirm("Cancel this scan? This cannot be undone.")) return;
         setCancellingId(scanId);
         try {
-            await api.delete(`/api/v1/scans/${scanId}`, token);
+            await api.post(`/api/v1/scans/${scanId}/cancel`, {}, token);
             fetchScans();
         } catch (err) {
             console.error("Cancel scan failed:", err);
             alert("Failed to cancel scan. It may have already completed.");
         } finally {
             setCancellingId(null);
+        }
+    };
+
+    // ─── Delete scan ──────────────────────────────────────────
+
+    const handleDeleteScan = async (scanId: string) => {
+        if (!token) return;
+        if (!confirm("Delete this scan permanently? This cannot be undone.")) return;
+        setDeletingId(scanId);
+        // Close modal if deleting the currently opened scan
+        if (selectedScanId === scanId) setSelectedScanId(null);
+        try {
+            await api.delete(`/api/v1/scans/${scanId}`, token);
+            setScans(prev => prev.filter(s => s.id !== scanId));
+        } catch (err) {
+            console.error("Delete scan failed:", err);
+            alert("Failed to delete scan.");
+            fetchScans();
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -753,11 +868,15 @@ export default function ScansPage() {
 
     const threatBadge = (level: string | null) => {
         const styles: Record<string, string> = {
-            safe: "bg-green-50 text-green-700 border border-green-200",
-            low: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-            medium: "bg-orange-50 text-orange-700 border border-orange-200",
-            high: "bg-red-50 text-red-700 border border-red-200",
-            critical: "bg-red-100 text-red-800 border border-red-300 font-bold",
+            safe:      "bg-green-50 text-green-700 border border-green-200",
+            clean:     "bg-green-50 text-green-700 border border-green-200",
+            low:       "bg-yellow-50 text-yellow-700 border border-yellow-200",
+            medium:    "bg-orange-50 text-orange-700 border border-orange-200",
+            high:      "bg-red-50 text-red-700 border border-red-200",
+            critical:  "bg-red-100 text-red-800 border border-red-300 font-bold",
+            not_found: "bg-gray-50 text-gray-500 border border-gray-200",
+            timeout:   "bg-yellow-50 text-yellow-600 border border-yellow-200",
+            unknown:   "bg-gray-50 text-gray-500 border border-gray-200",
         };
         return styles[level || ""] || "bg-gray-50 text-gray-400 border border-gray-200";
     };
@@ -769,7 +888,7 @@ export default function ScansPage() {
     // ─── Aggregate stats for chart ────────────────────────────
 
     const urlScans = scans.filter((s) => s.scan_type === "url");
-    const fileScans = scans.filter((s) => s.scan_type === "file");
+    const fileScans = scans.filter((s) => s.scan_type === "file" || s.scan_type === "file_upload");
 
     // ─── Render ───────────────────────────────────────────────
 
@@ -815,8 +934,8 @@ export default function ScansPage() {
                 {/* URL Scan Card */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
-                        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white text-lg flex-shrink-0">
-                            🔗
+                        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-gray-900">URL Scan</h3>
@@ -858,14 +977,17 @@ export default function ScansPage() {
                                 />
                                 {/* validation icon */}
                                 {urlTarget && (
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm">
-                                        {urlValidationError ? "❌" : "✔️"}
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        {urlValidationError
+                                            ? <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                            : <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        }
                                     </span>
                                 )}
                             </div>
                             {urlValidationError ? (
                                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                                    <span>⚠️</span> {urlValidationError}
+                                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> {urlValidationError}
                                 </p>
                             ) : (
                                 <p className="text-xs text-gray-400 mt-1">
@@ -876,13 +998,13 @@ export default function ScansPage() {
 
                         {urlError && (
                             <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg">
-                                <span>⚠️</span>
+                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                 <span>{urlError}</span>
                             </div>
                         )}
                         {urlSuccess && (
                             <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg">
-                                <span>✅</span>
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <span>{urlSuccess}</span>
                             </div>
                         )}
@@ -903,7 +1025,8 @@ export default function ScansPage() {
                                 </>
                             ) : (
                                 <>
-                                    🔍 Scan URL
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                    Scan URL
                                 </>
                             )}
                         </button>
@@ -913,8 +1036,8 @@ export default function ScansPage() {
                 {/* File Scan Card */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white">
-                        <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">
-                            📁
+                        <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-gray-900">File Scan</h3>
@@ -936,7 +1059,7 @@ export default function ScansPage() {
                                         : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
-                                📤 Upload File
+                                Upload File
                             </button>
                             <button
                                 type="button"
@@ -947,7 +1070,7 @@ export default function ScansPage() {
                                         : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
-                                #️⃣ Enter Hash
+                                Enter Hash
                             </button>
                         </div>
 
@@ -965,7 +1088,7 @@ export default function ScansPage() {
                                 >
                                     {selectedFile ? (
                                         <div className="text-center px-4">
-                                            <p className="text-2xl">📄</p>
+                                            <div className="flex justify-center"><svg className="w-8 h-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
                                             <p className="text-sm font-medium text-purple-700 mt-1 truncate max-w-[220px]">
                                                 {selectedFile.name}
                                             </p>
@@ -979,7 +1102,7 @@ export default function ScansPage() {
                                         </div>
                                     ) : (
                                         <div className="text-center">
-                                            <p className="text-2xl text-gray-400">☁️</p>
+                                            <div className="flex justify-center"><svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg></div>
                                             <p className="text-sm text-gray-500 mt-1">
                                                 Click to upload or drag & drop
                                             </p>
@@ -1020,13 +1143,13 @@ export default function ScansPage() {
 
                         {fileError && (
                             <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2.5 rounded-lg">
-                                <span>⚠️</span>
+                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                 <span>{fileError}</span>
                             </div>
                         )}
                         {fileSuccess && (
                             <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2.5 rounded-lg">
-                                <span>✅</span>
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <span>{fileSuccess}</span>
                             </div>
                         )}
@@ -1050,7 +1173,8 @@ export default function ScansPage() {
                                 </>
                             ) : (
                                 <>
-                                    🔍 Scan File
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                    Scan File
                                 </>
                             )}
                         </button>
@@ -1062,8 +1186,9 @@ export default function ScansPage() {
             {scans.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100">
-                        <h3 className="text-base font-semibold text-gray-900">
-                            📊 Scan Results Overview
+                        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            Scan Results Overview
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
                             Comparison of clean vs infected results across URL and File scans
@@ -1079,8 +1204,9 @@ export default function ScansPage() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-gray-100">
                     <div>
-                        <h3 className="text-base font-semibold text-gray-900">
-                            📋 Scan History
+                        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                            Scan History
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
                             Click any row to view detailed antivirus results & graphs
@@ -1097,7 +1223,7 @@ export default function ScansPage() {
                                         : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
-                                {tab === "all" ? "All" : tab === "url" ? "🔗 URLs" : "📁 Files"}
+                                {tab === "all" ? "All" : tab === "url" ? "URLs" : "Files"}
                             </button>
                         ))}
                     </div>
@@ -1115,7 +1241,9 @@ export default function ScansPage() {
                     </div>
                 ) : filteredScans.length === 0 ? (
                     <div className="text-center py-16">
-                        <div className="text-5xl mb-3">🔍</div>
+                        <div className="flex justify-center mb-3">
+                            <svg className="w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                        </div>
                         <p className="font-medium text-gray-700">No scans yet</p>
                         <p className="text-sm text-gray-400 mt-1">
                             {activeTab === "all"
@@ -1149,72 +1277,110 @@ export default function ScansPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {filteredScans.map((scan) => (
-                                    <tr
-                                        key={scan.id}
-                                        className="hover:bg-gray-50 transition-colors group"
-                                    >
-                                        <td className="px-6 py-3.5">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${scan.scan_type === "url"
+                                {filteredScans.map((scan) => {
+                                    const isActive = ["pending", "in_progress", "running"].includes(scan.status);
+                                    return (
+                                        <tr
+                                            key={scan.id}
+                                            onClick={() => setSelectedScanId(scan.id)}
+                                            className="hover:bg-blue-50/40 transition-colors cursor-pointer group"
+                                        >
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                                    scan.scan_type === "url"
                                                         ? "bg-blue-50 text-blue-700 border border-blue-200"
                                                         : "bg-purple-50 text-purple-700 border border-purple-200"
-                                                    }`}
-                                            >
-                                                {scan.scan_type === "url" ? "🔗" : "📁"}
-                                                {scan.scan_type.toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-3.5 max-w-[200px]">
-                                            <span
-                                                className="font-mono text-xs text-gray-600 truncate block"
-                                                title={scan.target}
-                                            >
-                                                {scan.target}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-3.5">
-                                            <span
-                                                className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge(scan.status)}`}
-                                            >
-                                                {scan.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-3.5">
-                                            {scan.threat_level ? (
-                                                <span
-                                                    className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${threatBadge(scan.threat_level)}`}
-                                                >
-                                                    {scan.threat_level}
+                                                }`}>
+                                                    {scan.scan_type === "url"
+                                                        ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                                        : <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                    }
+                                                    {scan.scan_type === "url" ? "URL" : "FILE"}
                                                 </span>
-                                            ) : (
-                                                <span className="text-gray-400 text-xs">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-3.5 text-gray-400 text-xs whitespace-nowrap">
-                                            {new Date(scan.created_at).toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-3.5">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => setSelectedScan(scan)}
-                                                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                            </td>
+                                            <td className="px-6 py-4 max-w-[220px]">
+                                                <span
+                                                    className="font-mono text-xs text-gray-600 truncate block group-hover:text-blue-700 transition-colors"
+                                                    title={scan.target}
                                                 >
-                                                    View Report →
-                                                </button>
-                                                {(scan.status === "pending" || scan.status === "in_progress" || scan.status === "running") && (
-                                                    <button
-                                                        onClick={() => handleCancelScan(scan.id)}
-                                                        disabled={cancellingId === scan.id}
-                                                        className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 hover:underline transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                                    >
-                                                        {cancellingId === scan.id ? "⏳" : "❌"} Cancel
-                                                    </button>
+                                                    {scan.target}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge(scan.status)}`}>
+                                                    {isActive && (
+                                                        <span className="relative flex h-2 w-2">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75" />
+                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-current" />
+                                                        </span>
+                                                    )}
+                                                    {scan.status.replace(/_/g, " ")}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {scan.threat_level ? (
+                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${threatBadge(scan.threat_level)}`}>
+                                                        {scan.threat_level}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-300 text-xs">—</span>
                                                 )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-400 text-xs whitespace-nowrap">
+                                                {new Date(scan.created_at).toLocaleString()}
+                                            </td>
+                                            <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setSelectedScanId(scan.id)}
+                                                        className="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-medium transition-all flex items-center gap-1.5 flex-shrink-0"
+                                                    >
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                        </svg>
+                                                        Details
+                                                    </button>
+                                                    {isActive && (
+                                                        <button
+                                                            onClick={() => handleCancelScan(scan.id)}
+                                                            disabled={cancellingId === scan.id}
+                                                            title="Cancel this scan"
+                                                            className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                                        >
+                                                            {cancellingId === scan.id ? (
+                                                                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                                                </svg>
+                                                            ) : (
+                                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                                                                </svg>
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleDeleteScan(scan.id)}
+                                                        disabled={deletingId === scan.id}
+                                                        title="Delete scan permanently"
+                                                        className="w-8 h-8 rounded-lg bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                                    >
+                                                        {deletingId === scan.id ? (
+                                                            <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -1226,7 +1392,7 @@ export default function ScansPage() {
                 <ScanDetailModal
                     scan={selectedScan}
                     token={token ?? undefined}
-                    onClose={() => setSelectedScan(null)}
+                    onClose={() => setSelectedScanId(null)}
                 />
             )}
         </div>

@@ -53,4 +53,20 @@ export const api = {
 
     delete: <T>(endpoint: string, token?: string) =>
         request<T>(endpoint, { method: "DELETE", token }),
+
+    uploadFile: <T>(endpoint: string, file: File, token?: string): Promise<T> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+        }).then(async (res) => {
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: "Upload failed" }));
+                throw new Error(err.detail || `HTTP ${res.status}`);
+            }
+            return res.json() as Promise<T>;
+        });
+    },
 };

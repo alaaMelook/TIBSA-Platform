@@ -11,8 +11,8 @@ import asyncio
 import httpx
 
 VT_BASE       = "https://www.virustotal.com/api/v3"
-POLL_INTERVAL = 5    # seconds between status checks
-MAX_POLLS     = 12   # give up after 60 s (12 × 5 s)
+POLL_INTERVAL = 10   # seconds between status checks
+MAX_POLLS     = 30   # give up after 5 min (30 × 10 s)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ class VirusTotalService:
                 return {
                     "found": False,
                     "status": "completed",
-                    "threat_level": "unknown",
+                    "threat_level": "not_found",
                     "stats": {},
                     "total_engines": 0,
                     "malicious": 0,
@@ -127,7 +127,7 @@ class VirusTotalService:
         return {
             "found": None,
             "status": "timeout",
-            "threat_level": "unknown",
+            "threat_level": "timeout",
             "stats": {},
             "total_engines": 0,
             "malicious": 0,
@@ -140,12 +140,16 @@ class VirusTotalService:
         stats      = attrs.get("stats", {})
         malicious  = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)
+        harmless   = stats.get("harmless", 0)
+        undetected = stats.get("undetected", 0)
+        # Only count engines that gave a decisive result (exclude timeout/failure/type-unsupported)
+        total_engines = malicious + suspicious + harmless + undetected
         return {
             "found": True,
             "status": "completed",
             "threat_level": _threat_level(malicious, suspicious),
             "stats": stats,
-            "total_engines": sum(stats.values()),
+            "total_engines": total_engines,
             "malicious": malicious,
             "suspicious": suspicious,
             "analysis_id": analysis_id,
@@ -156,12 +160,16 @@ class VirusTotalService:
         stats      = attrs.get("last_analysis_stats", {})
         malicious  = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)
+        harmless   = stats.get("harmless", 0)
+        undetected = stats.get("undetected", 0)
+        # Only count engines that gave a decisive result (exclude timeout/failure/type-unsupported)
+        total_engines = malicious + suspicious + harmless + undetected
         return {
             "found": True,
             "status": "completed",
             "threat_level": _threat_level(malicious, suspicious),
             "stats": stats,
-            "total_engines": sum(stats.values()),
+            "total_engines": total_engines,
             "malicious": malicious,
             "suspicious": suspicious,
             "file_name": attrs.get("meaningful_name", "unknown"),

@@ -169,6 +169,27 @@ class ScanService:
         )
         return result.data[0] if result.data else {**scan.data, "status": "cancelled"}
 
+    async def delete_scan(self, scan_id: str, user_id: str) -> dict:
+        """Permanently delete a scan and its report from the database."""
+        scan = (
+            self.supabase.table("scans")
+            .select("*")
+            .eq("id", scan_id)
+            .eq("user_id", user_id)
+            .single()
+            .execute()
+        )
+        if not scan.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Scan not found",
+            )
+        # Delete associated report first (FK constraint)
+        self.supabase.table("scan_reports").delete().eq("scan_id", scan_id).execute()
+        # Delete the scan
+        self.supabase.table("scans").delete().eq("id", scan_id).execute()
+        return scan.data
+
     async def _execute_vt_scan(self, scan_id: str, vt_call) -> None:
         """
         Core background worker:
