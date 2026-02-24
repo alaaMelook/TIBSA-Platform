@@ -382,10 +382,13 @@ function ScanDetailModal({
                     <div>
                         <div className="flex items-center gap-2">
                             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                {scan.scan_type === "url"
-                                    ? <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                                    : <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                }
+                                {scan.scan_type === "url" ? (
+                                    <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                ) : scan.scan_type === "file" ? (
+                                    <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                                ) : (
+                                    <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                )}
                                 Scan Report
                             </h2>
                             {["pending", "in_progress", "running"].includes(scan.status) && (
@@ -415,7 +418,7 @@ function ScanDetailModal({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-xs text-gray-500">Type</p>
-                            <p className="font-semibold text-gray-800 mt-0.5 capitalize">{scan.scan_type.replace("_", " ")}</p>
+                            <p className="font-semibold text-gray-800 mt-0.5 capitalize">{scan.scan_type === "file" ? "Hash" : scan.scan_type.replace("_", " ")}</p>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3">
                             <p className="text-xs text-gray-500">Status</p>
@@ -440,7 +443,7 @@ function ScanDetailModal({
                     {/* Target */}
                     <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
-                            {scan.scan_type === "url" ? "URL" : "File Hash / Name"}
+                            {scan.scan_type === "url" ? "URL" : scan.scan_type === "file" ? "Hash" : "File Name"}
                         </p>
                         <div className="bg-gray-900 rounded-lg px-4 py-3 font-mono text-sm text-green-400 break-all">
                             {scan.target}
@@ -1289,13 +1292,18 @@ export default function ScansPage() {
                                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                                                     scan.scan_type === "url"
                                                         ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                                        : scan.scan_type === "file"
+                                                        ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                                                         : "bg-purple-50 text-purple-700 border border-purple-200"
                                                 }`}>
-                                                    {scan.scan_type === "url"
-                                                        ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                                                        : <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                    }
-                                                    {scan.scan_type === "url" ? "URL" : "FILE"}
+                                                    {scan.scan_type === "url" ? (
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                                    ) : scan.scan_type === "file" ? (
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                                                    ) : (
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                    )}
+                                                    {scan.scan_type === "url" ? "URL" : scan.scan_type === "file" ? "HASH" : "FILE"}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 max-w-[220px]">
