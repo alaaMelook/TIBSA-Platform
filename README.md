@@ -94,4 +94,5 @@ SQL schemas are in the `database/` folder, split by module. Run them **in order*
 **Backend (Railway):**
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `VIRUSTOTAL_API_KEY` — required for URL/hash scans via VirusTotal
 - `CORS_ORIGINS` — Vercel frontend URL

@@ -19,11 +19,31 @@ logger = logging.getLogger(__name__)
 
 
 class ScanService:
+    _vt_missing_warned: bool = False
+
     def __init__(self, supabase: Client):
         self.supabase = supabase
         api_key = settings.virustotal_api_key
         self.vt: VirusTotalService | None = (
             VirusTotalService(api_key) if api_key else None
+        )
+
+        if not self.vt and not ScanService._vt_missing_warned:
+            logger.warning(
+                "VirusTotal integration is disabled (missing VIRUSTOTAL_API_KEY). "
+                "URL/hash scan submissions will be rejected with 503."
+            )
+            ScanService._vt_missing_warned = True
+
+    def _ensure_vt_configured(self) -> None:
+        if self.vt:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "VirusTotal is not configured on this deployment. "
+                "Set the VIRUSTOTAL_API_KEY environment variable and redeploy."
+            ),
         )
 
     # ── Public scan methods ───────────────────────────────────────────────────
@@ -32,20 +52,20 @@ class ScanService:
         self, user_id: str, url: str, background_tasks: BackgroundTasks
     ) -> dict:
         """Create a URL scan record and kick off VirusTotal analysis."""
+        self._ensure_vt_configured()
         scan_id = str(uuid.uuid4())
         saved = self._insert_scan(scan_id, user_id, "url", url)
-        if self.vt:
-            background_tasks.add_task(self._run_url_scan, scan_id, url)
+        background_tasks.add_task(self._run_url_scan, scan_id, url)
         return saved
 
     async def scan_file(
         self, user_id: str, file_hash: str, background_tasks: BackgroundTasks
     ) -> dict:
         """Create a file-hash scan record and kick off VirusTotal lookup."""
+        self._ensure_vt_configured()
         scan_id = str(uuid.uuid4())
         saved = self._insert_scan(scan_id, user_id, "file", file_hash)
-        if self.vt:
-            background_tasks.add_task(self._run_hash_scan, scan_id, file_hash)
+        background_tasks.add_task(self._run_hash_scan, scan_id, file_hash)
         return saved
 
     async def scan_uploaded_file(
@@ -124,6 +144,10 @@ class ScanService:
 
     async def _run_url_scan(self, scan_id: str, url: str) -> None:
         if not self.vt:
+            logger.error("VirusTotal API key not configured — cannot scan URL %s", url)
+            self.supabase.table("scans").update(
+                {"status": "failed", "threat_level": "unknown"}
+            ).eq("id", scan_id).execute()
             return
         await self._execute_vt_scan(
             scan_id=scan_id,
@@ -132,6 +156,10 @@ class ScanService:
 
     async def _run_hash_scan(self, scan_id: str, file_hash: str) -> None:
         if not self.vt:
+            logger.error("VirusTotal API key not configured — cannot scan hash %s", file_hash)
+            self.supabase.table("scans").update(
+                {"status": "failed", "threat_level": "unknown"}
+            ).eq("id", scan_id).execute()
             return
         await self._execute_vt_scan(
             scan_id=scan_id,
