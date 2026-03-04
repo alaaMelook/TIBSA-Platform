@@ -315,10 +315,24 @@ class ScanService:
             # ── Handle malice result ──────────────────────────────────────
             malice_data: dict = {}
             if isinstance(malice_result, Exception):
-                logger.error("Malice scan failed for %s: %s", scan_id, malice_result)
+                logger.error(
+                    "Malice scan failed for %s: %s (%s)",
+                    scan_id, malice_result, type(malice_result).__name__,
+                    exc_info=malice_result,
+                )
                 malice_data = {"error": str(malice_result)}
             elif malice_result is not None:
                 malice_data = malice_result
+            else:
+                logger.warning("Malice scan returned None for %s", scan_id)
+
+            logger.info(
+                "Scan %s results — VT: %s, Malice engines: %d, detected: %d",
+                scan_id,
+                "error" if vt_data.get("error") else f"{vt_data.get('malicious', 0)}/{vt_data.get('total_engines', 0)}",
+                malice_data.get("total_engines", 0),
+                malice_data.get("detected_by", 0),
+            )
 
             # ── Determine overall threat level ────────────────────────────
             vt_level    = vt_data.get("threat_level", "unknown")

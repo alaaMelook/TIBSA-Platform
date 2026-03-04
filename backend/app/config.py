@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     # ─── CORS ─────────────────────────────────────────────────
     cors_origins: str = "http://localhost:3000"
 
+    # ─── Malice Docker AV ─────────────────────────────────────
+    malice_engines: str = ""
+    malice_container_timeout: int = 120
+    malice_helper_image: str = "alpine:latest"
+
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"
     debug: bool = False
