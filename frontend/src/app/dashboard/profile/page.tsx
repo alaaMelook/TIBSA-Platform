@@ -9,8 +9,8 @@ export default function ProfilePage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-                <p className="text-gray-500 mt-1">Your account information</p>
+                <h1 className="text-2xl font-bold text-white">Profile</h1>
+                <p className="text-slate-400 mt-1">Your account information</p>
             </div>
 
             <div className="max-w-2xl">
@@ -22,30 +22,30 @@ export default function ProfilePage() {
                                 {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900">{user?.full_name}</h2>
-                                <p className="text-gray-500 text-sm">{user?.email}</p>
+                                <h2 className="text-xl font-bold text-white">{user?.full_name}</h2>
+                                <p className="text-slate-400 text-sm">{user?.email}</p>
                             </div>
                         </div>
 
-                        <hr className="border-gray-100" />
+                        <hr className="border-white/[0.06]" />
 
                         {/* Info Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">Full Name</label>
-                                <p className="text-gray-900 mt-1">{user?.full_name || "—"}</p>
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Full Name</label>
+                                <p className="text-slate-200 mt-1">{user?.full_name || "—"}</p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">Email</label>
-                                <p className="text-gray-900 mt-1">{user?.email || "—"}</p>
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Email</label>
+                                <p className="text-slate-200 mt-1">{user?.email || "—"}</p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">Role</label>
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Role</label>
                                 <p className="mt-1">
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${user?.role === "admin"
-                                                ? "bg-purple-100 text-purple-700"
-                                                : "bg-blue-100 text-blue-700"
+                                                ? "bg-purple-500/15 text-purple-400"
+                                                : "bg-blue-500/15 text-blue-400"
                                             }`}
                                     >
                                         {user?.role || "user"}
@@ -53,12 +53,12 @@ export default function ProfilePage() {
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">Status</label>
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Status</label>
                                 <p className="mt-1">
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${user?.is_active
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-red-100 text-red-700"
+                                                ? "bg-green-500/15 text-green-400"
+                                                : "bg-red-500/15 text-red-400"
                                             }`}
                                     >
                                         {user?.is_active ? "Active" : "Inactive"}
@@ -66,8 +66,8 @@ export default function ProfilePage() {
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider">Joined</label>
-                                <p className="text-gray-900 mt-1">
+                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Joined</label>
+                                <p className="text-slate-200 mt-1">
                                     {user?.created_at
                                         ? new Date(user.created_at).toLocaleDateString("en-US", {
                                             year: "numeric",

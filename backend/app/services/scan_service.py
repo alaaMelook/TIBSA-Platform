@@ -1,7 +1,9 @@
 """
 Scan service.
-Handles URL/file scanning logic using VirusTotal and report generation.
+Handles URL/file scanning logic using VirusTotal, local malice Docker AV
+engines, and report generation.
 """
+import asyncio
 import logging
 import uuid
 from typing import List
@@ -11,6 +13,7 @@ from supabase import Client
 
 from app.config import settings
 from app.services.virustotal_service import VirusTotalService
+from app.services import malice_service
 
 logger = logging.getLogger(__name__)
 
@@ -52,13 +55,12 @@ class ScanService:
         content: bytes,
         background_tasks: BackgroundTasks,
     ) -> dict:
-        """Upload a real file, scan it via VirusTotal, store the result."""
+        """Upload a real file, scan it via VirusTotal + local malice AV engines."""
         scan_id = str(uuid.uuid4())
         saved = self._insert_scan(scan_id, user_id, "file_upload", filename)
-        if self.vt:
-            background_tasks.add_task(
-                self._run_file_upload_scan, scan_id, filename, content
-            )
+        background_tasks.add_task(
+            self._run_combined_file_upload_scan, scan_id, filename, content
+        )
         return saved
 
     async def list_user_scans(self, user_id: str) -> List[dict]:
@@ -121,23 +123,29 @@ class ScanService:
     # ── Background tasks (called by FastAPI BackgroundTasks) ──────────────────
 
     async def _run_url_scan(self, scan_id: str, url: str) -> None:
+        if not self.vt:
+            return
         await self._execute_vt_scan(
             scan_id=scan_id,
             vt_call=self.vt.scan_url(url),
         )
 
     async def _run_hash_scan(self, scan_id: str, file_hash: str) -> None:
+        if not self.vt:
+            return
         await self._execute_vt_scan(
             scan_id=scan_id,
             vt_call=self.vt.lookup_hash(file_hash),
         )
 
-    async def _run_file_upload_scan(
+    async def _run_combined_file_upload_scan(
         self, scan_id: str, filename: str, content: bytes
     ) -> None:
-        await self._execute_vt_scan(
+        """Run VirusTotal and all malice Docker AV engines in parallel."""
+        await self._execute_combined_scan(
             scan_id=scan_id,
-            vt_call=self.vt.scan_file(filename, content),
+            filename=filename,
+            content=content,
         )
 
     async def cancel_scan(self, scan_id: str, user_id: str) -> dict:
@@ -248,6 +256,124 @@ class ScanService:
 
         except Exception as exc:  # noqa: BLE001
             logger.error("VirusTotal scan failed for %s: %s", scan_id, exc)
+            if not _is_cancelled():
+                self.supabase.table("scans").update(
+                    {"status": "failed"}
+                ).eq("id", scan_id).execute()
+
+    async def _execute_combined_scan(
+        self, scan_id: str, filename: str, content: bytes
+    ) -> None:
+        """
+        Run VirusTotal and malice Docker AV engines concurrently.
+        Stores a unified report that contains both sets of results.
+        """
+        def _is_cancelled() -> bool:
+            try:
+                chk = (
+                    self.supabase.table("scans")
+                    .select("status")
+                    .eq("id", scan_id)
+                    .single()
+                    .execute()
+                )
+                return bool(chk.data and chk.data.get("status") == "cancelled")
+            except Exception:
+                return False
+
+        try:
+            if _is_cancelled():
+                return
+
+            self.supabase.table("scans").update(
+                {"status": "in_progress"}
+            ).eq("id", scan_id).execute()
+
+            # Build concurrent tasks
+            vt_task = (
+                self.vt.scan_file(filename, content)
+                if self.vt
+                else asyncio.sleep(0, result=None)  # no-op coroutine
+            )
+            malice_task = malice_service.scan_file_with_malice(filename, content)
+
+            vt_result, malice_result = await asyncio.gather(
+                vt_task, malice_task, return_exceptions=True
+            )
+
+            if _is_cancelled():
+                return
+
+            # ── Handle VirusTotal result ──────────────────────────────────
+            vt_data: dict = {}
+            if isinstance(vt_result, Exception):
+                logger.error("VT scan failed for %s: %s", scan_id, vt_result)
+                vt_data = {"error": str(vt_result)}
+            elif vt_result is not None:
+                vt_data = vt_result
+
+            # ── Handle malice result ──────────────────────────────────────
+            malice_data: dict = {}
+            if isinstance(malice_result, Exception):
+                logger.error("Malice scan failed for %s: %s", scan_id, malice_result)
+                malice_data = {"error": str(malice_result)}
+            elif malice_result is not None:
+                malice_data = malice_result
+
+            # ── Determine overall threat level ────────────────────────────
+            vt_level    = vt_data.get("threat_level", "unknown")
+            malice_level = malice_data.get("threat_level", "clean")
+
+            level_rank = {"clean": 0, "unknown": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
+            ranked = max(
+                level_rank.get(vt_level, 0),
+                level_rank.get(malice_level, 0),
+            )
+            level_map = {0: "clean", 1: "low", 2: "medium", 3: "high", 4: "critical"}
+            final_level = level_map[ranked]
+
+            # ── Stats for summary ─────────────────────────────────────────
+            vt_malicious  = vt_data.get("malicious", 0)
+            vt_total      = vt_data.get("total_engines", 0)
+            mal_detected  = malice_data.get("detected_by", 0)
+            mal_total     = malice_data.get("total_engines", 0)
+
+            top_threat = (
+                malice_data.get("top_result")
+                or (f"{vt_malicious}/{vt_total} VT engines" if vt_malicious else None)
+            )
+
+            summary_parts = []
+            if vt_data and not vt_data.get("error"):
+                summary_parts.append(
+                    f"VirusTotal: {vt_malicious}/{vt_total} engines flagged as malicious"
+                )
+            if malice_data and not malice_data.get("error"):
+                summary_parts.append(
+                    f"Local AV engines: {mal_detected}/{mal_total} detected malware"
+                    + (f" ({top_threat})" if top_threat and mal_detected else "")
+                )
+            summary = ". ".join(summary_parts) + f". Overall threat level: {final_level}."
+
+            self.supabase.table("scans").update({
+                "status": "completed",
+                "threat_level": final_level,
+            }).eq("id", scan_id).execute()
+
+            self.supabase.table("scan_reports").insert({
+                "id": str(uuid.uuid4()),
+                "scan_id": scan_id,
+                "summary": summary,
+                "details": {
+                    "virustotal": vt_data,
+                    "malice": malice_data,
+                    "threat_level": final_level,
+                },
+                "indicators": [],
+            }).execute()
+
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Combined scan failed for %s: %s", scan_id, exc)
             if not _is_cancelled():
                 self.supabase.table("scans").update(
                     {"status": "failed"}

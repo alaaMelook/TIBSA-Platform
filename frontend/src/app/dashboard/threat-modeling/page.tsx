@@ -94,9 +94,9 @@ const initialForm: FormState = {
 // ─────────────────────────────────────────────────────────────────────
 
 const RISK_BADGE: Record<RiskLevel, string> = {
-    High:   "bg-red-50 text-red-700 border border-red-200",
-    Medium: "bg-orange-50 text-orange-700 border border-orange-200",
-    Low:    "bg-yellow-50 text-yellow-700 border border-yellow-200",
+    High:   "bg-red-500/15 text-red-400 border border-red-500/20",
+    Medium: "bg-orange-500/15 text-orange-400 border border-orange-500/20",
+    Low:    "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
 };
 
 const RISK_DOT: Record<RiskLevel, string> = {
@@ -108,10 +108,10 @@ const SCORE_COLOR: Record<string, string> = {
 };
 
 const SCORE_LABEL_STYLE: Record<string, string> = {
-    Critical: "bg-red-100 text-red-700",
-    High:     "bg-red-100 text-red-600",
-    Medium:   "bg-orange-100 text-orange-700",
-    Low:      "bg-green-100 text-green-700",
+    Critical: "bg-red-500/15 text-red-400",
+    High:     "bg-red-500/15 text-red-400",
+    Medium:   "bg-orange-500/15 text-orange-400",
+    Low:      "bg-green-500/15 text-green-400",
 };
 
 function getRiskLabel(score: number): string {
@@ -306,12 +306,12 @@ const PILL_ACTIVE: Record<PillColor, string> = {
 };
 
 const PILL_HOVER: Record<PillColor, string> = {
-    blue:    "hover:border-blue-400 hover:text-blue-600",
-    indigo:  "hover:border-indigo-400 hover:text-indigo-600",
-    violet:  "hover:border-violet-400 hover:text-violet-600",
-    teal:    "hover:border-teal-400 hover:text-teal-600",
-    emerald: "hover:border-emerald-400 hover:text-emerald-600",
-    rose:    "hover:border-rose-400 hover:text-rose-600",
+    blue:    "hover:border-blue-400/50 hover:text-blue-400",
+    indigo:  "hover:border-indigo-400/50 hover:text-indigo-400",
+    violet:  "hover:border-violet-400/50 hover:text-violet-400",
+    teal:    "hover:border-teal-400/50 hover:text-teal-400",
+    emerald: "hover:border-emerald-400/50 hover:text-emerald-400",
+    rose:    "hover:border-rose-400/50 hover:text-rose-400",
 };
 
 function MultiPillSelect<T extends string>({
@@ -323,8 +323,8 @@ function MultiPillSelect<T extends string>({
     return (
         <div>
             <div className="mb-2">
-                <span className="block text-sm font-medium text-gray-700">{label}</span>
-                {hint && <span className="block text-xs text-gray-400 mt-0.5">{hint}</span>}
+                <span className="block text-sm font-medium text-slate-300">{label}</span>
+                {hint && <span className="block text-xs text-slate-500 mt-0.5">{hint}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
                 {options.map((opt) => {
@@ -337,7 +337,7 @@ function MultiPillSelect<T extends string>({
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
                                 active
                                     ? PILL_ACTIVE[color]
-                                    : `bg-white text-gray-600 border-gray-300 ${PILL_HOVER[color]}`
+                                    : `bg-white/[0.04] text-slate-400 border-white/[0.08] ${PILL_HOVER[color]}`
                             }`}
                         >
                             {opt}
@@ -346,7 +346,7 @@ function MultiPillSelect<T extends string>({
                 })}
             </div>
             {selected.length > 0 && (
-                <p className="mt-2 text-xs text-gray-400 leading-relaxed">
+                <p className="mt-2 text-xs text-slate-500 leading-relaxed">
                     ✓ {selected.join(" · ")}
                 </p>
             )}
@@ -357,11 +357,11 @@ function MultiPillSelect<T extends string>({
 function SectionDivider({ label }: { label: string }) {
     return (
         <div className="flex items-center gap-3 py-1">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+            <div className="flex-1 h-px bg-white/[0.06]" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest whitespace-nowrap">
                 {label}
             </span>
-            <div className="flex-1 h-px bg-gray-100" />
+            <div className="flex-1 h-px bg-white/[0.06]" />
         </div>
     );
 }
@@ -438,7 +438,7 @@ export default function ThreatModelingPage() {
     const handleSave  = () => { setSaveMsg("✅ Report saved successfully!"); setTimeout(() => setSaveMsg(""), 3500); };
 
     const riskLabel  = result ? getRiskLabel(result.riskScore) : "";
-    const barColor   = SCORE_COLOR[riskLabel]       ?? "bg-gray-300";
+    const barColor   = SCORE_COLOR[riskLabel]       ?? "bg-slate-600";
     const labelStyle = SCORE_LABEL_STYLE[riskLabel] ?? "";
 
     // Compact summary of selected options for the report header
@@ -493,7 +493,7 @@ export default function ThreatModelingPage() {
 
                             {/* App type */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Application Type</label>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Application Type</label>
                                 <div className="flex flex-wrap gap-2">
                                     {APP_TYPES.map(type => (
                                         <button key={type} type="button"
@@ -501,7 +501,7 @@ export default function ThreatModelingPage() {
                                             className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
                                                 form.appType === type
                                                     ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                                    : "bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600"
+                                                    : "bg-white/[0.04] text-slate-400 border-white/[0.08] hover:border-blue-400/50 hover:text-blue-400"
                                             }`}
                                         >{type}</button>
                                     ))}
@@ -510,18 +510,18 @@ export default function ThreatModelingPage() {
 
                             {/* System characteristics */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">System Characteristics</label>
+                                <label className="block text-sm font-medium text-slate-300 mb-2">System Characteristics</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                     {CHECKBOXES.map(({ key, label }) => (
                                         <label key={key}
-                                            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 cursor-pointer transition-colors"
+                                            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-white/[0.08] hover:border-blue-500/30 hover:bg-blue-500/5 cursor-pointer transition-colors"
                                         >
                                             <input type="checkbox"
                                                 checked={form[key] as boolean}
                                                 onChange={() => toggleBool(key)}
-                                                className="w-4 h-4 rounded accent-blue-600 border-gray-300"
+                                                className="w-4 h-4 rounded accent-blue-600 border-slate-500"
                                             />
-                                            <span className="text-sm text-gray-700">{label}</span>
+                                            <span className="text-sm text-slate-300">{label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -612,18 +612,18 @@ export default function ThreatModelingPage() {
                                 onDrop={handleDrop}
                                 className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
                                     dragOver
-                                        ? "border-blue-500 bg-blue-50"
-                                        : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/30"
+                                        ? "border-blue-500 bg-blue-500/10"
+                                        : "border-white/[0.12] hover:border-blue-400/50 hover:bg-blue-500/5"
                                 }`}
                                 onClick={() => fileInputRef.current?.click()}
                             >
-                                <svg className="w-8 h-8 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <svg className="w-8 h-8 mx-auto text-slate-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                                 </svg>
-                                <p className="text-sm font-medium text-gray-700 mb-1">
+                                <p className="text-sm font-medium text-slate-300 mb-1">
                                     Drag & drop files here, or click to browse
                                 </p>
-                                <p className="text-xs text-gray-400">
+                                <p className="text-xs text-slate-500">
                                     Supports any file type — config files, diagrams, source code, docs
                                 </p>
 
@@ -642,14 +642,14 @@ export default function ThreatModelingPage() {
                                 <button
                                     type="button"
                                     onClick={() => folderInputRef.current?.click()}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:border-blue-400/50 hover:text-blue-400 transition-colors"
                                 >
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                                     </svg>
                                     Upload Entire Project Folder
                                 </button>
-                                <span className="text-xs text-gray-400">
+                                <span className="text-xs text-slate-500">
                                     Scans your folder structure for security context
                                 </span>
                                 {/* Hidden folder input — webkitdirectory is non-standard, so we cast */}
@@ -665,9 +665,9 @@ export default function ThreatModelingPage() {
 
                             {/* Uploaded entries list */}
                             {form.uploads.length > 0 && (
-                                <div className="rounded-lg border border-gray-200 overflow-hidden">
-                                    <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                                        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                                <div className="rounded-lg border border-white/[0.08] overflow-hidden">
+                                    <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.04] border-b border-white/[0.06]">
+                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
                                             {form.uploads.length} file{form.uploads.length !== 1 ? "s" : ""} staged
                                         </span>
                                         <button
@@ -678,7 +678,7 @@ export default function ThreatModelingPage() {
                                             Clear all
                                         </button>
                                     </div>
-                                    <ul className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                                    <ul className="divide-y divide-white/[0.06] max-h-64 overflow-y-auto">
                                         {form.uploads.map(entry => (
                                             <li key={entry.path} className="flex items-center gap-3 px-4 py-2.5">
                                                 {/* Icon */}
@@ -692,16 +692,16 @@ export default function ThreatModelingPage() {
                                                 }
                                                 {/* Details */}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-gray-800 truncate">{entry.name}</p>
+                                                    <p className="text-sm font-medium text-slate-200 truncate">{entry.name}</p>
                                                     {entry.path !== entry.name && (
-                                                        <p className="text-xs text-gray-400 truncate font-mono">{entry.path}</p>
+                                                        <p className="text-xs text-slate-500 truncate font-mono">{entry.path}</p>
                                                     )}
                                                 </div>
-                                                <span className="text-xs text-gray-400 flex-shrink-0">{formatBytes(entry.size)}</span>
+                                                <span className="text-xs text-slate-500 flex-shrink-0">{formatBytes(entry.size)}</span>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeUpload(entry.path)}
-                                                    className="text-gray-300 hover:text-red-500 transition-colors ml-1 flex-shrink-0"
+                                                    className="text-slate-600 hover:text-red-400 transition-colors ml-1 flex-shrink-0"
                                                     aria-label="Remove"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -735,11 +735,11 @@ export default function ThreatModelingPage() {
                     {/* ── Report header + action buttons ── */}
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">
+                            <h2 className="text-xl font-bold text-white">
                                 Threat Report —{" "}
-                                <span className="text-blue-600">{form.projectName}</span>
+                                <span className="text-blue-400">{form.projectName}</span>
                             </h2>
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <p className="text-sm text-slate-400 mt-0.5">
                                 {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
                                 {form.uploads.length > 0 && ` · ${form.uploads.length} file${form.uploads.length !== 1 ? "s" : ""} uploaded`}
                             </p>
@@ -768,7 +768,7 @@ export default function ThreatModelingPage() {
 
                     {/* Save confirmation */}
                     {saveMsg && (
-                        <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-lg print:hidden">
+                        <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg print:hidden">
                             {saveMsg}
                         </div>
                     )}
@@ -776,9 +776,9 @@ export default function ThreatModelingPage() {
                     {/* ── Stack summary tags ── */}
                     {stackTags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 print:hidden">
-                            <span className="text-xs font-medium text-gray-400 self-center mr-1">Stack:</span>
+                            <span className="text-xs font-medium text-slate-500 self-center mr-1">Stack:</span>
                             {stackTags.map(tag => (
-                                <span key={tag} className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full font-medium">
+                                <span key={tag} className="text-xs bg-white/[0.06] text-slate-400 border border-white/[0.08] px-2.5 py-1 rounded-full font-medium">
                                     {tag}
                                 </span>
                             ))}
@@ -789,23 +789,23 @@ export default function ThreatModelingPage() {
                     <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
                         <div className="flex items-center gap-6 mt-2">
                             <div className="flex-shrink-0 text-center w-20">
-                                <div className="text-5xl font-bold text-gray-900 leading-none">{result.riskScore}</div>
-                                <div className="text-sm text-gray-400 mt-1">/ 100</div>
+                                <div className="text-5xl font-bold text-white leading-none">{result.riskScore}</div>
+                                <div className="text-sm text-slate-500 mt-1">/ 100</div>
                             </div>
                             <div className="flex-1">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-gray-600">Risk Level</span>
+                                    <span className="text-sm font-medium text-slate-400">Risk Level</span>
                                     <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
                                         {riskLabel}
                                     </span>
                                 </div>
-                                <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div className="w-full bg-white/[0.06] rounded-full h-3 overflow-hidden">
                                     <div
                                         className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
                                         style={{ width: `${result.riskScore}%` }}
                                     />
                                 </div>
-                                <div className="flex justify-between text-xs text-gray-400 mt-1.5">
+                                <div className="flex justify-between text-xs text-slate-500 mt-1.5">
                                     <span>0 — Safe</span>
                                     <span>100 — Critical</span>
                                 </div>
@@ -818,7 +818,7 @@ export default function ThreatModelingPage() {
                         <Card title="Project Files Analyzed" description={`${form.uploads.length} file${form.uploads.length !== 1 ? "s" : ""} included in this analysis`}>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                                 {form.uploads.map(u => (
-                                    <div key={u.path} className="flex items-center gap-2.5 text-sm text-gray-600">
+                                    <div key={u.path} className="flex items-center gap-2.5 text-sm text-slate-400">
                                         {u.kind === "folder"
                                             ? <svg className="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
@@ -828,7 +828,7 @@ export default function ThreatModelingPage() {
                                               </svg>
                                         }
                                         <span className="truncate font-medium">{u.name}</span>
-                                        <span className="text-gray-400 text-xs flex-shrink-0">{formatBytes(u.size)}</span>
+                                        <span className="text-slate-500 text-xs flex-shrink-0">{formatBytes(u.size)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -838,10 +838,10 @@ export default function ThreatModelingPage() {
                     {/* ── Threats list ── */}
                     <div>
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-base font-semibold text-gray-800">
+                            <h3 className="text-base font-semibold text-slate-200">
                                 Identified Threats
                             </h3>
-                            <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <div className="flex items-center gap-3 text-xs text-slate-500">
                                 <span className="flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High
                                 </span>
@@ -857,16 +857,16 @@ export default function ThreatModelingPage() {
                         <div className="space-y-3">
                             {result.threats.map(threat => (
                                 <div key={threat.id}
-                                    className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                                    className="bg-[#263554] border border-white/[0.08] rounded-xl shadow-lg shadow-black/25 overflow-hidden">
                                     {/* Threat header */}
-                                    <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-4">
+                                    <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]}`} />
                                             <div className="min-w-0">
-                                                <h4 className="font-semibold text-gray-900 text-sm leading-tight truncate">
+                                                <h4 className="font-semibold text-white text-sm leading-tight truncate">
                                                     {threat.title}
                                                 </h4>
-                                                <span className="text-xs text-gray-400">{threat.category}</span>
+                                                <span className="text-xs text-slate-500">{threat.category}</span>
                                             </div>
                                         </div>
                                         <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
@@ -876,18 +876,18 @@ export default function ThreatModelingPage() {
                                     {/* Threat body */}
                                     <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                                                 Description
                                             </p>
-                                            <p className="text-sm text-gray-600 leading-relaxed">
+                                            <p className="text-sm text-slate-300 leading-relaxed">
                                                 {threat.description}
                                             </p>
                                         </div>
-                                        <div className="md:border-l md:border-gray-100 md:pl-4">
-                                            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">
+                                        <div className="md:border-l md:border-white/[0.06] md:pl-4">
+                                            <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
                                                 ✓ Mitigation
                                             </p>
-                                            <p className="text-sm text-gray-600 leading-relaxed">
+                                            <p className="text-sm text-slate-300 leading-relaxed">
                                                 {threat.mitigation}
                                             </p>
                                         </div>
@@ -899,10 +899,10 @@ export default function ThreatModelingPage() {
 
                     {/* ── Print-only header/footer ── */}
                     <div className="hidden print:block border-t pt-4 mt-8">
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-slate-500">
                             TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                             Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore}/100 ({riskLabel})
                         </p>
                     </div>

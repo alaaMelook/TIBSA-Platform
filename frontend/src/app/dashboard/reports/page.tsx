@@ -66,20 +66,20 @@ export default function ReportsPage() {
 
     const threatColor = (level: string | null) => {
         const colors: Record<string, string> = {
-            safe: "text-green-600",
-            low: "text-yellow-500",
-            medium: "text-orange-500",
-            high: "text-red-500",
-            critical: "text-red-700",
+            safe: "text-green-400",
+            low: "text-yellow-400",
+            medium: "text-orange-400",
+            high: "text-red-400",
+            critical: "text-red-500",
         };
-        return colors[level || "safe"] || "text-gray-400";
+        return colors[level || "safe"] || "text-slate-500";
     };
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Scan Reports</h1>
-                <p className="text-gray-500 mt-1">View detailed reports for completed scans</p>
+                <h1 className="text-2xl font-bold text-white">Scan Reports</h1>
+                <p className="text-slate-400 mt-1">View detailed reports for completed scans</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -87,9 +87,9 @@ export default function ReportsPage() {
                 <div className="lg:col-span-1">
                     <Card title="Completed Scans">
                         {isLoading ? (
-                            <div className="text-center py-8 text-gray-400 text-sm">Loading...</div>
+                            <div className="text-center py-8 text-slate-500 text-sm">Loading...</div>
                         ) : scans.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400 text-sm">
+                            <div className="text-center py-8 text-slate-500 text-sm">
                                 No completed scans yet.
                             </div>
                         ) : (
@@ -98,10 +98,10 @@ export default function ReportsPage() {
                                     <button
                                         key={scan.id}
                                         onClick={() => viewReport(scan.id)}
-                                        className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors text-sm"
+                                        className="w-full text-left p-3 rounded-lg bg-white/[0.04] hover:bg-blue-500/10 transition-colors text-sm border border-white/[0.06]"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="font-medium text-gray-800">
+                                            <span className="font-medium text-slate-200">
                                                 {scan.scan_type === "url" ? "🔗" : "📄"}{" "}
                                                 {scan.scan_type.toUpperCase()}
                                             </span>
@@ -109,10 +109,10 @@ export default function ReportsPage() {
                                                 {scan.threat_level || "—"}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-gray-500 truncate mt-1 font-mono">
+                                        <p className="text-xs text-slate-500 truncate mt-1 font-mono">
                                             {scan.target}
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-1">
+                                        <p className="text-xs text-slate-500 mt-1">
                                             {new Date(scan.created_at).toLocaleDateString()}
                                         </p>
                                     </button>
@@ -126,28 +126,28 @@ export default function ReportsPage() {
                 <div className="lg:col-span-2">
                     <Card title="Report Details">
                         {reportLoading ? (
-                            <div className="text-center py-12 text-gray-400">Loading report...</div>
+                            <div className="text-center py-12 text-slate-500">Loading report...</div>
                         ) : !selectedReport ? (
-                            <div className="text-center py-12 text-gray-400">
+                            <div className="text-center py-12 text-slate-500">
                                 <p className="text-lg">📄</p>
                                 <p className="mt-2">Select a scan to view its report</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
                                 <div>
-                                    <h3 className="font-medium text-gray-900">Summary</h3>
-                                    <p className="text-sm text-gray-600 mt-1">{selectedReport.summary}</p>
+                                    <h3 className="font-medium text-white">Summary</h3>
+                                    <p className="text-sm text-slate-400 mt-1">{selectedReport.summary}</p>
                                 </div>
 
                                 {selectedReport.indicators?.length > 0 && (
                                     <div>
-                                        <h3 className="font-medium text-gray-900 mb-2">Indicators Found</h3>
+                                        <h3 className="font-medium text-white mb-2">Indicators Found</h3>
                                         <div className="space-y-2">
                                             {selectedReport.indicators.map((ind, i) => (
-                                                <div key={i} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg text-sm">
+                                                <div key={i} className="flex items-center justify-between bg-white/[0.04] p-3 rounded-lg text-sm border border-white/[0.06]">
                                                     <div>
-                                                        <span className="text-gray-400 text-xs uppercase">{ind.type}</span>
-                                                        <p className="font-mono text-gray-800">{ind.value}</p>
+                                                        <span className="text-slate-500 text-xs uppercase">{ind.type}</span>
+                                                        <p className="font-mono text-slate-200">{ind.value}</p>
                                                     </div>
                                                     <span className={`font-medium capitalize ${threatColor(ind.threat_level)}`}>
                                                         {ind.threat_level}
@@ -160,8 +160,8 @@ export default function ReportsPage() {
 
                                 {selectedReport.details && Object.keys(selectedReport.details).length > 0 && (
                                     <div>
-                                        <h3 className="font-medium text-gray-900 mb-2">Details</h3>
-                                        <pre className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600 overflow-x-auto">
+                                        <h3 className="font-medium text-white mb-2">Details</h3>
+                                        <pre className="bg-[#0f172a] p-3 rounded-lg text-xs text-slate-400 overflow-x-auto border border-white/[0.06]">
                                             {JSON.stringify(selectedReport.details, null, 2)}
                                         </pre>
                                     </div>

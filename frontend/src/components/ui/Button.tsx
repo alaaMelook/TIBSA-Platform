@@ -16,13 +16,13 @@ export function Button({
     ...props
 }: ButtonProps) {
     const baseClasses =
-        "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+        "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
-        primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-        secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500",
-        danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
-        ghost: "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500",
+        primary: "bg-[#3b82f6] text-white hover:bg-[#60a5fa] focus:ring-blue-500 shadow-lg shadow-blue-600/25",
+        secondary: "bg-[#263554] text-slate-200 hover:bg-[#2d3f61] focus:ring-blue-500 border border-white/[0.08]",
+        danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-500",
+        ghost: "bg-transparent text-slate-300 hover:bg-white/[0.06] focus:ring-blue-500",
     };
 
     const sizes = {

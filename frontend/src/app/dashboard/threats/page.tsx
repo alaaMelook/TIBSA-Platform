@@ -80,13 +80,13 @@ export default function ThreatsPage() {
 
     const threatColor = (level: string) => {
         const colors: Record<string, string> = {
-            safe: "text-green-600",
-            low: "text-yellow-500",
-            medium: "text-orange-500",
-            high: "text-red-500",
-            critical: "text-red-700",
+            safe: "text-green-400",
+            low: "text-yellow-400",
+            medium: "text-orange-400",
+            high: "text-red-400",
+            critical: "text-red-500",
         };
-        return colors[level] || "text-gray-400";
+        return colors[level] || "text-slate-500";
     };
 
     const threatBg = (level: string) => {
@@ -95,16 +95,16 @@ export default function ThreatsPage() {
             low: "bg-yellow-400",
             medium: "bg-orange-500",
             high: "bg-red-500",
-            critical: "bg-red-700",
+            critical: "bg-red-600",
         };
-        return colors[level] || "bg-gray-300";
+        return colors[level] || "bg-slate-500";
     };
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Threat Intelligence</h1>
-                <p className="text-gray-500 mt-1">Look up IOCs and check reputation of domains, IPs, and URLs</p>
+                <h1 className="text-2xl font-bold text-white">Threat Intelligence</h1>
+                <p className="text-slate-400 mt-1">Look up IOCs and check reputation of domains, IPs, and URLs</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -112,11 +112,11 @@ export default function ThreatsPage() {
                 <Card title="🔎 IOC Lookup" description="Search for Indicators of Compromise">
                     <form onSubmit={handleIOCLookup} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Indicator Type</label>
+                            <label className="block text-sm font-medium text-slate-300 mb-1">Indicator Type</label>
                             <select
                                 value={iocType}
                                 onChange={(e) => setIocType(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-white/[0.08] rounded-lg text-sm bg-[#263554] text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="ip">IP Address</option>
                                 <option value="domain">Domain</option>
@@ -136,25 +136,25 @@ export default function ThreatsPage() {
                     </form>
 
                     {iocSearched && !iocLoading && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-white/[0.06]">
                             {iocResults.length === 0 ? (
-                                <div className="text-center py-4 text-gray-400 text-sm">
+                                <div className="text-center py-4 text-slate-500 text-sm">
                                     ✅ No threats found for this indicator
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    <h4 className="text-sm font-medium text-gray-700">
+                                    <h4 className="text-sm font-medium text-slate-300">
                                         {iocResults.length} result(s) found
                                     </h4>
                                     {iocResults.map((result, i) => (
-                                        <div key={i} className="bg-gray-50 p-3 rounded-lg text-sm">
+                                        <div key={i} className="bg-white/[0.04] p-3 rounded-lg text-sm border border-white/[0.06]">
                                             <div className="flex justify-between items-center">
-                                                <span className="font-mono">{result.value}</span>
+                                                <span className="font-mono text-slate-200">{result.value}</span>
                                                 <span className={`font-medium capitalize ${threatColor(result.threat_level)}`}>
                                                     {result.threat_level}
                                                 </span>
                                             </div>
-                                            <div className="text-gray-400 text-xs mt-1">
+                                            <div className="text-slate-500 text-xs mt-1">
                                                 Source: {result.source} · Type: {result.type}
                                             </div>
                                         </div>
@@ -179,13 +179,13 @@ export default function ThreatsPage() {
                     </form>
 
                     {repSearched && !repLoading && repResult && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-white/[0.06]">
                             <div className="text-center mb-4">
                                 <div className="text-3xl font-bold mb-1">
                                     <span className={threatColor(repResult.threat_level)}>
                                         {repResult.reputation_score}
                                     </span>
-                                    <span className="text-gray-300 text-lg">/100</span>
+                                    <span className="text-slate-500 text-lg">/100</span>
                                 </div>
                                 <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium capitalize ${threatColor(repResult.threat_level)}`}>
                                     {repResult.threat_level}
@@ -193,14 +193,14 @@ export default function ThreatsPage() {
                             </div>
 
                             {/* Score bar */}
-                            <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                            <div className="w-full bg-white/[0.06] rounded-full h-3 mb-4">
                                 <div
                                     className={`h-3 rounded-full transition-all ${threatBg(repResult.threat_level)}`}
                                     style={{ width: `${repResult.reputation_score}%` }}
                                 />
                             </div>
 
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-slate-400">
                                 <p><strong>Target:</strong> {repResult.target}</p>
                                 <p><strong>Sources:</strong> {repResult.sources_checked.join(", ")}</p>
                                 {repResult.details && Object.keys(repResult.details).length > 0 && (
@@ -211,7 +211,7 @@ export default function ThreatsPage() {
                     )}
 
                     {repSearched && !repLoading && !repResult && (
-                        <div className="mt-4 pt-4 border-t border-gray-100 text-center py-4 text-gray-400 text-sm">
+                        <div className="mt-4 pt-4 border-t border-white/[0.06] text-center py-4 text-slate-500 text-sm">
                             Could not check reputation. Try again.
                         </div>
                     )}

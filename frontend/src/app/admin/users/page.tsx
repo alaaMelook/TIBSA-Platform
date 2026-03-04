@@ -42,37 +42,37 @@ export default function UsersManagementPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-                <p className="text-gray-500 mt-1">Manage user accounts and roles</p>
+                <h1 className="text-2xl font-bold text-white">User Management</h1>
+                <p className="text-slate-400 mt-1">Manage user accounts and roles</p>
             </div>
 
             <Card>
                 {isLoading ? (
-                    <div className="text-center py-8 text-gray-400">Loading users...</div>
+                    <div className="text-center py-8 text-slate-500">Loading users...</div>
                 ) : users.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">No users found.</div>
+                    <div className="text-center py-8 text-slate-500">No users found.</div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="text-left border-b border-gray-200">
-                                    <th className="pb-3 font-medium text-gray-500">Name</th>
-                                    <th className="pb-3 font-medium text-gray-500">Email</th>
-                                    <th className="pb-3 font-medium text-gray-500">Role</th>
-                                    <th className="pb-3 font-medium text-gray-500">Status</th>
-                                    <th className="pb-3 font-medium text-gray-500">Actions</th>
+                                <tr className="text-left border-b border-white/[0.08]">
+                                    <th className="pb-3 font-medium text-slate-400">Name</th>
+                                    <th className="pb-3 font-medium text-slate-400">Email</th>
+                                    <th className="pb-3 font-medium text-slate-400">Role</th>
+                                    <th className="pb-3 font-medium text-slate-400">Status</th>
+                                    <th className="pb-3 font-medium text-slate-400">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-white/[0.06]">
                                 {users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50">
-                                        <td className="py-3 font-medium text-gray-900">{user.full_name}</td>
-                                        <td className="py-3 text-gray-600">{user.email}</td>
+                                    <tr key={user.id} className="hover:bg-white/[0.03]">
+                                        <td className="py-3 font-medium text-white">{user.full_name}</td>
+                                        <td className="py-3 text-slate-300">{user.email}</td>
                                         <td className="py-3">
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-medium ${user.role === "admin"
-                                                        ? "bg-purple-100 text-purple-700"
-                                                        : "bg-blue-100 text-blue-700"
+                                                        ? "bg-purple-500/15 text-purple-400"
+                                                        : "bg-blue-500/15 text-blue-400"
                                                     }`}
                                             >
                                                 {user.role}
@@ -81,8 +81,8 @@ export default function UsersManagementPage() {
                                         <td className="py-3">
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-medium ${user.is_active
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-red-100 text-red-700"
+                                                        ? "bg-green-500/15 text-green-400"
+                                                        : "bg-red-500/15 text-red-400"
                                                     }`}
                                             >
                                                 {user.is_active ? "Active" : "Inactive"}

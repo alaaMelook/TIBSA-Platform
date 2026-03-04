@@ -91,9 +91,9 @@ export function Sidebar() {
     const links = isAdminSection && isAdmin ? adminLinks : sidebarLinks;
 
     return (
-        <aside className="w-64 min-h-screen bg-gray-50 border-r border-gray-200 p-4">
+        <aside className="w-64 min-h-screen bg-[#0f172a] border-r border-white/[0.08] p-4">
             <div className="mb-6">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">
+                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">
                     {isAdminSection ? "Admin Panel" : "Navigation"}
                 </h2>
             </div>
@@ -105,12 +105,13 @@ export function Sidebar() {
                         <Link
                             key={link.href}
                             href={link.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive
-                                    ? "bg-blue-50 text-blue-700 font-medium"
-                                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                                }`}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                                isActive
+                                    ? "bg-[#3b82f6]/15 text-blue-400 font-medium border border-blue-500/20"
+                                    : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                            }`}
                         >
-                            <span className={isActive ? "text-blue-600" : "text-gray-400"}>{link.icon}</span>
+                            <span className={isActive ? "text-blue-400" : "text-slate-500"}>{link.icon}</span>
                             <span>{link.label}</span>
                         </Link>
                     );
@@ -119,10 +120,10 @@ export function Sidebar() {
 
             {/* Switch between user/admin */}
             {isAdmin && (
-                <div className="mt-8 pt-4 border-t border-gray-200">
+                <div className="mt-8 pt-4 border-t border-white/[0.08]">
                     <Link
                         href={isAdminSection ? "/dashboard" : "/admin"}
-                        className="flex items-center gap-2 px-3 py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
                     >
                         {isAdminSection ? (
                             <>

@@ -7,36 +7,36 @@ export function Header() {
     const { user, isAuthenticated, logout } = useAuth();
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
+        <header className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#0f172a]/95 backdrop-blur-md">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
                         <span className="text-white font-bold text-sm">T</span>
                     </div>
-                    <span className="text-xl font-bold text-gray-900">TIBSA</span>
+                    <span className="text-xl font-bold text-white">TIBSA</span>
                 </Link>
 
                 {/* Navigation */}
                 <nav className="flex items-center gap-4">
                     {isAuthenticated ? (
                         <>
-                            <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                            <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white transition-colors">
                                 Dashboard
                             </Link>
                             {user?.role === "admin" && (
-                                <Link href="/admin" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                                <Link href="/admin" className="text-sm text-slate-400 hover:text-white transition-colors">
                                     Admin Panel
                                 </Link>
                             )}
-                            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-gray-200">
-                                <span className="text-sm text-gray-500">{user?.full_name}</span>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium uppercase">
+                            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/[0.08]">
+                                <span className="text-sm text-slate-400">{user?.full_name}</span>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 font-medium uppercase border border-blue-500/25">
                                     {user?.role}
                                 </span>
                                 <button
                                     onClick={logout}
-                                    className="text-sm text-red-600 hover:text-red-800 transition-colors"
+                                    className="text-sm text-red-400 hover:text-red-300 transition-colors"
                                 >
                                     Logout
                                 </button>
@@ -44,14 +44,14 @@ export function Header() {
                         </>
                     ) : (
                         <>
-                            <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                            <Link href="/login" className="text-sm text-slate-400 hover:text-white transition-colors">
                                 Login
                             </Link>
                             <Link
                                 href="/register"
-                                className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                className="text-sm bg-[#3b82f6] hover:bg-[#60a5fa] text-white px-4 py-2 rounded-lg transition-colors shadow-lg shadow-blue-600/25"
                             >
-                                Register
+                                Get Started
                             </Link>
                         </>
                     )}
