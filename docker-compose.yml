@@ -1,0 +1,73 @@
+# ─────────────────────────────────────────────────────────────
+# TIBSA Platform – Docker Compose (Malice AV Engines)
+# ─────────────────────────────────────────────────────────────
+# Usage:
+#   git pull
+#   docker compose up -d
+#
+# This file pulls and keeps all malice antivirus engine images
+# available locally.  The backend spawns ephemeral containers
+# from these images on every scan (via `docker run`), so the
+# compose services themselves sit idle.
+# ─────────────────────────────────────────────────────────────
+
+version: "3.8"
+
+services:
+
+  # ── Helper image (used to write files into Docker volumes) ──
+  alpine-helper:
+    image: alpine:latest
+    container_name: malice-alpine-helper
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  # ── Antivirus engines ──────────────────────────────────────
+
+  clamav:
+    image: malice/clamav
+    container_name: malice-clamav
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  windows-defender:
+    image: malice/windows-defender
+    container_name: malice-windows-defender
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  mcafee:
+    image: malice/mcafee
+    container_name: malice-mcafee
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  fprot:
+    image: malice/fprot
+    container_name: malice-fprot
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  escan:
+    image: malice/escan
+    container_name: malice-escan
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  comodo:
+    image: malice/comodo
+    container_name: malice-comodo
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  avg:
+    image: malice/avg
+    container_name: malice-avg
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  zoner:
+    image: malice/zoner
+    container_name: malice-zoner
+    restart: unless-stopped
+    entrypoint: ["tail", "-f", "/dev/null"]
