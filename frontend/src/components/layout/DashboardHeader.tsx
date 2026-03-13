@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
 
 // ── Page title map ───────────────────────────────────────────
 const PAGE_TITLES: Record<string, string> = {
@@ -19,21 +20,27 @@ const PAGE_TITLES: Record<string, string> = {
     "/admin/system":             "System Settings",
 };
 
-// ── Notification mock data ───────────────────────────────────
+// ── Notification types ───────────────────────────────────────
 interface Notification {
     id: string;
     title: string;
     body: string;
-    time: string;
-    read: boolean;
     type: "threat" | "scan" | "system";
+    read: boolean;
+    scan_id: string | null;
+    created_at: string;
 }
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-    { id: "1", title: "High-severity threat detected",   body: "Scan #4821 flagged a critical vulnerability.",       time: "2 min ago",  read: false, type: "threat" },
-    { id: "2", title: "Scan completed",                  body: "URL scan for example.com finished successfully.",     time: "18 min ago", read: false, type: "scan" },
-    { id: "3", title: "System update available",          body: "TIBSA Platform v2.4.1 is ready to install.",         time: "1 hr ago",   read: true,  type: "system" },
-];
+function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hr ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+}
 
 const NOTIF_ICON_COLOR: Record<string, string> = {
     threat: "text-red-400 bg-red-500/15",
@@ -43,11 +50,11 @@ const NOTIF_ICON_COLOR: Record<string, string> = {
 
 export function DashboardHeader() {
     const pathname = usePathname();
-    const { user, logout } = useAuth();
+    const { user, token, logout } = useAuth();
 
     const [profileOpen, setProfileOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
@@ -60,6 +67,24 @@ export function DashboardHeader() {
     // First letter for avatar
     const initial = user?.full_name?.charAt(0)?.toUpperCase() || "U";
 
+    // ── Fetch notifications from API ─────────────────────────
+    const fetchNotifications = useCallback(async () => {
+        if (!token) return;
+        try {
+            const data = await api.get<Notification[]>("/api/v1/notifications/", token);
+            setNotifications(data);
+        } catch {
+            // silently ignore — notifications are non-critical
+        }
+    }, [token]);
+
+    // Initial fetch + poll every 15 seconds
+    useEffect(() => {
+        fetchNotifications();
+        const timer = setInterval(fetchNotifications, 15000);
+        return () => clearInterval(timer);
+    }, [fetchNotifications]);
+
     // Close dropdowns on outside click
     useEffect(() => {
         function handleClick(e: MouseEvent) {
@@ -70,7 +95,19 @@ export function DashboardHeader() {
         return () => document.removeEventListener("mousedown", handleClick);
     }, []);
 
-    const markAllRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const markOneRead = async (id: string) => {
+        setNotifications((prev) => prev.map((x) => x.id === id ? { ...x, read: true } : x));
+        if (token) {
+            try { await api.patch(`/api/v1/notifications/${id}/read`, {}, token); } catch { /* ignore */ }
+        }
+    };
+
+    const markAllRead = async () => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        if (token) {
+            try { await api.patch("/api/v1/notifications/read-all", {}, token); } catch { /* ignore */ }
+        }
+    };
 
     // ── Render ───────────────────────────────────────────────
     return (
@@ -147,13 +184,17 @@ export function DashboardHeader() {
                                     )}
                                 </div>
                                 <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04]">
-                                    {notifications.map((n) => (
+                                    {notifications.length === 0 ? (
+                                        <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                                            No notifications yet
+                                        </div>
+                                    ) : notifications.map((n) => (
                                         <button
                                             key={n.id}
-                                            onClick={() => setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, read: true } : x))}
+                                            onClick={() => markOneRead(n.id)}
                                             className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-white/[0.03] transition-colors ${!n.read ? "bg-blue-500/[0.04]" : ""}`}
                                         >
-                                            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${NOTIF_ICON_COLOR[n.type]}`}>
+                                            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${NOTIF_ICON_COLOR[n.type] || NOTIF_ICON_COLOR.system}`}>
                                                 {n.type === "threat" && (
                                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                                 )}
@@ -170,7 +211,7 @@ export function DashboardHeader() {
                                                     {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-400" />}
                                                 </div>
                                                 <p className="text-xs text-slate-500 truncate mt-0.5">{n.body}</p>
-                                                <p className="text-[10px] text-slate-600 mt-1">{n.time}</p>
+                                                <p className="text-[10px] text-slate-600 mt-1">{timeAgo(n.created_at)}</p>
                                             </div>
                                         </button>
                                     ))}

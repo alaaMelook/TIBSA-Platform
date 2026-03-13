@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"
     debug: bool = False
+    demo_mode: bool = False
 
     @property
     def cors_origins_list(self) -> List[str]:

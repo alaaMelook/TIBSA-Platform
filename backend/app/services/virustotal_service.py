@@ -18,13 +18,21 @@ MAX_POLLS     = 30   # give up after 5 min (30 × 10 s)
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _threat_level(malicious: int, suspicious: int) -> str:
-    if malicious >= 5:
-        return "high"
-    if malicious > 0:
-        return "medium"
-    if suspicious > 0:
+    """Determine threat level based on total detecting engines.
+
+    0 detections  → clean
+    1-2           → low
+    3-4           → medium
+    5+            → high
+    """
+    threat_count = malicious + suspicious
+    if threat_count == 0:
+        return "clean"
+    if threat_count <= 2:
         return "low"
-    return "clean"
+    if threat_count <= 4:
+        return "medium"
+    return "high"
 
 
 # ── Service class ─────────────────────────────────────────────────────────────

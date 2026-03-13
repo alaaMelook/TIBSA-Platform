@@ -27,3 +27,6 @@ env/
 .pytest_cache/
 htmlcov/
 .coverage
+
+# ML model files (too large for GitHub)
+models/*.joblib

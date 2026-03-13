@@ -201,11 +201,21 @@ interface MaliceDetails {
     error?: string;
 }
 
+// ─── AI Classifier Types ──────────────────────────────────────────
+
+interface AIClassifierDetails {
+    url: string;
+    is_phishing: boolean;
+    confidence: number;
+    model: string;
+}
+
 // ─── Combined report details (new format) ─────────────────────────
 
 interface CombinedDetails {
     virustotal?: VTDetails;
     malice?: MaliceDetails;
+    ai_classifier?: AIClassifierDetails;
     threat_level?: string;
 }
 
@@ -473,6 +483,83 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
 
 // ─── Unified Scan Results ──────────────────────────────────────────
 
+// ─── AI Classifier Display ────────────────────────────────────────
+
+function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
+    const isPhishing = data.is_phishing;
+    const confidence = Math.round(data.confidence * 100 * 10) / 10;
+
+    const borderColor = isPhishing ? "border-red-500/20" : "border-green-500/20";
+    const bgColor     = isPhishing ? "bg-red-500/10" : "bg-green-500/10";
+    const accentColor = isPhishing ? "text-red-400" : "text-green-400";
+    const barColor    = isPhishing ? "bg-red-500" : "bg-green-500";
+    const barTrack    = isPhishing ? "bg-red-500/15" : "bg-green-500/15";
+
+    return (
+        <div className="space-y-4">
+            {/* Header badge */}
+            <div className="flex items-center gap-2 mb-1">
+                <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-slate-200">AI Phishing Classifier</p>
+                    <p className="text-[10px] text-slate-500 font-mono">{data.model}</p>
+                </div>
+            </div>
+
+            {/* Verdict card */}
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${bgColor} ${borderColor}`}>
+                <div>
+                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">AI Verdict</p>
+                    <p className={`text-3xl font-black mt-1 ${accentColor}`}>
+                        {isPhishing ? "Phishing" : "Legitimate"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1.5">
+                        {isPhishing
+                            ? "AI model flagged this URL as a phishing attempt"
+                            : "AI model considers this URL safe"}
+                    </p>
+                </div>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${isPhishing ? "bg-red-500/15" : "bg-green-500/15"}`}>
+                    {isPhishing ? (
+                        <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    ) : (
+                        <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    )}
+                </div>
+            </div>
+
+            {/* Confidence bar */}
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-slate-500 font-medium">Confidence</p>
+                    <p className={`text-sm font-bold tabular-nums ${accentColor}`}>{confidence}%</p>
+                </div>
+                <div className={`h-3 rounded-full overflow-hidden ${barTrack}`}>
+                    <div
+                        className={`h-full rounded-full transition-all duration-700 ease-out ${barColor}`}
+                        style={{ width: `${confidence}%` }}
+                    />
+                </div>
+                <p className="text-[10px] text-slate-600 mt-1.5">
+                    {confidence >= 80 ? "High confidence" : confidence >= 60 ? "Moderate confidence" : "Low confidence"}
+                    {" — "}
+                    {isPhishing
+                        ? "exercise caution with this URL"
+                        : "URL appears safe based on structural analysis"}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: MaliceDetails | null }) {
     // ── VT numbers ──
     const vtMalicious  = vt?.malicious || 0;
@@ -724,12 +811,15 @@ function ScanDetailModal({
 
     // Support both new combined format { virustotal, malice } and legacy flat VT format
     const rawDetails = report?.details as (CombinedDetails & VTDetails) | null;
-    const isCombined = rawDetails && ("virustotal" in rawDetails || "malice" in rawDetails);
+    const isCombined = rawDetails && ("virustotal" in rawDetails || "malice" in rawDetails || "ai_classifier" in rawDetails);
     const vtDetails: VTDetails | null = isCombined
         ? (rawDetails?.virustotal ?? null)
         : (rawDetails as VTDetails | null);
     const maliceDetails: MaliceDetails | null = isCombined
         ? (rawDetails?.malice ?? null)
+        : null;
+    const aiDetails: AIClassifierDetails | null = isCombined
+        ? ((rawDetails as CombinedDetails)?.ai_classifier ?? null)
         : null;
 
     return (
@@ -818,9 +908,29 @@ function ScanDetailModal({
                                 </svg>
                                 <p className="text-sm text-slate-500">Loading scan results…</p>
                             </div>
-                        ) : (vtDetails || maliceDetails) ? (
+                        ) : (vtDetails || maliceDetails || aiDetails) ? (
                             <div className="space-y-6">
-                                <UnifiedScanResults vt={vtDetails} malice={maliceDetails} />
+                                {/* VirusTotal + Local AV (file scans or URL-with-VT) */}
+                                {(vtDetails || maliceDetails) && (
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                                                <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-sm font-semibold text-slate-200">VirusTotal Analysis</p>
+                                        </div>
+                                        <UnifiedScanResults vt={vtDetails} malice={maliceDetails} />
+                                    </div>
+                                )}
+
+                                {/* AI Classifier (URL scans) */}
+                                {aiDetails && (
+                                    <div className="border-t border-white/[0.06] pt-6">
+                                        <AIClassifierDisplay data={aiDetails} />
+                                    </div>
+                                )}
 
                                 {/* Summary */}
                                 {report?.summary && (

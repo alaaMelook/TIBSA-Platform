@@ -423,13 +423,15 @@ async def scan_file_with_malice(
         None,
     )
 
-    # Threat level heuristic
-    if detected_by >= 3:
-        threat_level = "high"
-    elif detected_by >= 1:
+    # Threat level heuristic: 0=clean, 1-2=low, 3-4=medium, 5+=high
+    if detected_by == 0:
+        threat_level = "clean"
+    elif detected_by <= 2:
+        threat_level = "low"
+    elif detected_by <= 4:
         threat_level = "medium"
     else:
-        threat_level = "clean"
+        threat_level = "high"
 
     return {
         "engines":       results,
