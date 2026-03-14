@@ -134,7 +134,13 @@ def main() -> None:
     y_pred = model.predict(X_test_scaled)
     print("\n── Test Results ──")
     print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
-    print(classification_report(y_test, y_pred, target_names=["safe", "phishing"]))
+    print(classification_report(
+    y_test,
+    y_pred,
+    labels=[0, 1],
+    target_names=["safe", "phishing"],
+    zero_division=0
+     ))
 
     # ── Save ──────────────────────────────────────────────────
     os.makedirs(args.output_dir, exist_ok=True)
