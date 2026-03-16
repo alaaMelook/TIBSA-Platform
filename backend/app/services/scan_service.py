@@ -16,6 +16,7 @@ from app.services.virustotal_service import VirusTotalService
 from app.services import malice_service
 from app.services.ml_engine import MLEngine
 from app.services.notification_service import NotificationService
+from app.services.threat_scoring import compute_threat_score
 
 logger = logging.getLogger(__name__)
 
@@ -401,15 +402,16 @@ class ScanService:
             vt_malicious  = vt_data.get("malicious", 0)
             vt_suspicious = vt_data.get("suspicious", 0)
             vt_total      = vt_data.get("total_engines", 0)
-            vt_has_threat = (vt_malicious + vt_suspicious) > 0
 
             ai_is_phishing = ai_data.get("is_phishing", False)
             ai_confidence  = ai_data.get("confidence", 0.0)
 
-            if vt_has_threat or ai_is_phishing:
-                final_level = "high"
-            else:
-                final_level = "clean"
+            threat_score, verdict, final_level = compute_threat_score(
+                vt_malicious=vt_malicious,
+                vt_total=vt_total,
+                ai_is_phishing=ai_is_phishing,
+                ai_confidence=ai_confidence,
+            )
 
             # ── Build summary ─────────────────────────────────────────
             summary_parts = []
@@ -429,11 +431,11 @@ class ScanService:
             else:
                 summary_parts.append("AI Model: not loaded")
 
-            summary = ". ".join(summary_parts) + f". Overall threat level: {final_level}."
+            summary = ". ".join(summary_parts) + f". Threat Score: {threat_score:.2f} ({verdict}). Overall threat level: {final_level}."
 
             logger.info(
-                "URL scan %s — VT: %s/%s malicious, AI: %s (%.2f), level: %s",
-                scan_id, vt_malicious, vt_total, ai_label, ai_confidence, final_level,
+                "URL scan %s — VT: %s/%s malicious, AI: %s (%.2f), Score: %.2f, Verdict: %s, level: %s",
+                scan_id, vt_malicious, vt_total, ai_label, ai_confidence, threat_score, verdict, final_level,
             )
 
             self.supabase.table("scans").update({
@@ -448,6 +450,8 @@ class ScanService:
                 "details": {
                     "virustotal": vt_data,
                     "ai_classifier": ai_data,
+                    "threat_score": threat_score,
+                    "verdict": verdict,
                     "threat_level": final_level,
                 },
                 "indicators": [],

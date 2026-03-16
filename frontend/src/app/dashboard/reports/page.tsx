@@ -105,6 +105,20 @@ function buildTextReport(scan: Scan, report: ScanReport): string {
         lines.push("");
     }
 
+    // ── Combined Threat Score section ──
+    const threatScore = details?.threat_score as number | undefined;
+    const verdict = details?.verdict as string | undefined;
+    if (typeof threatScore === "number" && verdict) {
+        lines.push(thinDiv);
+        lines.push("  COMBINED THREAT SCORE");
+        lines.push(thinDiv);
+        lines.push("");
+        lines.push(`  Score      : ${(threatScore * 100).toFixed(1)} / 100`);
+        lines.push(`  Verdict    : ${verdict.toUpperCase()}`);
+        lines.push(`  Formula    : (0.6 × AI Score) + (0.4 × VT Score)`);
+        lines.push("");
+    }
+
     // ── Malice section ──
     const malice = details?.malice as Record<string, unknown> | undefined;
     if (malice && !malice.error) {

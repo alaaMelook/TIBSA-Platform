@@ -48,16 +48,28 @@ def _load_model():
         return None, None
 
 
-_model, _scaler = _load_model()
-
+_model = None
+_scaler = None
 
 class MLEngine:
     """ML Engine for threat classification."""
 
     @staticmethod
+    def _ensure_model_loaded():
+        global _model, _scaler
+        if _model is not None and _scaler is not None:
+            return True
+        model, scaler = _load_model()
+        if model is not None and scaler is not None:
+            _model = model
+            _scaler = scaler
+            return True
+        return False
+
+    @staticmethod
     def is_model_loaded() -> bool:
         """Check if the phishing model is available."""
-        return _model is not None and _scaler is not None
+        return MLEngine._ensure_model_loaded()
 
     async def phishing_classifier(self, url: str) -> dict:
         """

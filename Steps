@@ -1,0 +1,10 @@
+1. git pull origin main
+2. docker compose up -d
+3. cd backend
+4. pip install -r requirements.txt
+5. cd backend
+6. python -m app.services.train_phishing_model
+7. cd backend
+8. uvicorn app.main:app --reload
+9. cd frontend
+10. npm run dev

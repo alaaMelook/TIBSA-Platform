@@ -123,7 +123,7 @@ function FileInfoPanel({ info, loading }: { info: FileInfo | null; loading: bool
     return (
         <div className="mt-3 rounded-xl border border-purple-500/20 bg-purple-500/10 p-4">
             <p className="text-xs font-semibold text-purple-400 mb-2 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                 File Analysis
             </p>
             <div className="space-y-1.5">
@@ -132,8 +132,8 @@ function FileInfoPanel({ info, loading }: { info: FileInfo | null; loading: bool
                         <span className="text-slate-500 font-medium flex-shrink-0 w-20">{label}</span>
                         <span
                             className={`font-mono text-slate-300 break-all text-right ${["MD5", "SHA-1", "SHA-256"].includes(label)
-                                    ? "text-[10px] text-purple-400"
-                                    : ""
+                                ? "text-[10px] text-purple-400"
+                                : ""
                                 }`}
                         >
                             {value}
@@ -217,15 +217,17 @@ interface CombinedDetails {
     malice?: MaliceDetails;
     ai_classifier?: AIClassifierDetails;
     threat_level?: string;
+    threat_score?: number;
+    verdict?: string;
 }
 
 // ─── VirusTotal Stats Display ──────────────────────────────────────
 
 function VTStatsDisplay({ details }: { details: VTDetails }) {
     const stats = details.stats || {};
-    const malicious  = details.malicious  || 0;
+    const malicious = details.malicious || 0;
     const suspicious = details.suspicious || 0;
-    const harmless   = stats.harmless   || 0;
+    const harmless = stats.harmless || 0;
     const undetected = stats.undetected || 0;
 
     // For files: harmless is always 0; undetected = engines that found nothing = CLEAN
@@ -237,9 +239,9 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
 
     // Non-decisive engines (informational only)
     const nonDecisive =
-        (stats["timeout"]          || 0) +
-        (stats["confirmed-timeout"]|| 0) +
-        (stats["failure"]          || 0) +
+        (stats["timeout"] || 0) +
+        (stats["confirmed-timeout"] || 0) +
+        (stats["failure"] || 0) +
         (stats["type-unsupported"] || 0);
 
     if (details.found === false) {
@@ -247,7 +249,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
             <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-5 space-y-3">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>
                     </div>
                     <div>
                         <p className="font-semibold text-yellow-400">File not in threat database</p>
@@ -257,7 +259,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                     </div>
                 </div>
                 <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
-                    <p className="text-xs font-semibold text-yellow-400 mb-1 flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> What to do?</p>
+                    <p className="text-xs font-semibold text-yellow-400 mb-1 flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> What to do?</p>
                     <p className="text-xs text-yellow-400/70">
                         Use <strong>Upload File</strong> mode instead of <strong>Enter Hash</strong>.
                         Uploading the actual file will submit it for analysis and give you real results.
@@ -272,7 +274,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
             <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-5 space-y-3">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     </div>
                     <div>
                         <p className="font-semibold text-orange-400">Analysis timed out</p>
@@ -282,7 +284,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                     </div>
                 </div>
                 <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/20">
-                    <p className="text-xs font-semibold text-orange-400 mb-1 flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> What to do?</p>
+                    <p className="text-xs font-semibold text-orange-400 mb-1 flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> What to do?</p>
                     <p className="text-xs text-orange-400/70">
                         Try scanning the same file again — it has been submitted and results will be available faster next time.
                     </p>
@@ -292,20 +294,19 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
     }
 
     const segments = [
-        { key: "malicious",  label: "Malicious",    count: malicious,  barColor: "bg-red-500",   textColor: "text-red-400",   bgColor: "bg-red-500/10",   borderColor: "border-red-500/20" },
-        { key: "suspicious", label: "Suspicious",   count: suspicious, barColor: "bg-orange-400",textColor: "text-orange-400",bgColor: "bg-orange-500/10",borderColor: "border-orange-500/20" },
-        { key: "clean",      label: "Clean / Safe", count: clean,      barColor: "bg-green-500", textColor: "text-green-400", bgColor: "bg-green-500/10", borderColor: "border-green-500/20" },
+        { key: "malicious", label: "Malicious", count: malicious, barColor: "bg-red-500", textColor: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" },
+        { key: "suspicious", label: "Suspicious", count: suspicious, barColor: "bg-orange-400", textColor: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" },
+        { key: "clean", label: "Clean / Safe", count: clean, barColor: "bg-green-500", textColor: "text-green-400", bgColor: "bg-green-500/10", borderColor: "border-green-500/20" },
     ];
 
     return (
         <div className="space-y-4">
             {/* Detection Score */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${
-                malicious >= 5 ? "bg-red-500/10 border-red-500/20" :
-                malicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
-                suspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
-                "bg-green-500/10 border-green-500/20"
-            }`}>
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${malicious >= 5 ? "bg-red-500/10 border-red-500/20" :
+                    malicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
+                        suspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
+                            "bg-green-500/10 border-green-500/20"
+                }`}>
                 <div>
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
                     <p className="text-5xl font-black mt-1 tabular-nums">
@@ -323,17 +324,16 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                         </p>
                     )}
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${
-                    malicious >= 5 ? "bg-red-500/15" : malicious > 0 ? "bg-orange-500/15" : suspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
-                }`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${malicious >= 5 ? "bg-red-500/15" : malicious > 0 ? "bg-orange-500/15" : suspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
+                    }`}>
                     {malicious >= 5 ? (
-                        <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : malicious > 0 ? (
-                        <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : suspicious > 0 ? (
-                        <svg className="w-7 h-7 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <svg className="w-7 h-7 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                     ) : (
-                        <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     )}
                 </div>
             </div>
@@ -390,18 +390,17 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
 
     const engines = data.engines || [];
     const detected = data.detected_by ?? 0;
-    const total    = engines.length;
-    const clean    = engines.filter(e => !e.malware && !e.error).length;
-    const errors   = engines.filter(e => !!e.error).length;
+    const total = engines.length;
+    const clean = engines.filter(e => !e.malware && !e.error).length;
+    const errors = engines.filter(e => !!e.error).length;
 
     return (
         <div className="space-y-4">
             {/* Summary bar */}
-            <div className={`flex items-center justify-between rounded-xl p-4 border-2 ${
-                detected >= 3 ? "bg-red-500/10 border-red-500/20" :
-                detected >= 1 ? "bg-orange-500/10 border-orange-500/20" :
-                "bg-green-500/10 border-green-500/20"
-            }`}>
+            <div className={`flex items-center justify-between rounded-xl p-4 border-2 ${detected >= 3 ? "bg-red-500/10 border-red-500/20" :
+                    detected >= 1 ? "bg-orange-500/10 border-orange-500/20" :
+                        "bg-green-500/10 border-green-500/20"
+                }`}>
                 <div>
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Local AV Detection</p>
                     <p className="text-4xl font-black mt-1 tabular-nums">
@@ -421,15 +420,14 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
                         </p>
                     )}
                 </div>
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow ${
-                    detected >= 3 ? "bg-red-500/15" : detected >= 1 ? "bg-orange-500/15" : "bg-green-500/15"
-                }`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow ${detected >= 3 ? "bg-red-500/15" : detected >= 1 ? "bg-orange-500/15" : "bg-green-500/15"
+                    }`}>
                     {detected >= 3 ? (
-                        <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : detected >= 1 ? (
-                        <svg className="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg className="w-6 h-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : (
-                        <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     )}
                 </div>
             </div>
@@ -438,29 +436,29 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
             {engines.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {engines.map((eng) => {
-                        const isError   = !!eng.error;
+                        const isError = !!eng.error;
                         const isMalware = eng.malware;
-                        const borderCls = isError   ? "border-white/[0.06] bg-white/[0.03]"
-                                        : isMalware ? "border-red-500/20 bg-red-500/10"
-                                        :             "border-green-500/15 bg-green-500/10";
-                        const iconCls   = isError   ? "text-slate-500"
-                                        : isMalware ? "text-red-400"
-                                        :             "text-green-400";
+                        const borderCls = isError ? "border-white/[0.06] bg-white/[0.03]"
+                            : isMalware ? "border-red-500/20 bg-red-500/10"
+                                : "border-green-500/15 bg-green-500/10";
+                        const iconCls = isError ? "text-slate-500"
+                            : isMalware ? "text-red-400"
+                                : "text-green-400";
                         const statusText = isError ? "Error"
-                                         : isMalware ? (eng.result || "Detected")
-                                         : "Clean";
-                        const statusColor = isError   ? "text-slate-500"
-                                          : isMalware ? "text-red-400 font-mono"
-                                          :             "text-green-400";
+                            : isMalware ? (eng.result || "Detected")
+                                : "Clean";
+                        const statusColor = isError ? "text-slate-500"
+                            : isMalware ? "text-red-400 font-mono"
+                                : "text-green-400";
                         return (
                             <div key={eng.engine} className={`rounded-lg border px-3 py-2 flex items-start gap-2 ${borderCls}`}>
                                 <div className="mt-0.5 flex-shrink-0">
                                     {isError ? (
-                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
                                     ) : isMalware ? (
-                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                     ) : (
-                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     )}
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -490,10 +488,10 @@ function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
     const confidence = Math.round(data.confidence * 100 * 10) / 10;
 
     const borderColor = isPhishing ? "border-red-500/20" : "border-green-500/20";
-    const bgColor     = isPhishing ? "bg-red-500/10" : "bg-green-500/10";
+    const bgColor = isPhishing ? "bg-red-500/10" : "bg-green-500/10";
     const accentColor = isPhishing ? "text-red-400" : "text-green-400";
-    const barColor    = isPhishing ? "bg-red-500" : "bg-green-500";
-    const barTrack    = isPhishing ? "bg-red-500/15" : "bg-green-500/15";
+    const barColor = isPhishing ? "bg-red-500" : "bg-green-500";
+    const barTrack = isPhishing ? "bg-red-500/15" : "bg-green-500/15";
 
     return (
         <div className="space-y-4">
@@ -560,14 +558,120 @@ function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
     );
 }
 
+// ─── Threat Score Display ──────────────────────────────────────────
+
+function ThreatScoreDisplay({ score, verdict }: { score: number; verdict: string }) {
+    const pct = Math.round(score * 100);
+
+    const verdictConfig: Record<string, { color: string; bg: string; border: string; ring: string; icon: string }> = {
+        Malicious: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", ring: "stroke-red-500", icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" },
+        Suspicious: { color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", ring: "stroke-orange-400", icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" },
+        Warning: { color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20", ring: "stroke-yellow-400", icon: "M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+        Clean: { color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", ring: "stroke-green-500", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+    };
+
+    const cfg = verdictConfig[verdict] || verdictConfig.Clean;
+
+    // SVG circle gauge
+    const radius = 52;
+    const circumference = 2 * Math.PI * radius;
+    const dashOffset = circumference - (score * circumference);
+
+    return (
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-slate-200">Combined Threat Score</p>
+                    <p className="text-[10px] text-slate-500">Weighted: 60% AI · 40% VirusTotal</p>
+                </div>
+            </div>
+
+            {/* Score card with circular gauge */}
+            <div className={`rounded-xl p-6 border-2 ${cfg.bg} ${cfg.border}`}>
+                <div className="flex items-center gap-6">
+                    {/* Circular gauge */}
+                    <div className="relative flex-shrink-0">
+                        <svg width="128" height="128" viewBox="0 0 128 128" className="-rotate-90">
+                            <circle
+                                cx="64" cy="64" r={radius}
+                                fill="none"
+                                stroke="currentColor"
+                                className="text-white/[0.06]"
+                                strokeWidth="8"
+                            />
+                            <circle
+                                cx="64" cy="64" r={radius}
+                                fill="none"
+                                className={cfg.ring}
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray={circumference}
+                                strokeDashoffset={dashOffset}
+                                style={{ transition: "stroke-dashoffset 1s ease-out" }}
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className={`text-3xl font-black tabular-nums ${cfg.color}`}>{pct}</span>
+                            <span className="text-[10px] text-slate-500 font-medium">/ 100</span>
+                        </div>
+                    </div>
+
+                    {/* Verdict & breakdown */}
+                    <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${cfg.bg}`}>
+                                <svg className={`w-5 h-5 ${cfg.color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d={cfg.icon} />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className={`text-2xl font-black ${cfg.color}`}>{verdict}</p>
+                                <p className="text-xs text-slate-500">
+                                    {verdict === "Malicious" ? "High risk — strongly recommended to avoid"
+                                        : verdict === "Suspicious" ? "Moderate risk — proceed with caution"
+                                            : verdict === "Warning" ? "Low risk — some indicators detected"
+                                                : "No significant threats detected"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Score breakdown */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2">
+                                <p className="text-[10px] text-slate-500 font-medium">AI Weight</p>
+                                <p className="text-sm font-bold text-purple-400">60%</p>
+                            </div>
+                            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2">
+                                <p className="text-[10px] text-slate-500 font-medium">VT Weight</p>
+                                <p className="text-sm font-bold text-blue-400">40%</p>
+                            </div>
+                        </div>
+
+                        {/* Raw score */}
+                        <p className="text-xs text-slate-500 font-mono">
+                            Raw score: {score.toFixed(4)}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: MaliceDetails | null }) {
     // ── VT numbers ──
-    const vtMalicious  = vt?.malicious || 0;
+    const vtMalicious = vt?.malicious || 0;
     const vtSuspicious = vt?.suspicious || 0;
-    const vtHarmless   = vt?.stats?.harmless || 0;
+    const vtHarmless = vt?.stats?.harmless || 0;
     const vtUndetected = vt?.stats?.undetected || 0;
-    const vtClean      = vtHarmless + vtUndetected;
-    const vtEffective  = vtMalicious + vtSuspicious + vtClean;
+    const vtClean = vtHarmless + vtUndetected;
+    const vtEffective = vtMalicious + vtSuspicious + vtClean;
     const vtNonDecisive =
         (vt?.stats?.["timeout"] || 0) +
         (vt?.stats?.["confirmed-timeout"] || 0) +
@@ -575,21 +679,21 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
         (vt?.stats?.["type-unsupported"] || 0);
 
     // ── Local AV numbers ──
-    const localEngines  = malice?.engines || [];
+    const localEngines = malice?.engines || [];
     const localDetected = malice?.detected_by || 0;
-    const localClean    = localEngines.filter(e => !e.malware && !e.error).length;
-    const localErrors   = localEngines.filter(e => !!e.error).length;
-    const localTotal    = localEngines.length;
+    const localClean = localEngines.filter(e => !e.malware && !e.error).length;
+    const localErrors = localEngines.filter(e => !!e.error).length;
+    const localTotal = localEngines.length;
 
     // ── Combined ──
-    const totalMalicious  = vtMalicious + localDetected;
+    const totalMalicious = vtMalicious + localDetected;
     const totalSuspicious = vtSuspicious;
-    const totalClean      = vtClean + localClean;
-    const totalEngines    = vtEffective + localTotal;
+    const totalClean = vtClean + localClean;
+    const totalEngines = vtEffective + localTotal;
     const totalNonDecisive = vtNonDecisive + localErrors;
 
     const vtNotFound = vt && vt.found === false;
-    const vtTimeout  = vt && vt.found === null;
+    const vtTimeout = vt && vt.found === null;
 
     // ── VT-only special states (no local data) ──
     if (vtNotFound && !malice) {
@@ -597,7 +701,7 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
             <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-5 space-y-3">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+                        <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>
                     </div>
                     <div>
                         <p className="font-semibold text-yellow-400">File not in threat database</p>
@@ -616,7 +720,7 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
             <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-5 space-y-3">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     </div>
                     <div>
                         <p className="font-semibold text-orange-400">Analysis timed out</p>
@@ -628,9 +732,9 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
     }
 
     const segments = [
-        { key: "malicious",  label: "Malicious",    count: totalMalicious,  barColor: "bg-red-500",    textColor: "text-red-400",    bgColor: "bg-red-500/10",    borderColor: "border-red-500/20" },
-        { key: "suspicious", label: "Suspicious",   count: totalSuspicious, barColor: "bg-orange-400", textColor: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" },
-        { key: "clean",      label: "Clean / Safe", count: totalClean,      barColor: "bg-green-500",  textColor: "text-green-400",  bgColor: "bg-green-500/10",  borderColor: "border-green-500/20" },
+        { key: "malicious", label: "Malicious", count: totalMalicious, barColor: "bg-red-500", textColor: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" },
+        { key: "suspicious", label: "Suspicious", count: totalSuspicious, barColor: "bg-orange-400", textColor: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" },
+        { key: "clean", label: "Clean / Safe", count: totalClean, barColor: "bg-green-500", textColor: "text-green-400", bgColor: "bg-green-500/10", borderColor: "border-green-500/20" },
     ];
 
     return (
@@ -638,24 +742,23 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
             {/* VT special state banners (when local data IS available) */}
             {vtNotFound && (
                 <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 text-xs text-yellow-400">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     Hash not found in cloud database — showing local engine results only
                 </div>
             )}
             {vtTimeout && (
                 <div className="flex items-center gap-2 rounded-lg bg-orange-500/10 border border-orange-500/20 px-3 py-2 text-xs text-orange-400">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     Cloud analysis timed out — showing local engine results only
                 </div>
             )}
 
             {/* Combined Detection Summary */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${
-                totalMalicious >= 5 ? "bg-red-500/10 border-red-500/20" :
-                totalMalicious > 0  ? "bg-orange-500/10 border-orange-500/20" :
-                totalSuspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
-                "bg-green-500/10 border-green-500/20"
-            }`}>
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${totalMalicious >= 5 ? "bg-red-500/10 border-red-500/20" :
+                    totalMalicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
+                        totalSuspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
+                            "bg-green-500/10 border-green-500/20"
+                }`}>
                 <div>
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
                     <p className="text-5xl font-black mt-1 tabular-nums">
@@ -673,17 +776,16 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                         </p>
                     )}
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${
-                    totalMalicious >= 5 ? "bg-red-500/15" : totalMalicious > 0 ? "bg-orange-500/15" : totalSuspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
-                }`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${totalMalicious >= 5 ? "bg-red-500/15" : totalMalicious > 0 ? "bg-orange-500/15" : totalSuspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
+                    }`}>
                     {totalMalicious >= 5 ? (
-                        <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : totalMalicious > 0 ? (
-                        <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : totalSuspicious > 0 ? (
-                        <svg className="w-7 h-7 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <svg className="w-7 h-7 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                     ) : (
-                        <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     )}
                 </div>
             </div>
@@ -738,23 +840,23 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
             {localEngines.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {localEngines.map(eng => {
-                        const isError   = !!eng.error;
+                        const isError = !!eng.error;
                         const isMalware = eng.malware;
-                        const borderCls = isError   ? "border-white/[0.06] bg-white/[0.03]"
-                                        : isMalware ? "border-red-500/20 bg-red-500/10"
-                                        :             "border-green-500/15 bg-green-500/10";
-                        const iconCls   = isError ? "text-slate-500" : isMalware ? "text-red-400" : "text-green-400";
+                        const borderCls = isError ? "border-white/[0.06] bg-white/[0.03]"
+                            : isMalware ? "border-red-500/20 bg-red-500/10"
+                                : "border-green-500/15 bg-green-500/10";
+                        const iconCls = isError ? "text-slate-500" : isMalware ? "text-red-400" : "text-green-400";
                         const statusText = isError ? "Error" : isMalware ? (eng.result || "Detected") : "Clean";
                         const statusColor = isError ? "text-slate-500" : isMalware ? "text-red-400 font-mono" : "text-green-400";
                         return (
                             <div key={eng.engine} className={`rounded-lg border px-3 py-2 flex items-start gap-2 ${borderCls}`}>
                                 <div className="mt-0.5 flex-shrink-0">
                                     {isError ? (
-                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
                                     ) : isMalware ? (
-                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                     ) : (
-                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <svg className={`w-4 h-4 ${iconCls}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     )}
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -799,13 +901,13 @@ function ScanDetailModal({
     }, [scan.id, scan.status, token]);
 
     const threatColors: Record<string, string> = {
-        safe:     "text-green-400 bg-green-500/10 border-green-500/20",
-        clean:    "text-green-400 bg-green-500/10 border-green-500/20",
-        low:      "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-        medium:   "text-orange-400 bg-orange-500/10 border-orange-500/20",
-        high:     "text-red-400 bg-red-500/10 border-red-500/20",
+        safe: "text-green-400 bg-green-500/10 border-green-500/20",
+        clean: "text-green-400 bg-green-500/10 border-green-500/20",
+        low: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+        medium: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+        high: "text-red-400 bg-red-500/10 border-red-500/20",
         critical: "text-red-400 bg-red-500/20 border-red-500/30",
-        unknown:  "text-slate-400 bg-white/[0.06] border-white/[0.08]",
+        unknown: "text-slate-400 bg-white/[0.06] border-white/[0.08]",
     };
     const tClass = threatColors[scan.threat_level || ""] || "text-slate-400 bg-white/[0.06] border-white/[0.08]";
 
@@ -831,11 +933,11 @@ function ScanDetailModal({
                         <div className="flex items-center gap-2">
                             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                                 {scan.scan_type === "url" ? (
-                                    <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                    <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                                 ) : scan.scan_type === "file" ? (
-                                    <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                                    <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
                                 ) : (
-                                    <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 )}
                                 Scan Report
                             </h2>
@@ -932,6 +1034,16 @@ function ScanDetailModal({
                                     </div>
                                 )}
 
+                                {/* Combined Threat Score */}
+                                {isCombined && typeof (rawDetails as CombinedDetails)?.threat_score === "number" && (rawDetails as CombinedDetails)?.verdict && (
+                                    <div className="border-t border-white/[0.06] pt-6">
+                                        <ThreatScoreDisplay
+                                            score={(rawDetails as CombinedDetails).threat_score!}
+                                            verdict={(rawDetails as CombinedDetails).verdict!}
+                                        />
+                                    </div>
+                                )}
+
                                 {/* Summary */}
                                 {report?.summary && (
                                     <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
@@ -943,7 +1055,7 @@ function ScanDetailModal({
                         ) : (
                             <div className="text-center py-8 text-slate-500">
                                 <div className="flex justify-center mb-2">
-                                    <svg className="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <svg className="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 </div>
                                 <p className="text-sm">Report details not available.</p>
                             </div>
@@ -952,7 +1064,7 @@ function ScanDetailModal({
                         <div className="text-center py-12">
                             <div className="flex justify-center mb-4">
                                 <div className="w-16 h-16 rounded-full bg-white/[0.04] flex items-center justify-center">
-                                    <svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                    <svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
                                 </div>
                             </div>
                             <p className="font-semibold text-slate-300 text-base">Scan was cancelled</p>
@@ -962,7 +1074,7 @@ function ScanDetailModal({
                         <div className="text-center py-12">
                             <div className="flex justify-center mb-4">
                                 <div className="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center">
-                                    <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                 </div>
                             </div>
                             <p className="font-semibold text-red-400 text-base">Scan failed</p>
@@ -975,7 +1087,7 @@ function ScanDetailModal({
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-30" />
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20" style={{ animationDelay: "0.5s" }} />
                                     <span className="relative inline-flex items-center justify-center rounded-full h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30">
-                                        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                                     </span>
                                 </span>
                             </div>
@@ -993,35 +1105,43 @@ function ScanDetailModal({
 
 function HistoryBarChart({ scans }: { scans: Scan[] }) {
     const completed = scans.filter(s => s.status === "completed");
-    const active    = scans.filter(s => ["pending","in_progress","running"].includes(s.status));
-    const failed    = scans.filter(s => ["failed","cancelled"].includes(s.status));
+    const active = scans.filter(s => ["pending", "in_progress", "running"].includes(s.status));
+    const failed = scans.filter(s => ["failed", "cancelled"].includes(s.status));
 
     const threats = {
-        high:   completed.filter(s => ["high","critical"].includes(s.threat_level || "")).length,
+        high: completed.filter(s => ["high", "critical"].includes(s.threat_level || "")).length,
         medium: completed.filter(s => s.threat_level === "medium").length,
-        low:    completed.filter(s => s.threat_level === "low").length,
-        clean:  completed.filter(s => ["clean","safe"].includes(s.threat_level || "")).length,
-        unknown:completed.filter(s => !s.threat_level || s.threat_level === "unknown").length,
+        low: completed.filter(s => s.threat_level === "low").length,
+        clean: completed.filter(s => ["clean", "safe"].includes(s.threat_level || "")).length,
+        unknown: completed.filter(s => !s.threat_level || s.threat_level === "unknown").length,
     };
 
-    const urlScans  = scans.filter(s => s.scan_type === "url").length;
+    const urlScans = scans.filter(s => s.scan_type === "url").length;
     const fileScans = scans.filter(s => s.scan_type !== "url").length;
-    const total     = scans.length || 1;
+    const total = scans.length || 1;
 
     return (
         <div className="space-y-6">
             {/* ── Top stat cards ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {([
-                    { label: "Completed",   value: completed.length, color: "text-green-400",  bg: "bg-green-500/10",  border: "border-green-500/20", iconColor: "text-green-400",
-                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> },
-                    { label: "In Progress", value: active.length,    color: "text-blue-400",   bg: "bg-blue-500/10",   border: "border-blue-500/20",  iconColor: "text-blue-400",
-                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-                    { label: "URL Scans",   value: urlScans,         color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20", iconColor: "text-indigo-400",
-                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg> },
-                    { label: "File Scans",  value: fileScans,        color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", iconColor: "text-purple-400",
-                      icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> },
-                ] as Array<{label:string;value:number;color:string;bg:string;border:string;iconColor:string;icon:React.ReactNode}>).map(c => (
+                    {
+                        label: "Completed", value: completed.length, color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", iconColor: "text-green-400",
+                        icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    },
+                    {
+                        label: "In Progress", value: active.length, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", iconColor: "text-blue-400",
+                        icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    },
+                    {
+                        label: "URL Scans", value: urlScans, color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20", iconColor: "text-indigo-400",
+                        icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                    },
+                    {
+                        label: "File Scans", value: fileScans, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", iconColor: "text-purple-400",
+                        icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    },
+                ] as Array<{ label: string; value: number; color: string; bg: string; border: string; iconColor: string; icon: React.ReactNode }>).map(c => (
                     <div key={c.label} className={`rounded-xl border ${c.border} ${c.bg} px-4 py-3 flex items-center gap-3`}>
                         <span className={c.iconColor}>{c.icon}</span>
                         <div>
@@ -1035,10 +1155,10 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
             {/* ── Threat breakdown ── */}
             {completed.length > 0 && (() => {
                 const chartBars = [
-                    { label: "High / Critical", value: threats.high,   barColor: "#ef4444", trackColor: "rgba(239,68,68,0.1)", textColor: "#f87171" },
-                    { label: "Medium",           value: threats.medium, barColor: "#f97316", trackColor: "rgba(249,115,22,0.1)", textColor: "#fb923c" },
-                    { label: "Low",              value: threats.low,    barColor: "#eab308", trackColor: "rgba(234,179,8,0.1)", textColor: "#facc15" },
-                    { label: "Clean / Safe",     value: threats.clean,  barColor: "#22c55e", trackColor: "rgba(34,197,94,0.1)", textColor: "#4ade80" },
+                    { label: "High / Critical", value: threats.high, barColor: "#ef4444", trackColor: "rgba(239,68,68,0.1)", textColor: "#f87171" },
+                    { label: "Medium", value: threats.medium, barColor: "#f97316", trackColor: "rgba(249,115,22,0.1)", textColor: "#fb923c" },
+                    { label: "Low", value: threats.low, barColor: "#eab308", trackColor: "rgba(234,179,8,0.1)", textColor: "#facc15" },
+                    { label: "Clean / Safe", value: threats.clean, barColor: "#22c55e", trackColor: "rgba(34,197,94,0.1)", textColor: "#4ade80" },
                     ...(threats.unknown > 0
                         ? [{ label: "Unknown", value: threats.unknown, barColor: "#9ca3af", trackColor: "rgba(156,163,175,0.1)", textColor: "#9ca3af" }]
                         : []),
@@ -1335,15 +1455,15 @@ export default function ScansPage() {
 
     const threatBadge = (level: string | null) => {
         const styles: Record<string, string> = {
-            safe:      "bg-green-500/15 text-green-400 border border-green-500/20",
-            clean:     "bg-green-500/15 text-green-400 border border-green-500/20",
-            low:       "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
-            medium:    "bg-orange-500/15 text-orange-400 border border-orange-500/20",
-            high:      "bg-red-500/15 text-red-400 border border-red-500/20",
-            critical:  "bg-red-500/20 text-red-400 border border-red-500/30 font-bold",
+            safe: "bg-green-500/15 text-green-400 border border-green-500/20",
+            clean: "bg-green-500/15 text-green-400 border border-green-500/20",
+            low: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
+            medium: "bg-orange-500/15 text-orange-400 border border-orange-500/20",
+            high: "bg-red-500/15 text-red-400 border border-red-500/20",
+            critical: "bg-red-500/20 text-red-400 border border-red-500/30 font-bold",
             not_found: "bg-white/[0.06] text-slate-500 border border-white/[0.08]",
-            timeout:   "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
-            unknown:   "bg-white/[0.06] text-slate-500 border border-white/[0.08]",
+            timeout: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
+            unknown: "bg-white/[0.06] text-slate-500 border border-white/[0.08]",
         };
         return styles[level || ""] || "bg-white/[0.06] text-slate-500 border border-white/[0.08]";
     };
@@ -1402,7 +1522,7 @@ export default function ScansPage() {
                 <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
                     <div className="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-blue-500/10 to-transparent">
                         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-white">URL Scan</h3>
@@ -1436,25 +1556,25 @@ export default function ScansPage() {
                                         }
                                     }}
                                     className={`w-full px-3.5 py-2.5 pr-10 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all placeholder-slate-500 bg-[#1a2744] text-slate-100 ${urlValidationError
-                                            ? "border-red-500/50 focus:ring-red-500/40 bg-red-500/5"
-                                            : urlTarget && !urlValidationError
-                                                ? "border-green-500/50 focus:ring-green-500/40 bg-green-500/5"
-                                                : "border-white/[0.08] focus:ring-blue-500/60"
+                                        ? "border-red-500/50 focus:ring-red-500/40 bg-red-500/5"
+                                        : urlTarget && !urlValidationError
+                                            ? "border-green-500/50 focus:ring-green-500/40 bg-green-500/5"
+                                            : "border-white/[0.08] focus:ring-blue-500/60"
                                         }`}
                                 />
                                 {/* validation icon */}
                                 {urlTarget && (
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2">
                                         {urlValidationError
-                                            ? <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                                            : <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                            ? <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                            : <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                                         }
                                     </span>
                                 )}
                             </div>
                             {urlValidationError ? (
                                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> {urlValidationError}
+                                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> {urlValidationError}
                                 </p>
                             ) : (
                                 <p className="text-xs text-slate-500 mt-1">
@@ -1465,13 +1585,13 @@ export default function ScansPage() {
 
                         {urlError && (
                             <div className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                 <span>{urlError}</span>
                             </div>
                         )}
                         {urlSuccess && (
                             <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 <span>{urlSuccess}</span>
                             </div>
                         )}
@@ -1492,7 +1612,7 @@ export default function ScansPage() {
                                 </>
                             ) : (
                                 <>
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                                     Scan URL
                                 </>
                             )}
@@ -1504,7 +1624,7 @@ export default function ScansPage() {
                 <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
                     <div className="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-purple-500/10 to-transparent">
                         <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white flex-shrink-0">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-white">File Scan</h3>
@@ -1522,8 +1642,8 @@ export default function ScansPage() {
                                 id="file-upload-mode"
                                 onClick={() => setFileMode("upload")}
                                 className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${fileMode === "upload"
-                                        ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
-                                        : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
+                                    : "text-slate-400 hover:text-slate-200"
                                     }`}
                             >
                                 Upload File
@@ -1533,8 +1653,8 @@ export default function ScansPage() {
                                 id="file-hash-mode"
                                 onClick={() => setFileMode("hash")}
                                 className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${fileMode === "hash"
-                                        ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
-                                        : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
+                                    : "text-slate-400 hover:text-slate-200"
                                     }`}
                             >
                                 Enter Hash
@@ -1549,13 +1669,13 @@ export default function ScansPage() {
                                 <label
                                     htmlFor="file-upload"
                                     className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${selectedFile
-                                            ? "border-purple-500/50 bg-purple-500/10"
-                                            : "border-white/[0.12] bg-white/[0.03] hover:border-purple-500/50 hover:bg-purple-500/10"
+                                        ? "border-purple-500/50 bg-purple-500/10"
+                                        : "border-white/[0.12] bg-white/[0.03] hover:border-purple-500/50 hover:bg-purple-500/10"
                                         }`}
                                 >
                                     {selectedFile ? (
                                         <div className="text-center px-4">
-                                            <div className="flex justify-center"><svg className="w-8 h-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+                                            <div className="flex justify-center"><svg className="w-8 h-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
                                             <p className="text-sm font-medium text-purple-400 mt-1 truncate max-w-[220px]">
                                                 {selectedFile.name}
                                             </p>
@@ -1569,7 +1689,7 @@ export default function ScansPage() {
                                         </div>
                                     ) : (
                                         <div className="text-center">
-                                            <div className="flex justify-center"><svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg></div>
+                                            <div className="flex justify-center"><svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg></div>
                                             <p className="text-sm text-slate-400 mt-1">
                                                 Click to upload or drag & drop
                                             </p>
@@ -1610,13 +1730,13 @@ export default function ScansPage() {
 
                         {fileError && (
                             <div className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                 <span>{fileError}</span>
                             </div>
                         )}
                         {fileSuccess && (
                             <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 <span>{fileSuccess}</span>
                             </div>
                         )}
@@ -1640,7 +1760,7 @@ export default function ScansPage() {
                                 </>
                             ) : (
                                 <>
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                                     Scan File
                                 </>
                             )}
@@ -1654,7 +1774,7 @@ export default function ScansPage() {
                 <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
                     <div className="px-6 py-4 border-b border-white/[0.06]">
                         <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                             Scan Results Overview
                         </h3>
                         <p className="text-xs text-slate-500 mt-0.5">
@@ -1672,7 +1792,7 @@ export default function ScansPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-white/[0.06]">
                     <div>
                         <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                             Scan History
                         </h3>
                         <p className="text-xs text-slate-500 mt-0.5">
@@ -1686,8 +1806,8 @@ export default function ScansPage() {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-3 py-1.5 rounded-md transition-all capitalize ${activeTab === tab
-                                        ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
-                                        : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
+                                    : "text-slate-400 hover:text-slate-200"
                                     }`}
                             >
                                 {tab === "all" ? "All" : tab === "url" ? "URLs" : "Files"}
@@ -1709,7 +1829,7 @@ export default function ScansPage() {
                 ) : filteredScans.length === 0 ? (
                     <div className="text-center py-16">
                         <div className="flex justify-center mb-3">
-                            <svg className="w-12 h-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                            <svg className="w-12 h-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                         </div>
                         <p className="font-medium text-slate-300">No scans yet</p>
                         <p className="text-sm text-slate-500 mt-1">
@@ -1753,19 +1873,18 @@ export default function ScansPage() {
                                             className="hover:bg-white/[0.03] transition-colors cursor-pointer group"
                                         >
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                                    scan.scan_type === "url"
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${scan.scan_type === "url"
                                                         ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
                                                         : scan.scan_type === "file"
-                                                        ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"
-                                                        : "bg-purple-500/15 text-purple-400 border border-purple-500/20"
-                                                }`}>
+                                                            ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"
+                                                            : "bg-purple-500/15 text-purple-400 border border-purple-500/20"
+                                                    }`}>
                                                     {scan.scan_type === "url" ? (
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                                                     ) : scan.scan_type === "file" ? (
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
                                                     ) : (
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                     )}
                                                     {scan.scan_type === "url" ? "URL" : scan.scan_type === "file" ? "HASH" : "FILE"}
                                                 </span>

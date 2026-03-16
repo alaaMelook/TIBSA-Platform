@@ -13,13 +13,13 @@ from app.routers import auth, users, scans, threats, notifications
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    print("🚀 TIBSA Backend starting up...")
+    print("TIBSA Backend starting up...")
     if not settings.virustotal_api_key:
-        print("⚠️  WARNING: VIRUSTOTAL_API_KEY is not set — URL/file scans will fail!")
+        print("WARNING: VIRUSTOTAL_API_KEY is not set — URL/file scans will fail!")
     else:
-        print("✅ VirusTotal API key loaded")
+        print("VirusTotal API key loaded")
     yield
-    print("👋 TIBSA Backend shutting down...")
+    print("TIBSA Backend shutting down...")
 
 
 app = FastAPI(
