@@ -1,0 +1,10 @@
+{
+  "name": "tibsa-platform",
+  "version": "1.0.0",
+  "description": "Run both frontend and backend concurrently",
+  "scripts": {
+    "dev": "npx concurrently -c \"blue,green\" -n \"backend,frontend\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && uvicorn app.main:app --reload",
+    "dev:frontend": "cd frontend && npm run dev"
+  }
+}
