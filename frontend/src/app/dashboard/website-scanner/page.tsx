@@ -47,10 +47,13 @@ interface ScanResult {
 // ─── Test options ────────────────────────────────────────────
 
 const TEST_OPTIONS = [
+    { key: "security_headers", label: "Security Headers", icon: "🔒" },
+    { key: "xss", label: "XSS Testing", icon: "💉" },
     { key: "sqli", label: "SQL Injection", icon: "🗃️" },
-    { key: "xss", label: "XSS", icon: "💉" },
+    { key: "endpoint_crawling", label: "Endpoint Crawling", icon: "📂" },
+    { key: "cookie_analysis", label: "Cookie Analysis", icon: "🍪" },
     { key: "misconfiguration", label: "Misconfiguration", icon: "⚙️" },
-    { key: "directory_discovery", label: "Directory Discovery", icon: "📂" },
+    { key: "directory_discovery", label: "Directory Discovery", icon: "🔍" },
     { key: "brute_force", label: "Brute Force", icon: "🔓" },
 ];
 

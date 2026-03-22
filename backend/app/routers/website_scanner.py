@@ -30,7 +30,11 @@ async def scan_website(
     if not target.startswith(("http://", "https://")):
         target = "https://" + target
 
-    valid_tests = {"sqli", "xss", "misconfiguration", "directory_discovery", "brute_force"}
+    valid_tests = {
+        "sqli", "xss",
+        "security_headers", "endpoint_crawling", "cookie_analysis",
+        "misconfiguration", "directory_discovery", "brute_force",
+    }
     selected = [t for t in request.tests if t in valid_tests]
     if not selected:
         raise HTTPException(
@@ -38,8 +42,16 @@ async def scan_website(
             detail="At least one valid test must be selected.",
         )
 
+    # Map frontend-friendly keys → backend internal keys (set deduplicates)
+    key_map = {
+        "security_headers": "misconfiguration",
+        "endpoint_crawling": "directory_discovery",
+        "cookie_analysis": "brute_force",
+    }
+    internal_tests = list({key_map.get(t, t) for t in selected})
+
     scanner = WebsiteScannerService()
-    result = await scanner.scan(target, selected)
+    result = await scanner.scan(target, internal_tests)
 
     # Save to database
     try:

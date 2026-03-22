@@ -11,11 +11,11 @@ from datetime import datetime
 class WebsiteScanRequest(BaseModel):
     target: str  # URL to scan
     tests: List[str] = [
-        "sqli",
+        "security_headers",
         "xss",
-        "misconfiguration",
-        "directory_discovery",
-        "brute_force",
+        "sqli",
+        "endpoint_crawling",
+        "cookie_analysis",
     ]
 
 

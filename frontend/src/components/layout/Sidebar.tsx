@@ -73,7 +73,7 @@ const IconThreatModeling = () => (
 const sidebarLinks: SidebarLink[] = [
     { href: "/dashboard",                   label: "Dashboard",       icon: <IconDashboard /> },
     { href: "/dashboard/scans",             label: "Scans",           icon: <IconScans /> },
-    { href: "/dashboard/website-scanner",  label: "Website Scanner", icon: <IconWebsiteScanner /> },
+    { href: "/dashboard/website-scanner",  label: "Pen Test",         icon: <IconWebsiteScanner /> },
     { href: "/dashboard/threats",           label: "Threats",         icon: <IconThreats /> },
     { href: "/dashboard/threat-modeling",   label: "Threat Modeling", icon: <IconThreatModeling /> },
     { href: "/dashboard/reports",           label: "Reports",         icon: <IconReports /> },
