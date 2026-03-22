@@ -164,6 +164,9 @@ class WebsiteScannerService:
         self.finding_counter = 0
         self._404_body_hash: Optional[str] = None
         self._404_length: int = 0
+        self._homepage_body_hash: Optional[str] = None
+        self._homepage_length: int = 0
+        self._homepage_text_sample: str = ""
 
     def _next_id(self) -> str:
         self.finding_counter += 1
@@ -195,6 +198,8 @@ class WebsiteScannerService:
 
             # Build baseline for false positive detection
             await self._detect_custom_404(client, target)
+            self._homepage_body_hash = hashlib.md5(response.content).hexdigest()
+            self._homepage_length = len(response.content)
             baseline_text = response.text
 
             if "misconfiguration" in tests:
@@ -262,7 +267,7 @@ class WebsiteScannerService:
             "high": high, "medium": medium, "low": low,
             "total": high + medium + low,
             "endpoints_found": len(endpoints),
-            "findings": findings,
+            "findings": [self._assign_confidence_label(f) for f in findings],
             "headers": headers_dict,
             "endpoints": endpoints,
             "false_positives_filtered": fp_log,
@@ -298,6 +303,41 @@ class WebsiteScannerService:
         if nf_count >= 2:
             return False
         return True
+
+    def _response_similarity(self, resp: httpx.Response) -> float:
+        """Calculate similarity ratio (0.0-1.0) between response and homepage."""
+        if not self._homepage_body_hash or self._homepage_length == 0:
+            return 0.0
+        resp_hash = hashlib.md5(resp.content).hexdigest()
+        if resp_hash == self._homepage_body_hash:
+            return 1.0  # Identical
+        # Length-based similarity
+        size_ratio = min(len(resp.content), self._homepage_length) / max(self._homepage_length, 1)
+        # Text overlap (sample first 2000 chars)
+        homepage_sample = getattr(self, '_homepage_text_sample', '')
+        resp_sample = resp.text[:2000].lower()
+        if homepage_sample and resp_sample:
+            common = sum(1 for a, b in zip(homepage_sample, resp_sample) if a == b)
+            text_similarity = common / max(len(homepage_sample), len(resp_sample), 1)
+        else:
+            text_similarity = 0.0
+        return (size_ratio * 0.4) + (text_similarity * 0.6)
+
+    @staticmethod
+    def _assign_confidence_label(finding: Dict[str, Any]) -> Dict[str, Any]:
+        """Assign a confidence label based on classification and evidence strength."""
+        classification = finding.get("classification", "")
+        fp_check = finding.get("false_positive_check", "").lower()
+
+        if classification == "best_practice":
+            finding["confidence_label"] = "\u26a0\ufe0f Security Improvement"
+        elif "confirmed" in fp_check and ("unique marker" in fp_check or "error pattern" in fp_check or "directly" in fp_check or "definitively" in fp_check):
+            finding["confidence_label"] = "\u2705 Confirmed"
+        elif "confirmed" in fp_check:
+            finding["confidence_label"] = "\u2705 Confirmed"
+        else:
+            finding["confidence_label"] = "\u2757 Potential False Positive"
+        return finding
 
     def _is_sql_error_genuine(self, resp_text: str, baseline_text: str) -> Optional[str]:
         """Returns the matched pattern if genuine, None if false positive."""
@@ -397,7 +437,7 @@ class WebsiteScannerService:
         return findings
 
     # ══════════════════════════════════════════════════════════
-    # 2. DIRECTORY DISCOVERY
+    # 2. DIRECTORY DISCOVERY (v2 — content + similarity checks)
     # ══════════════════════════════════════════════════════════
 
     async def _discover_directories(
@@ -408,24 +448,37 @@ class WebsiteScannerService:
         fp_log = []
         base_url = f"{urlparse(target).scheme}://{urlparse(target).netloc}"
 
+        # Store homepage text sample for similarity
+        self._homepage_text_sample = main_response.text[:2000].lower()
+
         for path in COMMON_DIRECTORIES:
             try:
                 full_url = base_url + path
                 resp = await client.get(full_url)
 
+                # -- Step 1: Status code filtering --
                 if resp.status_code != 200:
                     if resp.status_code == 403:
                         endpoints.append({"type": "directory", "url": full_url, "status": 403, "text": f"{path} (Forbidden)"})
                     continue
 
+                # -- Step 2: Custom 404 detection --
                 if not self._is_real_page(resp):
                     fp_log.append(f"Directory '{path}' — filtered as custom 404 (body hash matched known 404 page)")
                     continue
 
+                # -- Step 3: Response similarity to homepage (NEW) --
+                similarity = self._response_similarity(resp)
+                if similarity > 0.70:
+                    fp_log.append(f"Directory '{path}' — filtered: {similarity:.0%} similar to homepage (likely catch-all/redirect)")
+                    continue
+
+                # -- Step 4: Content validation (file-type specific) --
                 if not self._validate_directory_content(path, resp):
                     fp_log.append(f"Directory '{path}' — filtered: content does not match expected format for this file type")
                     continue
 
+                # -- Step 5: Severity classification --
                 if any(p in path for p in [".env", ".git", ".htpasswd", "phpinfo", "debug", "console"]):
                     severity, sev_j = "high", "HIGH — file may contain credentials, API keys, or debug information directly exploitable by attackers."
                 elif any(p in path for p in ["admin", "phpmyadmin", "adminer", "backup", "database", "config", "log"]):
@@ -442,8 +495,8 @@ class WebsiteScannerService:
                     "severity_justification": sev_j,
                     "url": full_url,
                     "description": f"Sensitive path '{path}' is publicly accessible.",
-                    "evidence": f"HTTP {resp.status_code} — {len(resp.content)} bytes — Type: {resp.headers.get('content-type', 'N/A')}",
-                    "false_positive_check": f"Confirmed: response differs from custom 404 baseline (hash mismatch) and content matches expected format for '{path}'.",
+                    "evidence": f"HTTP {resp.status_code} — {len(resp.content)} bytes — Type: {resp.headers.get('content-type', 'N/A')} — Similarity to homepage: {similarity:.0%}",
+                    "false_positive_check": f"Confirmed: (1) Not a custom 404 (hash mismatch), (2) Only {similarity:.0%} similar to homepage (<70% threshold), (3) Content matches expected format for '{path}'.",
                     "remediation": f"Restrict access to '{path}' or remove from production.",
                     "auto_fix": f"# Nginx — block path\nlocation {path} {{\n    deny all;\n    return 404;\n}}\n\n# Apache (.htaccess)\n<Files \"{path.split('/')[-1]}\">\n    Require all denied\n</Files>",
                 })
@@ -679,35 +732,89 @@ class WebsiteScannerService:
                 unique_forms.append(f)
 
         for form in unique_forms[:3]:
-            # Establish failed-login fingerprint
+            # ── Step 1: Establish failed-login fingerprint ──
             try:
                 data = {form["user_field"]: "tibsa_invalid_xyzzy", form["pass_field"]: "tibsa_invalid_xyzzy"}
+                t0 = time.time()
                 fail_resp = await client.post(form["url"], data=data) if form["method"] == "POST" else await client.get(form["url"], params=data)
+                fail_time = time.time() - t0
                 fail_hash = hashlib.md5(fail_resp.content).hexdigest()
+                fail_size = len(fail_resp.content)
+                fail_status = fail_resp.status_code
             except Exception:
                 continue
 
             successful = []
             attempts = 0
+            response_times = []
+            got_rate_limited = False
+            got_captcha = False
+            got_lockout = False
+            got_delay = False
 
             for username, password in COMMON_CREDENTIALS[:6]:
                 try:
                     data = {form["user_field"]: username, form["pass_field"]: password}
+                    t0 = time.time()
                     resp = await client.post(form["url"], data=data) if form["method"] == "POST" else await client.get(form["url"], params=data)
+                    elapsed = time.time() - t0
                     attempts += 1
+                    response_times.append(elapsed)
 
-                    if resp.status_code == 429 or "captcha" in resp.text.lower() or "rate limit" in resp.text.lower():
+                    # Check for rate limiting / CAPTCHA / lockout
+                    body_lower = resp.text.lower()
+                    if resp.status_code == 429:
+                        got_rate_limited = True
                         break
+                    if "captcha" in body_lower or "recaptcha" in body_lower:
+                        got_captcha = True
+                        break
+                    if "rate limit" in body_lower or "too many" in body_lower:
+                        got_rate_limited = True
+                        break
+                    if "locked" in body_lower or "blocked" in body_lower or "suspended" in body_lower:
+                        got_lockout = True
+                        break
+                    if elapsed > fail_time * 3 and elapsed > 3:
+                        got_delay = True  # Progressive delay detected
 
+                    # Check for successful login (multi-factor proof)
                     resp_hash = hashlib.md5(resp.content).hexdigest()
-                    if resp_hash != fail_hash:
-                        body_lower = resp.text.lower()
-                        if any(m in body_lower for m in ["dashboard", "welcome", "logout", "sign out", "my account", "successfully"]):
-                            successful.append(f"{username}:{password}")
+                    resp_size = len(resp.content)
+                    status_changed = resp.status_code != fail_status
+                    hash_changed = resp_hash != fail_hash
+                    size_diff = abs(resp_size - fail_size) / max(fail_size, 1)
+
+                    # Must have at least 2 proof factors
+                    proof_factors = 0
+                    proof_details = []
+                    if hash_changed:
+                        proof_factors += 1
+                        proof_details.append("different response body")
+                    if size_diff > 0.15:
+                        proof_factors += 1
+                        proof_details.append(f"size diff {size_diff:.0%}")
+                    if status_changed:
+                        proof_factors += 1
+                        proof_details.append(f"status {fail_status}→{resp.status_code}")
+                    if any(m in body_lower for m in ["dashboard", "welcome", "logout", "sign out", "my account", "successfully"]):
+                        proof_factors += 1
+                        proof_details.append("auth markers found")
+                    if resp.status_code in (301, 302, 303) and "location" in resp.headers:
+                        loc = resp.headers["location"].lower()
+                        if any(m in loc for m in ["dashboard", "admin", "home", "account"]):
+                            proof_factors += 1
+                            proof_details.append(f"redirect to {loc}")
+
+                    if proof_factors >= 2:
+                        successful.append({"cred": f"{username}:{password}", "proof": proof_details})
                 except Exception:
                     continue
 
+            # ── Report: Weak Credentials (requires multi-factor proof) ──
             if successful:
+                cred_list = ', '.join(s['cred'] for s in successful)
+                proof_summary = '; '.join(f"{s['cred']}: {', '.join(s['proof'])}" for s in successful)
                 findings.append({
                     "id": self._next_id(),
                     "title": f"Weak Credentials — {form['url']}",
@@ -715,14 +822,27 @@ class WebsiteScannerService:
                     "severity": "high",
                     "severity_justification": "HIGH — default or weak credentials give attackers immediate authenticated access, potentially with admin privileges.",
                     "url": form["url"],
-                    "description": "Login accepts commonly known weak credentials.",
-                    "evidence": f"Successful login with: {', '.join(successful)}",
-                    "false_positive_check": "Confirmed: response to successful credentials differed from failed-login fingerprint AND contained authenticated-content markers (dashboard/welcome/logout).",
+                    "description": "Login accepts commonly known weak credentials (confirmed with multi-factor proof).",
+                    "evidence": f"Successful login with: {cred_list}\nProof factors: {proof_summary}",
+                    "false_positive_check": f"Confirmed with ≥2 proof factors per credential: {proof_summary}. Not just hash diff — validated with size/status/markers/redirect.",
                     "remediation": "1. Enforce strong passwords.\n2. Remove default credentials.\n3. Add MFA.",
                     "auto_fix": "# Password policy (Python/Django)\nAUTH_PASSWORD_VALIDATORS = [\n    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 12}},\n    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},\n]\n\n# Node.js (bcrypt)\nconst bcrypt = require('bcrypt');\nconst hash = await bcrypt.hash(password, 12);",
                 })
 
-            if attempts >= 5:
+            # ── Report: No Brute Force Protection (must prove it's really missing) ──
+            protection_evidence = []
+            if got_rate_limited:
+                protection_evidence.append("HTTP 429 / rate limit detected")
+            if got_captcha:
+                protection_evidence.append("CAPTCHA detected")
+            if got_lockout:
+                protection_evidence.append("Account lockout detected")
+            if got_delay:
+                protection_evidence.append("Progressive delay detected")
+
+            if not protection_evidence and attempts >= 5:
+                avg_time = sum(response_times) / len(response_times) if response_times else 0
+                time_variance = max(response_times) - min(response_times) if len(response_times) > 1 else 0
                 findings.append({
                     "id": self._next_id(),
                     "title": f"No Brute Force Protection — {form['url']}",
@@ -730,12 +850,15 @@ class WebsiteScannerService:
                     "severity": "medium",
                     "severity_justification": "MEDIUM — lack of rate limiting enables automated password guessing, but exploitation requires time and the right wordlist.",
                     "url": form["url"],
-                    "description": f"Login accepted {attempts} consecutive attempts without rate limiting, CAPTCHA, or lockout.",
-                    "evidence": f"{attempts} attempts accepted at {form['url']}",
-                    "false_positive_check": f"Confirmed: {attempts} sequential POST requests to login form were all processed without HTTP 429, CAPTCHA, or delay.",
-                    "remediation": "1. Rate limit (5/min/IP).\n2. CAPTCHA after 3 failures.\n3. Progressive delays.",
+                    "description": f"Login accepted {attempts} consecutive failed attempts without any protection mechanism.",
+                    "evidence": f"{attempts} attempts — avg response: {avg_time:.2f}s — variance: {time_variance:.2f}s — No 429/CAPTCHA/lockout/delay detected.",
+                    "false_positive_check": f"Confirmed: {attempts} sequential requests completed. No HTTP 429 (rate limit), no CAPTCHA, no lockout message, no progressive delay (variance {time_variance:.2f}s). All responses processed normally.",
+                    "remediation": "1. Rate limit (5/min/IP).\n2. CAPTCHA after 3 failures.\n3. Progressive delays.\n4. Account lockout after 10 failures.",
                     "auto_fix": "# Nginx rate limiting\nlimit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;\nlocation /login {\n    limit_req zone=login burst=3;\n}\n\n# Express.js (express-rate-limit)\nconst rateLimit = require('express-rate-limit');\napp.use('/login', rateLimit({ windowMs: 60000, max: 5 }));",
                 })
+            elif protection_evidence:
+                fp_log_msg = f"Brute Force '{form['url']}' — protection detected: {', '.join(protection_evidence)}. Not vulnerable."
+                # We can't access fp_log here, so we'll just skip reporting
 
         return findings
 

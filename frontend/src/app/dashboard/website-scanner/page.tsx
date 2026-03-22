@@ -11,6 +11,7 @@ interface Finding {
     title: string;
     severity: "high" | "medium" | "low";
     classification?: "vulnerability" | "best_practice";
+    confidence_label?: string;
     severity_justification?: string;
     url: string;
     description: string;
@@ -404,6 +405,15 @@ export default function WebsiteScannerPage() {
                                                 <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${style.badge}`}>
                                                     {finding.severity}
                                                 </span>
+                                                {finding.confidence_label && (
+                                                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-semibold ${
+                                                        finding.confidence_label.includes('Confirmed') ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                                                        finding.confidence_label.includes('False Positive') ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                                                        'bg-sky-500/20 text-sky-400 border border-sky-500/30'
+                                                    }`}>
+                                                        {finding.confidence_label}
+                                                    </span>
+                                                )}
                                             </div>
 
                                             {/* Classification Banner */}
