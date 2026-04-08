@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 
@@ -43,6 +43,22 @@ interface ScanResult {
     }>;
     false_positives_filtered?: string[];
     error?: string;
+}
+
+interface HistoryItem {
+    id: string;
+    target: string;
+    summary: {
+        scan_id?: string;
+        high?: number;
+        medium?: number;
+        low?: number;
+        total?: number;
+        endpoints_found?: number;
+        duration?: number;
+        started_at?: string;
+    };
+    created_at: string;
 }
 
 // ─── Test options ────────────────────────────────────────────
@@ -96,6 +112,67 @@ export default function WebsiteScannerPage() {
     const [severityFilter, setSeverityFilter] = useState<"all" | "high" | "medium" | "low">("all");
     const reportRef = useRef<HTMLDivElement>(null);
 
+    // ─── History state ───────────────────────────────────────
+    const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
+
+    const fetchHistory = useCallback(async () => {
+        if (!token) return;
+        setHistoryLoading(true);
+        try {
+            const data = await api.get<HistoryItem[]>("/api/v1/website-scanner/history", token);
+            setHistory(data);
+        } catch {
+            // silently fail – history is a convenience feature
+        } finally {
+            setHistoryLoading(false);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
+
+    const loadHistoryScan = async (scanId: string) => {
+        if (!token) return;
+        setLoadingDetail(scanId);
+        try {
+            const detail = await api.get<{
+                id: string;
+                target: string;
+                summary: Record<string, unknown>;
+                findings: Finding[];
+                created_at: string;
+            }>(`/api/v1/website-scanner/history/${scanId}`, token);
+
+            const s = detail.summary || {} as Record<string, unknown>;
+            setResult({
+                scan_id: (s.scan_id as string) || detail.id,
+                target: detail.target,
+                started_at: (s.started_at as string) || detail.created_at,
+                duration: (s.duration as number) || 0,
+                high: (s.high as number) || 0,
+                medium: (s.medium as number) || 0,
+                low: (s.low as number) || 0,
+                total: (s.total as number) || 0,
+                endpoints_found: (s.endpoints_found as number) || 0,
+                findings: detail.findings || [],
+                headers: {},
+                endpoints: [],
+            });
+            setActiveTab("findings");
+            setSeverityFilter("all");
+            setTimeout(() => {
+                reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
+        } catch {
+            setError("Failed to load scan details.");
+        } finally {
+            setLoadingDetail(null);
+        }
+    };
+
     const toggleTest = (key: string) => {
         setSelectedTests((prev) =>
             prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key]
@@ -120,6 +197,8 @@ export default function WebsiteScannerPage() {
                 token || undefined
             );
             setResult(data);
+            // Refresh history list so the new scan shows up
+            fetchHistory();
             // Scroll to report
             setTimeout(() => {
                 reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -226,6 +305,108 @@ export default function WebsiteScannerPage() {
                         <strong className="text-yellow-400">Legal Notice:</strong> Only scan websites you own or have explicit written permission to test. Unauthorized scanning may be illegal. You are responsible for your actions.
                     </p>
                 </div>
+            </div>
+
+            {/* ── Scan History ────────────────────────────────────── */}
+            <div className="rounded-2xl border border-white/[0.08] bg-[#0f172a]/80 p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                            <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-bold text-slate-100">Scan History</h2>
+                            <p className="text-[11px] text-slate-500">{history.length} previous scans</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={fetchHistory}
+                        disabled={historyLoading}
+                        className="px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] text-xs text-slate-400 hover:bg-white/[0.08] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                        <svg className={`w-3.5 h-3.5 ${historyLoading ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                {historyLoading && history.length === 0 ? (
+                    <div className="flex items-center justify-center py-8">
+                        <svg className="w-5 h-5 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                    </div>
+                ) : history.length === 0 ? (
+                    <div className="text-center py-8">
+                        <svg className="w-8 h-8 text-slate-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <p className="text-xs text-slate-500">No scans yet. Run your first scan above!</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+                        {history.map((item) => {
+                            const s = item.summary || {};
+                            const isLoading = loadingDetail === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => loadHistoryScan(item.id)}
+                                    disabled={isLoading}
+                                    className="w-full text-left rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] hover:border-purple-500/20 p-4 transition-all group"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-purple-300 transition-colors">
+                                                {item.target}
+                                            </p>
+                                            <p className="text-[10px] text-slate-600 mt-1">
+                                                {new Date(item.created_at).toLocaleString()}
+                                                {s.duration != null && <span className="ml-2">• {s.duration}s</span>}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {(s.high ?? 0) > 0 && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
+                                                    {s.high} High
+                                                </span>
+                                            )}
+                                            {(s.medium ?? 0) > 0 && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500/15 text-orange-400 border border-orange-500/20">
+                                                    {s.medium} Med
+                                                </span>
+                                            )}
+                                            {(s.low ?? 0) > 0 && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/15 text-yellow-400 border border-yellow-500/20">
+                                                    {s.low} Low
+                                                </span>
+                                            )}
+                                            {(s.total ?? 0) === 0 && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400 border border-green-500/20">
+                                                    Clean
+                                                </span>
+                                            )}
+                                            {isLoading ? (
+                                                <svg className="w-4 h-4 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-4 h-4 text-slate-600 group-hover:text-purple-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* ── Error ─────────────────────────────────────────── */}

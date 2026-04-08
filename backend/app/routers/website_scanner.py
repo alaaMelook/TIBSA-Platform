@@ -4,11 +4,17 @@ Runs security tests against a target website.
 """
 import uuid
 import logging
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from supabase import Client
 
 from app.dependencies import get_supabase, get_current_user
-from app.models.website_scan import WebsiteScanRequest, WebsiteScanResponse
+from app.models.website_scan import (
+    WebsiteScanRequest,
+    WebsiteScanResponse,
+    WebsiteScanHistoryItem,
+    WebsiteScanDetail,
+)
 from app.services.website_scanner_service import WebsiteScannerService
 
 router = APIRouter()
@@ -76,3 +82,55 @@ async def scan_website(
         logger.warning("Failed to save website scan to DB: %s", exc)
 
     return result
+
+
+# ─── History Endpoints ────────────────────────────────────────
+
+
+@router.get("/history", response_model=List[WebsiteScanHistoryItem], summary="List past scans")
+async def list_scan_history(
+    current_user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase),
+):
+    """Return the current user's past website scans, newest first."""
+    auth_user = current_user["auth_user"]
+    try:
+        resp = (
+            supabase.table("website_scans")
+            .select("id, target, summary, created_at")
+            .eq("user_id", auth_user.id)
+            .order("created_at", desc=True)
+            .limit(50)
+            .execute()
+        )
+        return resp.data or []
+    except Exception as exc:
+        logger.error("Failed to fetch scan history: %s", exc)
+        raise HTTPException(status_code=500, detail="Could not load history.")
+
+
+@router.get("/history/{scan_id}", response_model=WebsiteScanDetail, summary="Get a past scan")
+async def get_scan_detail(
+    scan_id: str,
+    current_user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase),
+):
+    """Return full details for a single past scan."""
+    auth_user = current_user["auth_user"]
+    try:
+        resp = (
+            supabase.table("website_scans")
+            .select("id, target, summary, findings, created_at")
+            .eq("id", scan_id)
+            .eq("user_id", auth_user.id)
+            .single()
+            .execute()
+        )
+        if not resp.data:
+            raise HTTPException(status_code=404, detail="Scan not found.")
+        return resp.data
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Failed to fetch scan detail: %s", exc)
+        raise HTTPException(status_code=500, detail="Could not load scan.")

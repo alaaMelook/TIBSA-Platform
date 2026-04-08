@@ -44,3 +44,31 @@ class WebsiteScanResponse(BaseModel):
     findings: List[WebsiteScanFinding] = []
     headers: Dict[str, str] = {}
     endpoints: List[Dict[str, Any]] = []
+
+
+# ─── History ─────────────────────────────────────────────────
+
+class WebsiteScanSummary(BaseModel):
+    scan_id: Optional[str] = None
+    high: int = 0
+    medium: int = 0
+    low: int = 0
+    total: int = 0
+    endpoints_found: int = 0
+    duration: Optional[float] = None
+    started_at: Optional[str] = None
+
+
+class WebsiteScanHistoryItem(BaseModel):
+    id: str
+    target: str
+    summary: WebsiteScanSummary = WebsiteScanSummary()
+    created_at: str
+
+
+class WebsiteScanDetail(BaseModel):
+    id: str
+    target: str
+    summary: WebsiteScanSummary = WebsiteScanSummary()
+    findings: List[Dict[str, Any]] = []
+    created_at: str
