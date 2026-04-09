@@ -2,6 +2,11 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Card, Button, Input } from "@/components/ui";
+<<<<<<< HEAD
+=======
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
+>>>>>>> b4a826d (edit threat modeling)
 
 // ─────────────────────────────────────────────────────────────────────
 // Types
@@ -125,6 +130,7 @@ function getRiskLabel(score: number): string {
 // Threat generation engine
 // ─────────────────────────────────────────────────────────────────────
 
+<<<<<<< HEAD
 function generateThreats(f: FormState): AnalysisResult {
     const threats: ThreatItem[] = [];
     let score = 0;
@@ -290,6 +296,8 @@ function generateThreats(f: FormState): AnalysisResult {
     return { threats, riskScore: Math.min(score, 100) };
 }
 
+=======
+>>>>>>> b4a826d (edit threat modeling)
 // ─────────────────────────────────────────────────────────────────────
 // Reusable sub-components
 // ─────────────────────────────────────────────────────────────────────
@@ -377,10 +385,185 @@ function formatBytes(b: number): string {
 // Main Page Component
 // ─────────────────────────────────────────────────────────────────────
 
+<<<<<<< HEAD
 export default function ThreatModelingPage() {
     const [form, setForm]         = useState<FormState>(initialForm);
     const [result, setResult]     = useState<AnalysisResult | null>(null);
     const [saveMsg, setSaveMsg]   = useState("");
+=======
+// ─────────────────────────────────────────────────────────────────────
+// PDF generation (pure client-side, no external lib needed)
+// ─────────────────────────────────────────────────────────────────────
+
+function buildPdfHtml(form: FormState, result: AnalysisResult): string {
+    const riskColor: Record<string, string> = {
+        High: "#ef4444", Medium: "#f97316", Low: "#eab308", Critical: "#dc2626",
+    };
+    const label = getRiskLabel(result.riskScore);
+    const now = new Date().toLocaleString();
+    const stackTags = [...form.frameworks, ...form.languages, ...form.deployEnvs, ...form.deployTypes, ...form.databases, ...form.protocols];
+
+    const threatsHtml = result.threats.map(t => `
+        <div style="margin-bottom:16px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;border-left:4px solid ${riskColor[t.risk] || "#94a3b8"}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-weight:700;font-size:15px;color:#1e293b">${t.title}</span>
+                <span style="font-size:12px;font-weight:600;color:${riskColor[t.risk]};background:${riskColor[t.risk]}22;padding:2px 10px;border-radius:999px;border:1px solid ${riskColor[t.risk]}44">${t.risk}</span>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">${t.category}</div>
+            <p style="font-size:13px;color:#475569;margin:0 0 8px 0;line-height:1.6"><strong>Risk:</strong> ${t.description}</p>
+            <p style="font-size:13px;color:#0f766e;margin:0;line-height:1.6;background:#f0fdf4;padding:8px;border-radius:6px"><strong>✅ Mitigation:</strong> ${t.mitigation}</p>
+        </div>`).join("");
+
+    const tagsHtml = stackTags.length > 0
+        ? stackTags.map(t => `<span style="display:inline-block;padding:3px 10px;margin:3px;background:#eff6ff;color:#1d4ed8;border-radius:999px;font-size:12px;border:1px solid #bfdbfe">${t}</span>`).join("")
+        : "<span style='color:#94a3b8;font-size:13px'>None selected</span>";
+
+    const highCount   = result.threats.filter(t => t.risk === "High").length;
+    const medCount    = result.threats.filter(t => t.risk === "Medium").length;
+    const lowCount    = result.threats.filter(t => t.risk === "Low").length;
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Threat Report — ${form.projectName}</title>
+    <style>
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:32px;color:#1e293b;background:#fff}
+        @media print{body{padding:0}}
+        h1{margin:0;font-size:26px} h2{font-size:17px;margin:24px 0 12px;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:6px}
+        .badge{display:inline-block;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px}
+        table{width:100%;border-collapse:collapse;font-size:13px} td{padding:6px 10px;border-bottom:1px solid #f1f5f9} td:first-child{color:#64748b;width:160px}
+    </style></head><body>
+    <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);color:white;padding:28px 32px;border-radius:12px;margin-bottom:28px">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;opacity:0.7;margin-bottom:6px">TIBSA · Security Analysis · TMaaS</div>
+        <h1>Threat Report — ${form.projectName}</h1>
+        <div style="opacity:0.8;margin-top:6px;font-size:14px">${form.appType} Application · Generated ${now}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px">
+        <div style="padding:16px;background:#fef2f2;border-radius:10px;text-align:center;border:1px solid #fecaca">
+            <div style="font-size:28px;font-weight:800;color:#ef4444">${highCount}</div>
+            <div style="font-size:12px;color:#b91c1c;font-weight:600">HIGH RISK</div>
+        </div>
+        <div style="padding:16px;background:#fff7ed;border-radius:10px;text-align:center;border:1px solid #fed7aa">
+            <div style="font-size:28px;font-weight:800;color:#f97316">${medCount}</div>
+            <div style="font-size:12px;color:#c2410c;font-weight:600">MEDIUM RISK</div>
+        </div>
+        <div style="padding:16px;background:#fefce8;border-radius:10px;text-align:center;border:1px solid #fde68a">
+            <div style="font-size:28px;font-weight:800;color:#eab308">${lowCount}</div>
+            <div style="font-size:12px;color:#a16207;font-weight:600">LOW RISK</div>
+        </div>
+        <div style="padding:16px;background:#f0f9ff;border-radius:10px;text-align:center;border:1px solid #bae6fd">
+            <div style="font-size:28px;font-weight:800;color:${riskColor[label] || "#0ea5e9"}">${result.riskScore}</div>
+            <div style="font-size:12px;color:#0369a1;font-weight:600">RISK SCORE</div>
+        </div>
+    </div>
+
+    <h2>Project Information</h2>
+    <table>
+        <tr><td>Project Name</td><td><strong>${form.projectName}</strong></td></tr>
+        <tr><td>App Type</td><td>${form.appType}</td></tr>
+        <tr><td>Risk Label</td><td><span class="badge" style="background:${riskColor[label]}22;color:${riskColor[label]};border:1px solid ${riskColor[label]}44">${label}</span></td></tr>
+        <tr><td>Uses Auth</td><td>${form.usesAuth ? "✅ Yes" : "❌ No"}</td></tr>
+        <tr><td>Uses Database</td><td>${form.usesDatabase ? "✅ Yes" : "❌ No"}</td></tr>
+        <tr><td>Admin Panel</td><td>${form.hasAdminPanel ? "✅ Yes" : "❌ No"}</td></tr>
+        <tr><td>External APIs</td><td>${form.usesExternalAPIs ? "✅ Yes" : "❌ No"}</td></tr>
+        <tr><td>Sensitive Data</td><td>${form.storesSensitiveData ? "✅ Yes" : "❌ No"}</td></tr>
+    </table>
+
+    <h2>Technology Stack</h2>
+    <div style="margin-bottom:8px">${tagsHtml}</div>
+
+    <h2>Identified Threats (${result.threats.length})</h2>
+    ${threatsHtml}
+
+    <div style="margin-top:32px;padding:14px;background:#f8fafc;border-radius:8px;font-size:12px;color:#94a3b8;text-align:center;border:1px solid #e2e8f0">
+        Generated by TIBSA Platform · Threat Modeling as a Service · ${now}
+    </div>
+    </body></html>`;
+}
+
+function downloadAsPDF(form: FormState, result: AnalysisResult) {
+    const html = buildPdfHtml(form, result);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, "_blank");
+    if (win) {
+        win.addEventListener("load", () => {
+            setTimeout(() => {
+                win.print();
+                URL.revokeObjectURL(url);
+            }, 400);
+        });
+    }
+}
+
+function downloadAsJSON(form: FormState, result: AnalysisResult) {
+    const now = new Date().toISOString();
+    const jsonData = {
+        metadata: {
+            generated_at: now,
+            generator: "TIBSA Platform - Threat Modeling as a Service",
+            version: "1.0",
+            framework: "STRIDE"
+        },
+        project: {
+            name: form.projectName,
+            app_type: form.appType,
+            uses_auth: form.usesAuth,
+            uses_database: form.usesDatabase,
+            has_admin_panel: form.hasAdminPanel,
+            uses_external_apis: form.usesExternalAPIs,
+            stores_sensitive_data: form.storesSensitiveData
+        },
+        technology_stack: {
+            frameworks: form.frameworks,
+            languages: form.languages,
+            databases: form.databases,
+            protocols: form.protocols
+        },
+        deployment: {
+            environments: form.deployEnvs,
+            types: form.deployTypes
+        },
+        uploaded_files: form.uploads.map(u => ({
+            name: u.name,
+            path: u.path,
+            size: u.size,
+            kind: u.kind
+        })),
+        analysis: {
+            risk_score: result.riskScore,
+            risk_label: getRiskLabel(result.riskScore),
+            total_threats: result.threats.length,
+            threats: result.threats.map(t => ({
+                id: t.id,
+                title: t.title,
+                risk: t.risk,
+                category: t.category,
+                description: t.description,
+                mitigation: t.mitigation
+            }))
+        }
+    };
+
+    const jsonString = JSON.stringify(jsonData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `threat-model-${form.projectName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+export default function ThreatModelingPage() {
+    const { token } = useAuth();
+    const [form, setForm]         = useState<FormState>(initialForm);
+    const [result, setResult]     = useState<AnalysisResult | null>(null);
+    const [saveMsg, setSaveMsg]   = useState("");
+    const [saveErr, setSaveErr]   = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+>>>>>>> b4a826d (edit threat modeling)
     const [nameError, setNameErr] = useState("");
     const [dragOver, setDragOver] = useState(false);
 
@@ -425,6 +608,7 @@ export default function ThreatModelingPage() {
     };
 
     // Form submit
+<<<<<<< HEAD
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.projectName.trim()) { setNameErr("Project name is required."); return; }
@@ -436,6 +620,121 @@ export default function ThreatModelingPage() {
 
     const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setNameErr(""); };
     const handleSave  = () => { setSaveMsg("✅ Report saved successfully!"); setTimeout(() => setSaveMsg(""), 3500); };
+=======
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!form.projectName.trim()) { setNameErr("Project name is required."); return; }
+        setNameErr("");
+
+        // Set loading state
+        const loadingResult: AnalysisResult = {
+            threats: [],
+            riskScore: 0
+        };
+        setResult(loadingResult);
+
+        try {
+            // Transform form data to match backend API
+            const requestData = {
+                project_name: form.projectName,
+                app_type: form.appType,
+                uses_auth: form.usesAuth,
+                uses_database: form.usesDatabase,
+                has_admin_panel: form.hasAdminPanel,
+                uses_external_apis: form.usesExternalAPIs,
+                stores_sensitive_data: form.storesSensitiveData,
+                frameworks: form.frameworks,
+                languages: form.languages,
+                deploy_envs: form.deployEnvs,
+                deploy_types: form.deployTypes,
+                databases: form.databases,
+                protocols: form.protocols,
+            };
+
+            // Call STRIDE analysis endpoint
+            const response = await api.post("/api/v1/threat-modeling/analyze/stride", requestData);
+
+            // Transform backend response to frontend format
+            const analysisResult: AnalysisResult = {
+                threats: response.threats.map((threat: any) => ({
+                    id: threat.title.toLowerCase().replace(/\s+/g, "-"),
+                    title: threat.title,
+                    risk: threat.risk,
+                    category: threat.category,
+                    description: threat.description,
+                    mitigation: threat.mitigation,
+                })),
+                riskScore: response.risk_score,
+            };
+
+            setResult(analysisResult);
+        } catch (error) {
+            console.error("STRIDE analysis failed:", error);
+            // Fallback to a basic error result
+            const errorResult: AnalysisResult = {
+                threats: [{
+                    id: "analysis-error",
+                    title: "Analysis Error",
+                    risk: "High",
+                    category: "System Error",
+                    description: "Failed to perform STRIDE threat analysis. Please check your connection and try again.",
+                    mitigation: "Ensure the backend service is running and accessible.",
+                }],
+                riskScore: 50,
+            };
+            setResult(errorResult);
+        }
+
+        setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+    };
+
+    const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setSaveErr(""); setNameErr(""); };
+
+    const handleSave = async () => {
+        if (!result || !token) return;
+        setIsSaving(true);
+        setSaveMsg("");
+        setSaveErr("");
+        try {
+            await api.post(
+                "/api/v1/threat-modeling/analyses",
+                {
+                    project_name:          form.projectName,
+                    app_type:              form.appType,
+                    uses_auth:             form.usesAuth,
+                    uses_database:         form.usesDatabase,
+                    has_admin_panel:       form.hasAdminPanel,
+                    uses_external_apis:    form.usesExternalAPIs,
+                    stores_sensitive_data: form.storesSensitiveData,
+                    frameworks:            form.frameworks,
+                    languages:             form.languages,
+                    deploy_envs:           form.deployEnvs,
+                    deploy_types:          form.deployTypes,
+                    databases:             form.databases,
+                    protocols:             form.protocols,
+                },
+                token,
+            );
+            setSaveMsg("✅ Report saved! You can view it in the Reports page.");
+            setTimeout(() => setSaveMsg(""), 5000);
+        } catch (err) {
+            setSaveErr(`❌ Failed to save: ${err instanceof Error ? err.message : "Unknown error"}`);
+            setTimeout(() => setSaveErr(""), 5000);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDownloadPDF = () => {
+        if (!result) return;
+        downloadAsPDF(form, result);
+    };
+
+    const handleDownloadJSON = () => {
+        if (!result) return;
+        downloadAsJSON(form, result);
+    };
+>>>>>>> b4a826d (edit threat modeling)
 
     const riskLabel  = result ? getRiskLabel(result.riskScore) : "";
     const barColor   = SCORE_COLOR[riskLabel]       ?? "bg-slate-600";
@@ -745,17 +1044,35 @@ export default function ThreatModelingPage() {
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2 flex-shrink-0">
+<<<<<<< HEAD
                             <Button variant="secondary" size="sm" onClick={() => window.print()}>
+=======
+                            <Button variant="secondary" size="sm" onClick={handleDownloadPDF}>
+>>>>>>> b4a826d (edit threat modeling)
                                 <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 Download PDF
                             </Button>
+<<<<<<< HEAD
                             <Button variant="secondary" size="sm" onClick={handleSave}>
                                 <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                 </svg>
                                 Save Report
+=======
+                            <Button variant="secondary" size="sm" onClick={handleDownloadJSON}>
+                                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Download JSON
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={handleSave} disabled={isSaving}>
+                                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                                {isSaving ? "Saving…" : "Save Report"}
+>>>>>>> b4a826d (edit threat modeling)
                             </Button>
                             <Button variant="ghost" size="sm" onClick={handleReset}>
                                 <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -772,6 +1089,14 @@ export default function ThreatModelingPage() {
                             {saveMsg}
                         </div>
                     )}
+<<<<<<< HEAD
+=======
+                    {saveErr && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg print:hidden">
+                            {saveErr}
+                        </div>
+                    )}
+>>>>>>> b4a826d (edit threat modeling)
 
                     {/* ── Stack summary tags ── */}
                     {stackTags.length > 0 && (
