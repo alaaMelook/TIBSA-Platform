@@ -14,6 +14,7 @@ Tests:
   - Brute Force (login detection, weak creds, rate limit)
   - Header Injection (CRLF, Host header)
 """
+import asyncio
 import logging
 import time
 import re
@@ -160,13 +161,14 @@ class WebsiteScannerService:
     """Production-grade vulnerability scanner with accuracy improvements."""
 
     def __init__(self):
-        self.timeout = httpx.Timeout(15.0, connect=10.0)
+        self.timeout = httpx.Timeout(20.0, connect=10.0)
         self.finding_counter = 0
         self._404_body_hash: Optional[str] = None
         self._404_length: int = 0
         self._homepage_body_hash: Optional[str] = None
         self._homepage_length: int = 0
         self._homepage_text_sample: str = ""
+        self._limits = httpx.Limits(max_connections=10, max_keepalive_connections=5)
 
     def _next_id(self) -> str:
         self.finding_counter += 1
@@ -188,6 +190,7 @@ class WebsiteScannerService:
 
         async with httpx.AsyncClient(
             timeout=self.timeout, follow_redirects=True, verify=False,
+            limits=self._limits,
             headers={"User-Agent": "TIBSA-Scanner/3.0 (Security Audit)"},
         ) as client:
             try:
@@ -313,15 +316,24 @@ class WebsiteScannerService:
             return 1.0  # Identical
         # Length-based similarity
         size_ratio = min(len(resp.content), self._homepage_length) / max(self._homepage_length, 1)
-        # Text overlap (sample first 2000 chars)
+        # Text overlap — strip dynamic content (timestamps, nonces, etc)
         homepage_sample = getattr(self, '_homepage_text_sample', '')
-        resp_sample = resp.text[:2000].lower()
+        resp_sample = self._strip_dynamic_content(resp.text[:2000].lower())
         if homepage_sample and resp_sample:
             common = sum(1 for a, b in zip(homepage_sample, resp_sample) if a == b)
             text_similarity = common / max(len(homepage_sample), len(resp_sample), 1)
         else:
             text_similarity = 0.0
         return (size_ratio * 0.4) + (text_similarity * 0.6)
+
+    @staticmethod
+    def _strip_dynamic_content(text: str) -> str:
+        """Remove dynamic parts of HTML (nonces, timestamps, hashes) for stable comparison."""
+        text = re.sub(r'nonce="[^"]*"', 'nonce=""', text)
+        text = re.sub(r'csrf[_-]?token["\']?\s*[:=]\s*["\'][^"\']*["\']', 'csrf_token=""', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b\d{10,13}\b', '0', text)  # Unix timestamps
+        text = re.sub(r'[a-f0-9]{32,64}', 'HASH', text)  # Hashes
+        return text
 
     @staticmethod
     def _assign_confidence_label(finding: Dict[str, Any]) -> Dict[str, Any]:
@@ -448,61 +460,73 @@ class WebsiteScannerService:
         fp_log = []
         base_url = f"{urlparse(target).scheme}://{urlparse(target).netloc}"
 
-        # Store homepage text sample for similarity
-        self._homepage_text_sample = main_response.text[:2000].lower()
+        # Store homepage text sample for similarity (strip dynamic content)
+        self._homepage_text_sample = self._strip_dynamic_content(
+            main_response.text[:2000].lower()
+        )
 
         for path in COMMON_DIRECTORIES:
-            try:
-                full_url = base_url + path
-                resp = await client.get(full_url)
+            full_url = base_url + path
+            resp = None
 
-                # -- Step 1: Status code filtering --
-                if resp.status_code != 200:
-                    if resp.status_code == 403:
-                        endpoints.append({"type": "directory", "url": full_url, "status": 403, "text": f"{path} (Forbidden)"})
+            # Retry once on transient failure
+            for attempt in range(2):
+                try:
+                    resp = await client.get(full_url)
+                    break  # Success — don't retry
+                except Exception:
+                    if attempt == 0:
+                        await asyncio.sleep(0.5)
                     continue
 
-                # -- Step 2: Custom 404 detection --
-                if not self._is_real_page(resp):
-                    fp_log.append(f"Directory '{path}' — filtered as custom 404 (body hash matched known 404 page)")
-                    continue
+            if resp is None:
+                continue  # Both attempts failed — skip this path
 
-                # -- Step 3: Response similarity to homepage (NEW) --
-                similarity = self._response_similarity(resp)
-                if similarity > 0.70:
-                    fp_log.append(f"Directory '{path}' — filtered: {similarity:.0%} similar to homepage (likely catch-all/redirect)")
-                    continue
-
-                # -- Step 4: Content validation (file-type specific) --
-                if not self._validate_directory_content(path, resp):
-                    fp_log.append(f"Directory '{path}' — filtered: content does not match expected format for this file type")
-                    continue
-
-                # -- Step 5: Severity classification --
-                if any(p in path for p in [".env", ".git", ".htpasswd", "phpinfo", "debug", "console"]):
-                    severity, sev_j = "high", "HIGH — file may contain credentials, API keys, or debug information directly exploitable by attackers."
-                elif any(p in path for p in ["admin", "phpmyadmin", "adminer", "backup", "database", "config", "log"]):
-                    severity, sev_j = "medium", "MEDIUM — administrative interfaces and config paths can assist attackers in enumeration and privilege escalation."
-                else:
-                    severity, sev_j = "low", "LOW — path reveals site structure information useful for reconnaissance but not directly exploitable."
-
-                classification = "vulnerability" if severity == "high" else "best_practice"
-                findings.append({
-                    "id": self._next_id(),
-                    "title": f"Exposed Path — {path}",
-                    "classification": classification,
-                    "severity": severity,
-                    "severity_justification": sev_j,
-                    "url": full_url,
-                    "description": f"Sensitive path '{path}' is publicly accessible.",
-                    "evidence": f"HTTP {resp.status_code} — {len(resp.content)} bytes — Type: {resp.headers.get('content-type', 'N/A')} — Similarity to homepage: {similarity:.0%}",
-                    "false_positive_check": f"Confirmed: (1) Not a custom 404 (hash mismatch), (2) Only {similarity:.0%} similar to homepage (<70% threshold), (3) Content matches expected format for '{path}'.",
-                    "remediation": f"Restrict access to '{path}' or remove from production.",
-                    "auto_fix": f"# Nginx — block path\nlocation {path} {{\n    deny all;\n    return 404;\n}}\n\n# Apache (.htaccess)\n<Files \"{path.split('/')[-1]}\">\n    Require all denied\n</Files>",
-                })
-                endpoints.append({"type": "directory", "url": full_url, "status": resp.status_code, "text": path})
-            except Exception:
+            # -- Step 1: Status code filtering --
+            if resp.status_code != 200:
+                if resp.status_code == 403:
+                    endpoints.append({"type": "directory", "url": full_url, "status": 403, "text": f"{path} (Forbidden)"})
                 continue
+
+            # -- Step 2: Custom 404 detection --
+            if not self._is_real_page(resp):
+                fp_log.append(f"Directory '{path}' — filtered as custom 404 (body hash matched known 404 page)")
+                continue
+
+            # -- Step 3: Response similarity to homepage --
+            similarity = self._response_similarity(resp)
+            if similarity > 0.70:
+                fp_log.append(f"Directory '{path}' — filtered: {similarity:.0%} similar to homepage (likely catch-all/redirect)")
+                continue
+
+            # -- Step 4: Content validation (file-type specific) --
+            if not self._validate_directory_content(path, resp):
+                fp_log.append(f"Directory '{path}' — filtered: content does not match expected format for this file type")
+                continue
+
+            # -- Step 5: Severity classification --
+            if any(p in path for p in [".env", ".git", ".htpasswd", "phpinfo", "debug", "console"]):
+                severity, sev_j = "high", "HIGH — file may contain credentials, API keys, or debug information directly exploitable by attackers."
+            elif any(p in path for p in ["admin", "phpmyadmin", "adminer", "backup", "database", "config", "log"]):
+                severity, sev_j = "medium", "MEDIUM — administrative interfaces and config paths can assist attackers in enumeration and privilege escalation."
+            else:
+                severity, sev_j = "low", "LOW — path reveals site structure information useful for reconnaissance but not directly exploitable."
+
+            classification = "vulnerability" if severity == "high" else "best_practice"
+            findings.append({
+                "id": self._next_id(),
+                "title": f"Exposed Path — {path}",
+                "classification": classification,
+                "severity": severity,
+                "severity_justification": sev_j,
+                "url": full_url,
+                "description": f"Sensitive path '{path}' is publicly accessible.",
+                "evidence": f"HTTP {resp.status_code} — {len(resp.content)} bytes — Type: {resp.headers.get('content-type', 'N/A')} — Similarity to homepage: {similarity:.0%}",
+                "false_positive_check": f"Confirmed: (1) Not a custom 404 (hash mismatch), (2) Only {similarity:.0%} similar to homepage (<70% threshold), (3) Content matches expected format for '{path}'.",
+                "remediation": f"Restrict access to '{path}' or remove from production.",
+                "auto_fix": f"# Nginx — block path\nlocation {path} {{\n    deny all;\n    return 404;\n}}\n\n# Apache (.htaccess)\n<Files \"{path.split('/')[-1]}\">\n    Require all denied\n</Files>",
+            })
+            endpoints.append({"type": "directory", "url": full_url, "status": resp.status_code, "text": path})
 
         return findings, endpoints, fp_log
 
@@ -951,14 +975,18 @@ class WebsiteScannerService:
         return forms
 
     async def _send_payload(self, client: httpx.AsyncClient, point: Dict[str, Any], payload: str) -> Optional[httpx.Response]:
-        try:
-            if point["type"] == "query_param":
-                return await client.get(self._inject_query_param(point["url"], point["param"], payload))
-            elif point["type"] == "form_input":
-                data = {point["name"]: payload}
-                return await client.get(point["url"], params=data) if point["method"] == "GET" else await client.post(point["url"], data=data)
-        except Exception:
-            return None
+        for attempt in range(2):  # Retry once on failure
+            try:
+                if point["type"] == "query_param":
+                    return await client.get(self._inject_query_param(point["url"], point["param"], payload))
+                elif point["type"] == "form_input":
+                    data = {point["name"]: payload}
+                    return await client.get(point["url"], params=data) if point["method"] == "GET" else await client.post(point["url"], data=data)
+            except Exception:
+                if attempt == 0:
+                    await asyncio.sleep(0.3)
+                    continue
+                return None
         return None
 
     def _get_test_points(self, target: str, soup: BeautifulSoup) -> List[Dict[str, Any]]:

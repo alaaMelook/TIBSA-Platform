@@ -57,6 +57,7 @@ interface HistoryItem {
         endpoints_found?: number;
         duration?: number;
         started_at?: string;
+        error?: string;
     };
     created_at: string;
 }
@@ -386,9 +387,15 @@ export default function WebsiteScannerPage() {
                                                 </span>
                                             )}
                                             {(s.total ?? 0) === 0 && (
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400 border border-green-500/20">
-                                                    Clean
-                                                </span>
+                                                s.error ? (
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/20">
+                                                        Error
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/15 text-green-400 border border-green-500/20">
+                                                        Clean
+                                                    </span>
+                                                )
                                             )}
                                             {isLoading ? (
                                                 <svg className="w-4 h-4 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
