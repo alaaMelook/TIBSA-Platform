@@ -381,13 +381,16 @@ function downloadAsJSON(form: FormState, result: AnalysisResult) {
 }
 
 export default function ThreatModelingPage() {
-    const { token } = useAuth();
+    const { token, isLoading, isAuthenticated } = useAuth();
     const [form, setForm]         = useState<FormState>(initialForm);
     const [result, setResult]     = useState<AnalysisResult | null>(null);
     const [saveMsg, setSaveMsg]   = useState("");
     const [saveErr, setSaveErr]   = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [nameError, setNameErr] = useState("");
+
+    const canSubmit = !!token && !isLoading;
+    const canSave   = !!token && !isSaving;
     const [dragOver, setDragOver] = useState(false);
 
     const fileInputRef   = useRef<HTMLInputElement>(null);
@@ -436,6 +439,21 @@ export default function ThreatModelingPage() {
         if (!form.projectName.trim()) { setNameErr("Project name is required."); return; }
         setNameErr("");
 
+        if (!token) {
+            setResult({
+                threats: [{
+                    id: "auth-required",
+                    title: "Authentication Required",
+                    risk: "High",
+                    category: "Authorization",
+                    description: "Please sign in and reload the page before generating a threat model.",
+                    mitigation: "Log in and try again.",
+                }],
+                riskScore: 0,
+            });
+            return;
+        }
+
         // Set loading state
         const loadingResult: AnalysisResult = {
             threats: [],
@@ -462,7 +480,7 @@ export default function ThreatModelingPage() {
             };
 
             // Call STRIDE analysis endpoint
-            const response = await api.post("/api/v1/threat-modeling/analyze/stride", requestData);
+            const response = await api.post("/api/v1/threat-modeling/analyze/stride", requestData, token);
 
             // Transform backend response to frontend format
             const analysisResult: AnalysisResult = {
@@ -824,9 +842,20 @@ export default function ThreatModelingPage() {
                         </div>
                     </Card>
 
+                    {!isAuthenticated && !isLoading && (
+                        <div className="rounded-lg border border-yellow-400 bg-yellow-500/10 text-yellow-800 px-4 py-3 mb-4">
+                            You must be signed in to generate and save threat models.
+                        </div>
+                    )}
+                    {isLoading && (
+                        <div className="rounded-lg border border-slate-400 bg-slate-500/10 text-slate-200 px-4 py-3 mb-4">
+                            Checking authentication…
+                        </div>
+                    )}
+
                     {/* ── Submit ── */}
                     <div className="flex justify-end pt-1">
-                        <Button type="submit" size="lg">
+                        <Button type="submit" size="lg" disabled={!canSubmit}>
                             <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
@@ -865,7 +894,7 @@ export default function ThreatModelingPage() {
                                 </svg>
                                 Download JSON
                             </Button>
-                            <Button variant="secondary" size="sm" onClick={handleSave} disabled={isSaving}>
+                            <Button variant="secondary" size="sm" onClick={handleSave} disabled={!canSave}>
                                 <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                 </svg>
