@@ -54,6 +54,8 @@ interface ThreatItem {
     category:    string;
     description: string;
     mitigation:  string;
+    priority?:   number;
+    stride_category?: string;
 }
 
 interface AnalysisResult {
@@ -454,9 +456,16 @@ export default function ThreatModelingPage() {
             return;
         }
 
-        // Set loading state
+        // Set loading state with analysis info
         const loadingResult: AnalysisResult = {
-            threats: [],
+            threats: [{
+                id: "analysis-loading",
+                title: "Analyzing your system…",
+                risk: "Low",
+                category: "Analysis",
+                description: `Scanning threat landscape based on your inputs: ${form.appType} application using ${form.frameworks.length > 0 ? form.frameworks.join(", ") : "selected frameworks"} with ${form.databases.length > 0 ? form.databases.join(", ") : "selected databases"}. This analysis evaluates all STRIDE threat categories.`,
+                mitigation: "Please wait while the threat modeling engine generates detailed vulnerability assessments...",
+            }],
             riskScore: 0
         };
         setResult(loadingResult);
@@ -480,17 +489,31 @@ export default function ThreatModelingPage() {
             };
 
             // Call STRIDE analysis endpoint
-            const response = await api.post("/api/v1/threat-modeling/analyze/stride", requestData, token);
+            const response = await api.post<{
+                threats: Array<{
+                    id?: string;
+                    title: string;
+                    risk: string;
+                    category: string;
+                    description: string;
+                    mitigation: string;
+                    priority_score?: number;
+                    stride_category?: string;
+                }>;
+                risk_score: number;
+            }>("/api/v1/threat-modeling/analyze/stride", requestData, token);
 
             // Transform backend response to frontend format
             const analysisResult: AnalysisResult = {
-                threats: response.threats.map((threat: any) => ({
-                    id: threat.title.toLowerCase().replace(/\s+/g, "-"),
+                threats: response.threats.map((threat) => ({
+                    id: threat.id || threat.title.toLowerCase().replace(/\s+/g, "-"),
                     title: threat.title,
-                    risk: threat.risk,
+                    risk: threat.risk as RiskLevel,
                     category: threat.category,
                     description: threat.description,
                     mitigation: threat.mitigation,
+                    priority: threat.priority_score,
+                    stride_category: threat.stride_category,
                 })),
                 riskScore: response.risk_score,
             };
@@ -1017,12 +1040,19 @@ export default function ThreatModelingPage() {
                                                 <span className="text-xs text-slate-500">{threat.category}</span>
                                             </div>
                                         </div>
-                                        <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
-                                            {threat.risk} Risk
-                                        </span>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {threat.stride_category && (
+                                                <span className="text-xs font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                    {threat.stride_category}
+                                                </span>
+                                            )}
+                                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
+                                                {threat.risk} Risk
+                                            </span>
+                                        </div>
                                     </div>
                                     {/* Threat body */}
-                                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="px-5 py-4 space-y-4">
                                         <div>
                                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                                                 Description
@@ -1031,7 +1061,7 @@ export default function ThreatModelingPage() {
                                                 {threat.description}
                                             </p>
                                         </div>
-                                        <div className="md:border-l md:border-white/[0.06] md:pl-4">
+                                        <div className="border-t border-white/[0.06] pt-4">
                                             <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
                                                 ✓ Mitigation
                                             </p>
@@ -1039,6 +1069,18 @@ export default function ThreatModelingPage() {
                                                 {threat.mitigation}
                                             </p>
                                         </div>
+                                        {threat.priority && (
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="font-semibold text-slate-500">Priority Score:</span>
+                                                <div className="flex-1 bg-white/[0.06] rounded-full h-2">
+                                                    <div
+                                                        className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
+                                                        style={{ width: `${Math.min(threat.priority, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-slate-400">{threat.priority}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

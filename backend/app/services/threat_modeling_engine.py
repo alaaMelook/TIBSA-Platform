@@ -381,6 +381,44 @@ class EnhancedThreatModelingEngine:
 _engine = EnhancedThreatModelingEngine()
 
 
+# ─── Helper functions ────────────────────────────────────────────────
+
+def _make_id(title: str) -> str:
+    """Create a URL-safe ID from a title."""
+    return title.lower().replace(" ", "-").replace("(", "").replace(")", "").replace("/", "").replace(".", "")
+
+
+def _risk_label(score: int) -> str:
+    """Convert risk score to label."""
+    if score >= 80:
+        return "Critical"
+    if score >= 60:
+        return "High"
+    if score >= 35:
+        return "Medium"
+    return "Low"
+
+
+def _map_threat_to_stride(category: str) -> Optional[STRIDECategory]:
+    """Map threat category to STRIDE framework."""
+    category_lower = category.lower()
+    
+    if "auth" in category_lower or "spoof" in category_lower:
+        return STRIDECategory.SPOOFING
+    elif "tampering" in category_lower or "injection" in category_lower or "integrity" in category_lower:
+        return STRIDECategory.TAMPERING
+    elif "audit" in category_lower or "repudiation" in category_lower:
+        return STRIDECategory.REPUDIATION
+    elif "disclosure" in category_lower or "data security" in category_lower or "exposure" in category_lower:
+        return STRIDECategory.INFORMATION_DISCLOSURE
+    elif "denial" in category_lower or "dos" in category_lower or "availability" in category_lower:
+        return STRIDECategory.DENIAL_OF_SERVICE
+    elif "privilege" in category_lower or "escalation" in category_lower or "authorization" in category_lower:
+        return STRIDECategory.ELEVATION_OF_PRIVILEGE
+    
+    return None
+
+
 def analyze(req: ThreatModelCreateRequest) -> ThreatModelAnalyzeResponse:
     """
     Backward-compatible analyze function using the enhanced engine.
@@ -395,26 +433,37 @@ def analyze_stride(
 ) -> ThreatModelAnalyzeResponse:
     """
     Stateless STRIDE-based threat modeling analysis.
+    Uses user input data (frameworks, databases, protocols, etc.) to generate relevant threats.
     """
-    normalized_architecture = _engine.normalized_schema.normalize_architecture(req.architecture_diagram)
-    threats = _engine.stride_engine.generate_threats(
-        normalized_architecture,
-        req.system_metadata or {}
-    )
+    # Use the rule-based threat generation with user's actual input
+    threats, raw_score = _build_threats(req)
+    
+    # Cap score at 100
+    capped_score = min(raw_score, 100)
+    
+    # Enrich threats with additional metadata
+    enriched_threats = []
+    for threat in threats:
+        # Map threat category to STRIDE if not already mapped
+        if not threat.stride_category:
+            threat.stride_category = _map_threat_to_stride(threat.category)
+        enriched_threats.append(threat)
 
-    mitigations = _engine._generate_mitigations(threats)
+    # Generate mitigations based on threat severity
+    mitigations = _engine._generate_mitigations(enriched_threats)
+    
+    # Generate heatmap if requested
     heatmap_data = []
     if generate_heatmap:
-        heatmap_obj = _engine.heatmap_generator.generate_heatmap_data(threats)
+        heatmap_obj = _engine.heatmap_generator.generate_heatmap_data(enriched_threats)
         heatmap_data = [heatmap_obj]
 
-    score = _engine._calculate_risk_score_from_threats(threats)
     return ThreatModelAnalyzeResponse(
-        threats=threats,
+        threats=enriched_threats,
         mitigations=mitigations,
         heatmap_data=heatmap_data,
-        risk_score=score,
-        risk_label=_engine._risk_label(score),
+        risk_score=capped_score,
+        risk_label=_risk_label(capped_score),
     )
 
 
@@ -885,6 +934,143 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
                 "capability and sign firmware images. Apply secure boot."
             ),
             pts=18,
+        )
+
+    # ── Combined / Advanced threats ────────────────────────────────────
+
+    if req.uses_database and req.uses_external_apis:
+        add(
+            title="Database Poisoning via Third-Party Integration",
+            risk="High", category="Supply Chain",
+            description=(
+                "If external APIs are trusted to directly populate your database without validation, "
+                "a compromised third-party service could inject malicious data into your core database."
+            ),
+            mitigation=(
+                "Validate all data from external APIs before inserting into the database. Implement "
+                "schema validation, rate limiting, and anomaly detection for API responses."
+            ),
+            pts=16,
+        )
+
+    if req.stores_sensitive_data and req.uses_external_apis:
+        add(
+            title="Sensitive Data Leakage through Third-Party APIs",
+            risk="High", category="Data Security",
+            description=(
+                "When sending sensitive data to external APIs (e.g. for processing, analytics), "
+                "that data could be logged, cached, or misused if the third-party service is compromised."
+            ),
+            mitigation=(
+                "Minimize PII sent to third parties. Use data anonymization/pseudonymization. "
+                "Implement data retention policies and audit third-party data handling practices."
+            ),
+            pts=14,
+        )
+
+    if req.stores_sensitive_data and "Elasticsearch" in req.databases:
+        add(
+            title="Elasticsearch PII Exposure",
+            risk="High", category="Data Security",
+            description=(
+                "Elasticsearch is commonly misconfigured and exposed to the internet, and it does not "
+                "encrypt indexed data by default, making PII easily searchable by attackers."
+            ),
+            mitigation=(
+                "Never expose Elasticsearch to the internet. Bind to 127.0.0.1. Enable X-Pack encryption "
+                "and authentication. Use VPC/security groups and regularly audit indices for sensitive data."
+            ),
+            pts=17,
+        )
+
+    if req.app_type == "API" and req.uses_auth:
+        add(
+            title="API Token Theft and Replay Attacks",
+            risk="High", category="API Security",
+            description=(
+                "API tokens transmitted over HTTP or stored in browser localStorage are vulnerable to theft "
+                "and replay. Attackers can reuse stolen tokens until expiration."
+            ),
+            mitigation=(
+                "Always use HTTPS. Implement short token expiry (15-30 min) with refresh token rotation. "
+                "Use opaque tokens and store them securely (httpOnly cookies). Add token binding."
+            ),
+            pts=15,
+        )
+
+    if req.has_admin_panel and not req.uses_auth:
+        add(
+            title="Unrestricted Admin Panel Access",
+            risk="Critical", category="Authorization",
+            description=(
+                "An admin panel without authentication is a critical vulnerability that allows any attacker "
+                "to gain full administrative control over the application and its data."
+            ),
+            mitigation=(
+                "Implement strong authentication on ALL admin routes. Separate admin route handling from "
+                "public routes. Implement IP whitelisting and require MFA for admin accounts."
+            ),
+            pts=25,
+        )
+
+    if "MongoDB" in req.databases and req.uses_external_apis:
+        add(
+            title="NoSQL Database Injection via External API",
+            risk="High", category="Injection",
+            description=(
+                "External APIs providing data that gets queried against MongoDB can inject MongoDB operators "
+                "if the data is not properly sanitized before constructing queries."
+            ),
+            mitigation=(
+                "Use mongoose schema validation and sanitize inputs before any database query. Never construct "
+                "MongoDB queries by string concatenation. Use parameterized queries."
+            ),
+            pts=14,
+        )
+
+    if len(req.deploy_envs) >= 2 and "Hybrid" in req.deploy_envs:
+        add(
+            title="Multi-Environment Configuration Drift",
+            risk="Medium", category="Infrastructure",
+            description=(
+                "Applications deployed across multiple environments (on-premise, cloud, hybrid) often suffer "
+                "from configuration inconsistencies that create security gaps between environments."
+            ),
+            mitigation=(
+                "Use infrastructure-as-code for all environments. Implement automated compliance checking "
+                "and drift detection. Run the same security tests across all environments."
+            ),
+            pts=10,
+        )
+
+    if "GraphQL" in req.protocols and len(req.frameworks) > 0:
+        add(
+            title="GraphQL Query Complexity Attacks",
+            risk="Medium", category="API Security",
+            description=(
+                "GraphQL endpoints without proper validation can be exploited with deeply nested queries "
+                "or field aliasing to cause denial of service through excessive computation."
+            ),
+            mitigation=(
+                "Implement query depth and complexity limits. Use query whitelisting for production. "
+                "Monitor query execution time and add rate limiting per user/token."
+            ),
+            pts=10,
+        )
+
+    if "REST" in req.protocols and req.uses_external_apis:
+        add(
+            title="Server-Side Request Forgery (SSRF) via REST APIs",
+            risk="High", category="API Security",
+            description=(
+                "If your application fetches resources from URLs provided in user input or external APIs, "
+                "an attacker can trick it into making requests to internal systems or sensitive endpoints."
+            ),
+            mitigation=(
+                "Validate and whitelist all URLs before making requests. Disable access to private IP ranges. "
+                "Use DNS rebinding protection and implement request timeouts."
+            ),
+            pts=14,
         )
 
     return items, score
