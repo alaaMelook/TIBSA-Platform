@@ -28,6 +28,17 @@ interface ScanReport {
     created_at: string;
 }
 
+interface ThreatModelItem {
+    id: string;
+    project_name: string;
+    app_type: string;
+    risk_score: number;
+    risk_label: string;
+    threat_count: number;
+    mitigation_count?: number;
+    created_at: string;
+}
+
 // ΓöÇΓöÇΓöÇ Download helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function downloadBlob(content: string, filename: string, mime: string) {
@@ -176,27 +187,51 @@ function buildJsonReport(scan: Scan, report: ScanReport): string {
 export default function ReportsPage() {
     const { token } = useAuth();
     const [scans, setScans] = useState<Scan[]>([]);
+    const [threatModels, setThreatModels] = useState<ThreatModelItem[]>([]);
     const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
+    const [selectedThreatModel, setSelectedThreatModel] = useState<ThreatModelItem | null>(null);
     const [selectedReport, setSelectedReport] = useState<ScanReport | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [reportLoading, setReportLoading] = useState(false);
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<"scans" | "threat-models">("scans");
 
-    const fetchScans = useCallback(async () => {
-        if (!token) return;
+    const fetchReports = useCallback(async () => {
+        if (!token) {
+            setIsLoading(false);
+            return;
+        }
         try {
-            const data = await api.get<Scan[]>("/api/v1/scans/", token);
-            setScans(data.filter((s) => s.status === "completed"));
+            // Fetch scans
+            let scansData: Scan[] = [];
+            try {
+                scansData = await api.get<Scan[]>("/api/v1/scans/", token);
+            } catch (err) {
+                console.warn("Failed to fetch scans:", err);
+            }
+
+            // Fetch threat models
+            let modelsData: ThreatModelItem[] = [];
+            try {
+                const result = await api.get<ThreatModelItem[]>("/api/v1/threat-modeling/analyses", token);
+                modelsData = result || [];
+                console.log("Threat models loaded:", modelsData);
+            } catch (err) {
+                console.warn("Failed to fetch threat models:", err);
+            }
+
+            setScans((scansData || []).filter((s) => s.status === "completed"));
+            setThreatModels(modelsData || []);
         } catch (err) {
-            console.error("Failed to fetch scans:", err);
+            console.error("Failed to fetch reports:", err);
         } finally {
             setIsLoading(false);
         }
     }, [token]);
 
     useEffect(() => {
-        fetchScans();
-    }, [fetchScans]);
+        fetchReports();
+    }, [fetchReports]);
 
     const viewReport = async (scanId: string) => {
         if (!token) return;
@@ -242,10 +277,39 @@ export default function ReportsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-white">Scan Reports</h1>
-                <p className="text-slate-400 mt-1">View detailed reports for completed scans</p>
+                <h1 className="text-2xl font-bold text-white">Reports & Analyses</h1>
+                <p className="text-slate-400 mt-1">View scan reports and threat modeling analyses</p>
+                <div className="flex gap-2 mt-4">
+                    <button
+                        onClick={() => {
+                            setActiveTab("scans");
+                            setSelectedReport(null);
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            activeTab === "scans"
+                                ? "bg-blue-600 text-white"
+                                : "bg-white/[0.04] text-slate-400 hover:text-blue-400 border border-white/[0.08]"
+                        }`}
+                    >
+                        Scan Reports ({scans.length})
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveTab("threat-models");
+                            setSelectedReport(null);
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            activeTab === "threat-models"
+                                ? "bg-blue-600 text-white"
+                                : "bg-white/[0.04] text-slate-400 hover:text-blue-400 border border-white/[0.08]"
+                        }`}
+                    >
+                        Threat Models ({threatModels.length})
+                    </button>
+                </div>
             </div>
 
+            {activeTab === "scans" ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Scan List */}
                 <div className="lg:col-span-1">
@@ -383,6 +447,100 @@ export default function ReportsPage() {
                     </Card>
                 </div>
             </div>
+            ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Threat Model List */}
+                <div className="lg:col-span-1">
+                    <Card title="Saved Threat Models">
+                        {isLoading ? (
+                            <div className="text-center py-8 text-slate-500 text-sm">Loading...</div>
+                        ) : threatModels.length === 0 ? (
+                            <div className="text-center py-8 text-slate-500 text-sm">
+                                No threat models saved yet.
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {threatModels.map((model) => (
+                                    <button
+                                        key={model.id}
+                                        onClick={() => setSelectedThreatModel(model)}
+                                        className={`w-full text-left p-3 rounded-lg transition-colors text-sm border ${
+                                            selectedThreatModel?.id === model.id
+                                                ? "bg-blue-500/10 border-blue-500/30"
+                                                : "bg-white/[0.04] hover:bg-blue-500/10 border-white/[0.06]"
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-medium text-slate-200">
+                                                {model.project_name}
+                                            </span>
+                                            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                                model.risk_label === "Critical" ? "bg-red-500/20 text-red-400" :
+                                                model.risk_label === "High" ? "bg-red-500/15 text-red-400" :
+                                                model.risk_label === "Medium" ? "bg-orange-500/15 text-orange-400" :
+                                                "bg-yellow-500/15 text-yellow-400"
+                                            }`}>
+                                                {model.risk_label}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            {model.app_type} • {model.threat_count} threat{model.threat_count !== 1 ? "s" : ""}
+                                        </p>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            {new Date(model.created_at).toLocaleDateString()}
+                                        </p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </Card>
+                </div>
+
+                {/* Threat Model Detail */}
+                <div className="lg:col-span-2">
+                    <Card title="Analysis Details">
+                        {!selectedThreatModel ? (
+                            <div className="text-center py-12 text-slate-500">
+                                <p className="text-lg">⚔️</p>
+                                <p className="mt-2">Select a threat model to view details</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">{selectedThreatModel.project_name}</h3>
+                                    <p className="text-sm text-slate-400 mt-1">{selectedThreatModel.app_type}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3">
+                                        <p className="text-xs text-slate-500">Risk Score</p>
+                                        <p className="text-2xl font-bold text-white mt-1">{selectedThreatModel.risk_score}</p>
+                                    </div>
+                                    <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3">
+                                        <p className="text-xs text-slate-500">Risk Level</p>
+                                        <p className={`text-lg font-semibold mt-1 ${
+                                            selectedThreatModel.risk_label === "Critical" ? "text-red-400" :
+                                            selectedThreatModel.risk_label === "High" ? "text-red-400" :
+                                            selectedThreatModel.risk_label === "Medium" ? "text-orange-400" :
+                                            "text-yellow-400"
+                                        }`}>{selectedThreatModel.risk_label}</p>
+                                    </div>
+                                </div>
+                                <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3">
+                                    <p className="text-xs text-slate-500">Threats Identified</p>
+                                    <p className="text-2xl font-bold text-white mt-1">{selectedThreatModel.threat_count}</p>
+                                </div>
+                                <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3">
+                                    <p className="text-xs text-slate-500">Created</p>
+                                    <p className="text-sm text-slate-300 mt-1">
+                                        {new Date(selectedThreatModel.created_at).toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            </div>
+            )}
         </div>
     );
 }

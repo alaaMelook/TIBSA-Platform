@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Card, Button, Input } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { ScanHistory } from "./scan-history";
 
 // ─────────────────────────────────────────────────────────────────────
 // Types
@@ -17,13 +18,6 @@ type DatabaseType   = "PostgreSQL" | "MySQL / MariaDB" | "MongoDB" | "Redis" | "
 type ProtocolType   = "HTTPS" | "HTTP (plain)" | "WebSocket / WSS" | "gRPC" | "GraphQL" | "REST" | "MQTT" | "AMQP" | "FTP / SFTP" | "SSH";
 type FrameworkType  = "React" | "Next.js" | "Vue" | "Angular" | "Svelte" | "Django" | "FastAPI" | "Flask" | "Express" | "NestJS" | "Spring Boot" | "Laravel" | "Rails" | "ASP.NET";
 type LanguageType   = "TypeScript" | "JavaScript" | "Python" | "Java" | "Go" | "PHP" | "Ruby" | "C#" | "Rust" | "C / C++";
-
-interface UploadedEntry {
-    name:  string;
-    size:  number;
-    kind:  "file" | "folder";
-    path:  string;
-}
 
 interface FormState {
     // Section 1 – Basic
@@ -43,8 +37,6 @@ interface FormState {
     // Section 4 – Data & Protocols
     databases:  DatabaseType[];
     protocols:  ProtocolType[];
-    // Section 5 – Files
-    uploads: UploadedEntry[];
 }
 
 interface ThreatItem {
@@ -90,7 +82,6 @@ const initialForm: FormState = {
     frameworks: [], languages: [],
     deployEnvs: [], deployTypes: [],
     databases: [], protocols: [],
-    uploads: [],
 };
 
 // ─────────────────────────────────────────────────────────────────────
@@ -349,12 +340,6 @@ function downloadAsJSON(form: FormState, result: AnalysisResult) {
             environments: form.deployEnvs,
             types: form.deployTypes
         },
-        uploaded_files: form.uploads.map(u => ({
-            name: u.name,
-            path: u.path,
-            size: u.size,
-            kind: u.kind
-        })),
         analysis: {
             risk_score: result.riskScore,
             risk_label: getRiskLabel(result.riskScore),
@@ -393,10 +378,6 @@ export default function ThreatModelingPage() {
 
     const canSubmit = !!token && !isLoading;
     const canSave   = !!token && !isSaving;
-    const [dragOver, setDragOver] = useState(false);
-
-    const fileInputRef   = useRef<HTMLInputElement>(null);
-    const folderInputRef = useRef<HTMLInputElement>(null);
 
     // Generic array toggle
     const toggleArr = useCallback(<T extends string>(key: keyof FormState, val: T) => {
@@ -409,31 +390,6 @@ export default function ThreatModelingPage() {
 
     const toggleBool = (key: keyof FormState) =>
         setForm(prev => ({ ...prev, [key]: !prev[key] }));
-
-    // File / folder ingestion
-    const ingestFiles = useCallback((fileList: FileList | null, kind: "file" | "folder" = "file") => {
-        if (!fileList || fileList.length === 0) return;
-        const entries: UploadedEntry[] = [];
-        for (let i = 0; i < fileList.length; i++) {
-            const f = fileList[i];
-            // When coming from a folder input, webkitRelativePath contains the folder structure
-            const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
-            entries.push({ name: f.name, size: f.size, kind, path });
-        }
-        setForm(prev => ({ ...prev, uploads: [...prev.uploads, ...entries] }));
-    }, []);
-
-    const removeUpload = (path: string) =>
-        setForm(prev => ({ ...prev, uploads: prev.uploads.filter(u => u.path !== path) }));
-
-    const clearUploads = () => setForm(prev => ({ ...prev, uploads: [] }));
-
-    // Drop zone
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragOver(false);
-        ingestFiles(e.dataTransfer.files, "file");
-    };
 
     // Form submit
     const handleSubmit = async (e: React.FormEvent) => {
@@ -747,125 +703,7 @@ export default function ThreatModelingPage() {
                         </div>
                     </Card>
 
-                    {/* ── Card 5: Project Upload ── */}
-                    <Card
-                        title="Upload Project Files or Folder"
-                        description="Upload individual files or your entire project folder for richer context. Files are analyzed locally — nothing is sent to a server."
-                    >
-                        <div className="mt-1 space-y-4">
-
-                            {/* Drop zone */}
-                            <div
-                                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                                onDragLeave={() => setDragOver(false)}
-                                onDrop={handleDrop}
-                                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
-                                    dragOver
-                                        ? "border-blue-500 bg-blue-500/10"
-                                        : "border-white/[0.12] hover:border-blue-400/50 hover:bg-blue-500/5"
-                                }`}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <svg className="w-8 h-8 mx-auto text-slate-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                                </svg>
-                                <p className="text-sm font-medium text-slate-300 mb-1">
-                                    Drag & drop files here, or click to browse
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    Supports any file type — config files, diagrams, source code, docs
-                                </p>
-
-                                {/* Hidden file input */}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    multiple
-                                    className="hidden"
-                                    onChange={e => { ingestFiles(e.target.files, "file"); e.target.value = ""; }}
-                                />
-                            </div>
-
-                            {/* Folder upload button (separate — uses webkitdirectory) */}
-                            <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => folderInputRef.current?.click()}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:border-blue-400/50 hover:text-blue-400 transition-colors"
-                                >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                    </svg>
-                                    Upload Entire Project Folder
-                                </button>
-                                <span className="text-xs text-slate-500">
-                                    Scans your folder structure for security context
-                                </span>
-                                {/* Hidden folder input — webkitdirectory is non-standard, so we cast */}
-                                <input
-                                    ref={folderInputRef}
-                                    type="file"
-                                    multiple
-                                    className="hidden"
-                                    {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)}
-                                    onChange={e => { ingestFiles(e.target.files, "folder"); e.target.value = ""; }}
-                                />
-                            </div>
-
-                            {/* Uploaded entries list */}
-                            {form.uploads.length > 0 && (
-                                <div className="rounded-lg border border-white/[0.08] overflow-hidden">
-                                    <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.04] border-b border-white/[0.06]">
-                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                                            {form.uploads.length} file{form.uploads.length !== 1 ? "s" : ""} staged
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={clearUploads}
-                                            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
-                                        >
-                                            Clear all
-                                        </button>
-                                    </div>
-                                    <ul className="divide-y divide-white/[0.06] max-h-64 overflow-y-auto">
-                                        {form.uploads.map(entry => (
-                                            <li key={entry.path} className="flex items-center gap-3 px-4 py-2.5">
-                                                {/* Icon */}
-                                                {entry.kind === "folder"
-                                                    ? <svg className="w-4 h-4 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                                      </svg>
-                                                    : <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                      </svg>
-                                                }
-                                                {/* Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-slate-200 truncate">{entry.name}</p>
-                                                    {entry.path !== entry.name && (
-                                                        <p className="text-xs text-slate-500 truncate font-mono">{entry.path}</p>
-                                                    )}
-                                                </div>
-                                                <span className="text-xs text-slate-500 flex-shrink-0">{formatBytes(entry.size)}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeUpload(entry.path)}
-                                                    className="text-slate-600 hover:text-red-400 transition-colors ml-1 flex-shrink-0"
-                                                    aria-label="Remove"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
-
-                    {!isAuthenticated && !isLoading && (
+                        {!isAuthenticated && !isLoading && (
                         <div className="rounded-lg border border-yellow-400 bg-yellow-500/10 text-yellow-800 px-4 py-3 mb-4">
                             You must be signed in to generate and save threat models.
                         </div>
@@ -901,7 +739,6 @@ export default function ThreatModelingPage() {
                             </h2>
                             <p className="text-sm text-slate-400 mt-0.5">
                                 {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
-                                {form.uploads.length > 0 && ` · ${form.uploads.length} file${form.uploads.length !== 1 ? "s" : ""} uploaded`}
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2 flex-shrink-0">
@@ -985,26 +822,6 @@ export default function ThreatModelingPage() {
                     </Card>
 
                     {/* ── Uploaded files in report ── */}
-                    {form.uploads.length > 0 && (
-                        <Card title="Project Files Analyzed" description={`${form.uploads.length} file${form.uploads.length !== 1 ? "s" : ""} included in this analysis`}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                                {form.uploads.map(u => (
-                                    <div key={u.path} className="flex items-center gap-2.5 text-sm text-slate-400">
-                                        {u.kind === "folder"
-                                            ? <svg className="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                              </svg>
-                                            : <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                              </svg>
-                                        }
-                                        <span className="truncate font-medium">{u.name}</span>
-                                        <span className="text-slate-500 text-xs flex-shrink-0">{formatBytes(u.size)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    )}
 
                     {/* ── Threats list ── */}
                     <div>
@@ -1096,6 +913,14 @@ export default function ThreatModelingPage() {
                             Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore}/100 ({riskLabel})
                         </p>
                     </div>
+                </div>
+            )}
+
+            {/* ════════════════════ SCAN HISTORY ════════════════════ */}
+            {!result && (
+                <div className="print:hidden">
+                    <h2 className="text-xl font-bold text-white mb-4">Scan History</h2>
+                    <ScanHistory />
                 </div>
             )}
         </div>

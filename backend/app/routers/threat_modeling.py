@@ -28,6 +28,8 @@ from app.models.threat_modeling import (
     ThreatModelAnalysis,
     DeleteResponse,
     ExportFormat,
+    ThreatModelScanHistoryResponse,
+    ThreatModelScanHistorySummary,
 )
 from app.services.threat_modeling_engine import (
     analyze as engine_analyze,
@@ -96,11 +98,20 @@ async def create_analysis(
     service = ThreatModelingService(supabase)
 
     try:
-        return await service.create_analysis(req, user_id=user_id)
+        result = await service.create_analysis(req, user_id=user_id)
+        print(f"✅ Threat model created: {result.id}")
+        return result
     except RuntimeError as exc:
+        print(f"❌ RuntimeError creating threat model: {str(exc)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(exc),
+        )
+    except Exception as exc:
+        print(f"❌ Error creating threat model: {type(exc).__name__}: {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create threat model: {str(exc)}",
         )
 
 
@@ -281,3 +292,53 @@ async def delete_analysis(
             detail=f"Analysis '{analysis_id}' not found or you do not have permission to delete it.",
         )
     return DeleteResponse(message="Analysis deleted successfully.", id=analysis_id)
+
+
+# ─── Scan History ────────────────────────────────────────────────────
+
+@router.get(
+    "/scan-history",
+    response_model=ThreatModelScanHistoryResponse,
+    summary="Get threat modeling scan history",
+    description="Retrieve the authenticated user's threat modeling scan history with statistics.",
+)
+async def get_scan_history(
+    limit: int = Query(default=50, ge=1, le=200, description="Number of scans to return"),
+    offset: int = Query(default=0, ge=0, description="Pagination offset"),
+    current_user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase),
+):
+    """Get scan history for the authenticated user."""
+    user_id: str = current_user["auth_user"].id
+    service = ThreatModelingService(supabase)
+
+    try:
+        return await service.get_scan_history(user_id, limit=limit, offset=offset)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve scan history: {str(exc)}",
+        )
+
+
+@router.get(
+    "/scan-history/summary",
+    response_model=ThreatModelScanHistorySummary,
+    summary="Get threat modeling scan history summary",
+    description="Retrieve summary statistics for the authenticated user's threat modeling scans.",
+)
+async def get_scan_history_summary(
+    current_user: dict = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase),
+):
+    """Get scan history summary statistics for the authenticated user."""
+    user_id: str = current_user["auth_user"].id
+    service = ThreatModelingService(supabase)
+
+    try:
+        return await service.get_scan_history_summary(user_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve scan history summary: {str(exc)}",
+        )

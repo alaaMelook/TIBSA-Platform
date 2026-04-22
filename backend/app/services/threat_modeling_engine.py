@@ -17,7 +17,7 @@ while adding advanced features for enterprise threat modeling.
 """
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime
 
 from app.models.threat_modeling import (
@@ -289,7 +289,7 @@ class EnhancedThreatModelingEngine:
     def _map_legacy_risk(self, risk: str) -> str:
         """Map legacy risk levels to new severity levels."""
         mapping = {
-            "Critical": "Critical",
+            "Critical": "High",  # Map Critical to High (ThreatItem only accepts High/Medium/Low)
             "High": "High",
             "Medium": "Medium",
             "Low": "Low"
@@ -402,7 +402,7 @@ def _risk_label(score: int) -> str:
 def _map_threat_to_stride(category: str) -> Optional[STRIDECategory]:
     """Map threat category to STRIDE framework."""
     category_lower = category.lower()
-    
+
     if "auth" in category_lower or "spoof" in category_lower:
         return STRIDECategory.SPOOFING
     elif "tampering" in category_lower or "injection" in category_lower or "integrity" in category_lower:
@@ -415,7 +415,7 @@ def _map_threat_to_stride(category: str) -> Optional[STRIDECategory]:
         return STRIDECategory.DENIAL_OF_SERVICE
     elif "privilege" in category_lower or "escalation" in category_lower or "authorization" in category_lower:
         return STRIDECategory.ELEVATION_OF_PRIVILEGE
-    
+
     return None
 
 
@@ -437,10 +437,10 @@ def analyze_stride(
     """
     # Use the rule-based threat generation with user's actual input
     threats, raw_score = _build_threats(req)
-    
+
     # Cap score at 100
     capped_score = min(raw_score, 100)
-    
+
     # Enrich threats with additional metadata
     enriched_threats = []
     for threat in threats:
@@ -451,7 +451,7 @@ def analyze_stride(
 
     # Generate mitigations based on threat severity
     mitigations = _engine._generate_mitigations(enriched_threats)
-    
+
     # Generate heatmap if requested
     heatmap_data = []
     if generate_heatmap:
@@ -1001,7 +1001,7 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
     if req.has_admin_panel and not req.uses_auth:
         add(
             title="Unrestricted Admin Panel Access",
-            risk="Critical", category="Authorization",
+            risk="High", category="Authorization",
             description=(
                 "An admin panel without authentication is a critical vulnerability that allows any attacker "
                 "to gain full administrative control over the application and its data."
@@ -1077,16 +1077,3 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
 
 
 # ─── Public API ──────────────────────────────────────────────────────────
-
-def analyze(req: ThreatModelCreateRequest) -> ThreatModelAnalyzeResponse:
-    """
-    Run the rule engine and return a stateless AnalyzeResponse
-    (no DB interaction – mirrors generateThreats() on the frontend).
-    """
-    threats, raw_score = _build_threats(req)
-    capped = min(raw_score, 100)
-    return ThreatModelAnalyzeResponse(
-        threats=threats,
-        risk_score=capped,
-        risk_label=_risk_label(capped),  # type: ignore[arg-type]
-    )
