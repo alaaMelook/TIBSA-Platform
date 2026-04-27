@@ -259,18 +259,21 @@ class WebsiteScannerService:
                 fp_log.extend(sf2fp)
 
         duration = round(time.time() - start, 1)
+        critical = sum(1 for f in findings if f["severity"] == "critical")
         high = sum(1 for f in findings if f["severity"] == "high")
         medium = sum(1 for f in findings if f["severity"] == "medium")
         low = sum(1 for f in findings if f["severity"] == "low")
+        info = sum(1 for f in findings if f["severity"] == "info")
 
+        processed_findings = [self._assign_confidence_label(f) for f in findings]
         return {
             "scan_id": scan_id, "target": target,
             "started_at": time.strftime("%m/%d/%Y, %I:%M:%S %p", time.localtime(start)),
             "duration": duration,
-            "high": high, "medium": medium, "low": low,
-            "total": high + medium + low,
+            "critical": critical, "high": high, "medium": medium, "low": low, "info": info,
+            "total": critical + high + medium + low + info,
             "endpoints_found": len(endpoints),
-            "findings": [self._assign_confidence_label(f) for f in findings],
+            "findings": processed_findings,
             "headers": headers_dict,
             "endpoints": endpoints,
             "false_positives_filtered": fp_log,
@@ -326,6 +329,21 @@ class WebsiteScannerService:
             text_similarity = 0.0
         return (size_ratio * 0.4) + (text_similarity * 0.6)
 
+    def _responses_differ(self, a: httpx.Response, b: httpx.Response) -> bool:
+        """Strongly compare two responses to detect meaningful differences."""
+        if a.status_code != b.status_code:
+            return True
+        if a.content is None or b.content is None:
+            return False
+        len_a, len_b = len(a.content), len(b.content)
+        if len_a == 0 or len_b == 0:
+            return abs(len_a - len_b) > 50
+        if abs(len_a - len_b) / max(len_a, len_b) > 0.12:
+            return True
+        stripped_a = self._strip_dynamic_content(a.text[:2000].lower())
+        stripped_b = self._strip_dynamic_content(b.text[:2000].lower())
+        return stripped_a != stripped_b
+
     @staticmethod
     def _strip_dynamic_content(text: str) -> str:
         """Remove dynamic parts of HTML (nonces, timestamps, hashes) for stable comparison."""
@@ -340,9 +358,12 @@ class WebsiteScannerService:
         """Assign a confidence label based on classification and evidence strength."""
         classification = finding.get("classification", "")
         fp_check = finding.get("false_positive_check", "").lower()
+        severity = finding.get("severity", "").lower()
 
         if classification == "best_practice":
             finding["confidence_label"] = "\u26a0\ufe0f Security Improvement"
+        elif severity == "info":
+            finding["confidence_label"] = "\u2139\ufe0f Informational"
         elif "confirmed" in fp_check and ("unique marker" in fp_check or "error pattern" in fp_check or "directly" in fp_check or "definitively" in fp_check):
             finding["confidence_label"] = "\u2705 Confirmed"
         elif "confirmed" in fp_check:
@@ -392,8 +413,8 @@ class WebsiteScannerService:
                     "id": self._next_id(),
                     "title": f"Info Disclosure — {header_name}",
                     "classification": "best_practice",
-                    "severity": "low",
-                    "severity_justification": "LOW because information disclosure alone doesn't allow exploitation, but helps attackers fingerprint the technology stack for targeted attacks.",
+                    "severity": "info",
+                    "severity_justification": "INFO because information disclosure does not directly enable exploitation, but it can help attackers fingerprint the application stack.",
                     "url": target,
                     "description": f"Server reveals: \"{val}\".",
                     "evidence": f"{header_name}: {val}",
@@ -582,6 +603,7 @@ class WebsiteScannerService:
                     is_confirmed = False
                     evidence_detail = ""
 
+                    param_name = point.get('param') or point.get('name', 'input')
                     if payload in body:
                         is_confirmed = True
                         evidence_detail = "Full payload reflected unescaped in response body."
@@ -601,13 +623,13 @@ class WebsiteScannerService:
                                 break
 
                     if is_confirmed:
-                        param_name = point.get('param') or point.get('name', 'input')
+                        severity = "critical" if xss['type'] in ("script_tag", "svg_event", "body_event", "js_proto") else "high"
                         findings.append({
                             "id": self._next_id(),
                             "title": f"Confirmed XSS — {param_name}",
                             "classification": "vulnerability",
-                            "severity": "high",
-                            "severity_justification": "HIGH because reflected XSS allows attackers to execute arbitrary JavaScript in victim's browser, stealing session cookies, credentials, and performing actions on behalf of the user.",
+                            "severity": severity,
+                            "severity_justification": "CRITICAL because reflected XSS allows attackers to execute arbitrary JavaScript in victim's browser, steal cookies, impersonate users, and perform actions on behalf of victims." if severity == "critical" else "HIGH because reflected XSS allows attackers to execute arbitrary JavaScript in victim's browser, stealing session cookies, credentials, and performing actions on behalf of the user.",
                             "url": point.get("url", target),
                             "description": f"Parameter '{param_name}' reflects input without sanitization. Type: {xss['type']}. {evidence_detail}",
                             "evidence": f"Payload: {payload}\nMarker: {marker}\n{evidence_detail}",
@@ -637,6 +659,7 @@ class WebsiteScannerService:
 
         for point in test_points[:12]:
             # Get per-param baseline
+            clean_resp = None
             try:
                 clean_resp = await self._send_payload(client, point, "tibsa_clean_value_12345")
                 param_baseline = clean_resp.text if clean_resp else baseline_text
@@ -666,8 +689,8 @@ class WebsiteScannerService:
                             "id": self._next_id(),
                             "title": f"Confirmed SQLi — {param_name}",
                             "classification": "vulnerability",
-                            "severity": "high",
-                            "severity_justification": "HIGH because SQL injection can lead to full database compromise: data theft, data modification, authentication bypass, and in some cases OS command execution.",
+                            "severity": "critical",
+                            "severity_justification": "CRITICAL because SQL injection can lead to full database compromise: data theft, data modification, authentication bypass, and in some cases OS command execution.",
                             "url": point.get("url", target),
                             "description": f"Parameter '{param_name}' is vulnerable. Server returned a DB error not present in baseline, confirming the injection.",
                             "evidence": f"Payload: {payload}\nDB Error: {error_ctx[:200]}",
@@ -688,6 +711,33 @@ class WebsiteScannerService:
 
             if found:
                 continue
+
+            # Boolean-based blind SQLi detection
+            if clean_resp is not None:
+                try:
+                    true_payload = "1' OR '1'='1' --"
+                    false_payload = "1' OR '1'='2' --"
+                    true_resp = await self._send_payload(client, point, true_payload)
+                    false_resp = await self._send_payload(client, point, false_payload)
+                    if true_resp and false_resp and self._responses_differ(true_resp, false_resp):
+                        if self._responses_differ(false_resp, clean_resp):
+                            param_name = point.get('param') or point.get('name', 'input')
+                            findings.append({
+                                "id": self._next_id(),
+                                "title": f"Boolean SQLi — {param_name}",
+                                "classification": "vulnerability",
+                                "severity": "critical",
+                                "severity_justification": "CRITICAL — boolean-based SQL injection confirms the application evaluates injected SQL logic differently for true/false payloads, indicating direct database query manipulation.",
+                                "url": point.get("url", target),
+                                "description": f"Parameter '{param_name}' returns different responses for true and false SQL conditions, indicating SQL query injection.",
+                                "evidence": f"True payload: {true_payload}\nFalse payload: {false_payload}\nBaseline response size: {len(clean_resp.content)}\nTrue response size: {len(true_resp.content)}\nFalse response size: {len(false_resp.content)}",
+                                "false_positive_check": "Confirmed: true/false SQL payloads produce different responses and the false payload is still different from baseline, indicating genuine injection behavior.",
+                                "remediation": "Use parameterized queries and never interpolate user input directly into SQL statements.",
+                                "auto_fix": "# Use parameterized queries\nresult = db.execute(text('SELECT * FROM users WHERE id = :id'), {'id': user_input})",
+                            })
+                            continue
+                except Exception:
+                    pass
 
             # Blind SQLi (time-based) — real attack simulation
             try:
@@ -712,8 +762,8 @@ class WebsiteScannerService:
                             "id": self._next_id(),
                             "title": f"Blind SQLi (Time-based) — {param_name}",
                             "classification": "vulnerability",
-                            "severity": "high",
-                            "severity_justification": "HIGH — time-based blind SQLi confirms the parameter is passed directly to SQL. Attacker can extract entire database contents character by character.",
+                            "severity": "critical",
+                            "severity_justification": "CRITICAL — time-based blind SQLi confirms the parameter is passed directly to SQL. Attacker can extract entire database contents character by character.",
                             "url": point.get("url", target),
                             "description": f"SLEEP payload caused consistent delay: {inject_time:.1f}s and {confirm_time:.1f}s vs baseline {clean_time:.1f}s.",
                             "evidence": f"Payload: {sleep_payload}\nBaseline: {clean_time:.1f}s\n1st inject: {inject_time:.1f}s\n2nd inject (confirm): {confirm_time:.1f}s",
@@ -980,8 +1030,11 @@ class WebsiteScannerService:
                 if point["type"] == "query_param":
                     return await client.get(self._inject_query_param(point["url"], point["param"], payload))
                 elif point["type"] == "form_input":
-                    data = {point["name"]: payload}
-                    return await client.get(point["url"], params=data) if point["method"] == "GET" else await client.post(point["url"], data=data)
+                    data = point.get("form_data", {}).copy()
+                    data[point["name"]] = payload
+                    if point["method"] == "GET":
+                        return await client.get(point["url"], params=data)
+                    return await client.post(point["url"], data=data)
             except Exception:
                 if attempt == 0:
                     await asyncio.sleep(0.3)
@@ -992,16 +1045,60 @@ class WebsiteScannerService:
     def _get_test_points(self, target: str, soup: BeautifulSoup) -> List[Dict[str, Any]]:
         points: List[Dict[str, Any]] = []
         parsed = urlparse(target)
-        for param in parse_qs(parsed.query):
+        for param, values in parse_qs(parsed.query, keep_blank_values=True).items():
             points.append({"type": "query_param", "param": param, "url": target})
+
         for form in soup.find_all("form"):
             action = form.get("action", "")
             method = (form.get("method") or "GET").upper()
             form_url = urljoin(target, action) if action else target
+            form_data = {}
+            for inp in form.find_all(["input", "textarea", "select"]):
+                name = inp.get("name")
+                if not name:
+                    continue
+                itype = inp.get("type", "text").lower()
+                if itype in ("submit", "button", "image"):
+                    continue
+                if inp.name == "select":
+                    option = inp.find("option", selected=True) or inp.find("option")
+                    if option is not None and option.get("value") is not None:
+                        form_data[name] = option["value"]
+                    elif option is not None:
+                        form_data[name] = option.text.strip() or "tibsa_select"
+                    else:
+                        form_data[name] = "tibsa_select"
+                    continue
+                if itype in ("checkbox", "radio"):
+                    if inp.has_attr("checked"):
+                        form_data[name] = inp.get("value", "on")
+                    elif name not in form_data:
+                        form_data[name] = inp.get("value", "on")
+                    continue
+                value = inp.get("value")
+                if value is None or value == "":
+                    if itype in ("email", "text", "search", "url", "tel"):
+                        form_data[name] = "tibsa_test_value"
+                    elif itype in ("number", "range"):
+                        form_data[name] = "123"
+                    else:
+                        form_data[name] = "tibsa_test_value"
+                else:
+                    form_data[name] = value
+
             for inp in form.find_all(["input", "textarea"]):
                 name = inp.get("name")
-                if name and inp.get("type", "text") not in ("submit", "hidden", "button", "image", "password"):
-                    points.append({"type": "form_input", "name": name, "method": method, "url": form_url})
+                if not name:
+                    continue
+                itype = inp.get("type", "text").lower()
+                if name and itype not in ("submit", "button", "image"):
+                    points.append({
+                        "type": "form_input",
+                        "name": name,
+                        "method": method,
+                        "url": form_url,
+                        "form_data": form_data,
+                    })
         return points
 
     def _inject_query_param(self, url: str, param: str, payload: str) -> str:

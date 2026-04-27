@@ -52,7 +52,7 @@ async def scan_website(
     key_map = {
         "security_headers": "misconfiguration",
         "endpoint_crawling": "directory_discovery",
-        "cookie_analysis": "brute_force",
+        "cookie_analysis": "misconfiguration",
     }
     internal_tests = list({key_map.get(t, t) for t in selected})
 
@@ -69,9 +69,11 @@ async def scan_website(
             "findings": result.get("findings", []),
             "summary": {
                 "scan_id": result["scan_id"],
+                "critical": result["critical"],
                 "high": result["high"],
                 "medium": result["medium"],
                 "low": result["low"],
+                "info": result["info"],
                 "total": result["total"],
                 "endpoints_found": result.get("endpoints_found", 0),
                 "duration": result["duration"],
@@ -80,6 +82,10 @@ async def scan_website(
                     "error": result["error"]
                 } if result.get("error") else {}),
             },
+            "headers": result.get("headers", {}),
+            "endpoints": result.get("endpoints", []),
+            "false_positives_filtered": result.get("false_positives_filtered", []),
+            "error": result.get("error"),
         }).execute()
     except Exception as exc:
         logger.warning("Failed to save website scan to DB: %s", exc)
@@ -123,7 +129,7 @@ async def get_scan_detail(
     try:
         resp = (
             supabase.table("website_scans")
-            .select("id, target, summary, findings, created_at")
+            .select("id, target, summary, findings, headers, endpoints, false_positives_filtered, error, created_at")
             .eq("id", scan_id)
             .eq("user_id", auth_user.id)
             .single()

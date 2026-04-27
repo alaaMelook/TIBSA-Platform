@@ -10,6 +10,10 @@ CREATE TABLE IF NOT EXISTS public.website_scans (
   target TEXT NOT NULL,
   findings JSONB DEFAULT '[]',
   summary JSONB DEFAULT '{}',
+  headers JSONB DEFAULT '{}',
+  endpoints JSONB DEFAULT '[]',
+  false_positives_filtered JSONB DEFAULT '[]',
+  error TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

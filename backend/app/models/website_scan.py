@@ -24,11 +24,16 @@ class WebsiteScanRequest(BaseModel):
 class WebsiteScanFinding(BaseModel):
     id: str
     title: str
-    severity: str  # "high", "medium", "low"
+    severity: str  # "critical", "high", "medium", "low", "info"
     url: str
     description: str
     evidence: Optional[str] = None
     remediation: Optional[str] = None
+    classification: Optional[str] = None
+    confidence_label: Optional[str] = None
+    severity_justification: Optional[str] = None
+    false_positive_check: Optional[str] = None
+    auto_fix: Optional[str] = None
 
 
 class WebsiteScanResponse(BaseModel):
@@ -36,23 +41,29 @@ class WebsiteScanResponse(BaseModel):
     target: str
     started_at: str
     duration: float  # seconds
+    critical: int = 0
     high: int = 0
     medium: int = 0
     low: int = 0
+    info: int = 0
     total: int = 0
     endpoints_found: int = 0
     findings: List[WebsiteScanFinding] = []
     headers: Dict[str, str] = {}
     endpoints: List[Dict[str, Any]] = []
+    false_positives_filtered: List[str] = []
+    error: Optional[str] = None
 
 
 # ─── History ─────────────────────────────────────────────────
 
 class WebsiteScanSummary(BaseModel):
     scan_id: Optional[str] = None
+    critical: int = 0
     high: int = 0
     medium: int = 0
     low: int = 0
+    info: int = 0
     total: int = 0
     endpoints_found: int = 0
     duration: Optional[float] = None
@@ -71,4 +82,8 @@ class WebsiteScanDetail(BaseModel):
     target: str
     summary: WebsiteScanSummary = WebsiteScanSummary()
     findings: List[Dict[str, Any]] = []
+    headers: Dict[str, str] = {}
+    endpoints: List[Dict[str, Any]] = []
+    false_positives_filtered: List[str] = []
+    error: Optional[str] = None
     created_at: str

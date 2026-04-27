@@ -48,7 +48,11 @@ TIBSA/
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local  # Add your Supabase keys
+# Copy the example env file to the required local env file
+cp .env.local.example .env.local               # macOS / Linux
+copy .env.local.example .env.local             # Windows PowerShell
+
+# Add your Supabase keys and backend API URL
 npm run dev                        # → http://localhost:3000
 ```
 

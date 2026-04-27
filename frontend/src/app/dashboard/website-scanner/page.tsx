@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 interface Finding {
     id: string;
     title: string;
-    severity: "high" | "medium" | "low";
+    severity: "critical" | "high" | "medium" | "low" | "info";
     classification?: "vulnerability" | "best_practice";
     confidence_label?: string;
     severity_justification?: string;
@@ -26,9 +26,11 @@ interface ScanResult {
     target: string;
     started_at: string;
     duration: number;
+    critical: number;
     high: number;
     medium: number;
     low: number;
+    info: number;
     total: number;
     endpoints_found: number;
     findings: Finding[];
@@ -50,9 +52,11 @@ interface HistoryItem {
     target: string;
     summary: {
         scan_id?: string;
+        critical?: number;
         high?: number;
         medium?: number;
         low?: number;
+        info?: number;
         total?: number;
         endpoints_found?: number;
         duration?: number;
@@ -78,6 +82,12 @@ const TEST_OPTIONS = [
 // ─── Severity colors ─────────────────────────────────────────
 
 const SEVERITY_STYLES: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+    critical: {
+        bg: "bg-fuchsia-500/10",
+        border: "border-fuchsia-500/30",
+        text: "text-fuchsia-400",
+        badge: "bg-fuchsia-500 text-white",
+    },
     high: {
         bg: "bg-red-500/10",
         border: "border-red-500/30",
@@ -96,6 +106,12 @@ const SEVERITY_STYLES: Record<string, { bg: string; border: string; text: string
         text: "text-yellow-400",
         badge: "bg-yellow-600 text-white",
     },
+    info: {
+        bg: "bg-cyan-500/10",
+        border: "border-cyan-500/30",
+        text: "text-cyan-400",
+        badge: "bg-cyan-500 text-white",
+    },
 };
 
 // ─── Main Page ───────────────────────────────────────────────
@@ -110,7 +126,7 @@ export default function WebsiteScannerPage() {
     const [result, setResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState<"findings" | "headers" | "endpoints">("findings");
-    const [severityFilter, setSeverityFilter] = useState<"all" | "high" | "medium" | "low">("all");
+    const [severityFilter, setSeverityFilter] = useState<"all" | "critical" | "high" | "medium" | "low" | "info">("all");
     const reportRef = useRef<HTMLDivElement>(null);
 
     // ─── History state ───────────────────────────────────────
@@ -153,14 +169,18 @@ export default function WebsiteScannerPage() {
                 target: detail.target,
                 started_at: (s.started_at as string) || detail.created_at,
                 duration: (s.duration as number) || 0,
+                critical: (s.critical as number) || 0,
                 high: (s.high as number) || 0,
                 medium: (s.medium as number) || 0,
                 low: (s.low as number) || 0,
+                info: (s.info as number) || 0,
                 total: (s.total as number) || 0,
                 endpoints_found: (s.endpoints_found as number) || 0,
                 findings: detail.findings || [],
-                headers: {},
-                endpoints: [],
+                headers: (detail.headers as Record<string, string>) || {},
+                endpoints: (detail.endpoints as Array<{ type: string; url: string; text?: string; method?: string; status?: number; inputs?: Array<{ name: string; type: string }> }>) || [],
+                false_positives_filtered: (detail.false_positives_filtered as string[]) || [],
+                error: detail.error as string | undefined,
             });
             setActiveTab("findings");
             setSeverityFilter("all");
@@ -480,11 +500,13 @@ export default function WebsiteScannerPage() {
                     </div>
 
                     {/* Severity Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                         {[
+                            { label: "CRITICAL", count: result.critical, color: "text-fuchsia-400", border: "border-fuchsia-500/30", bg: "bg-fuchsia-500/10" },
                             { label: "HIGH RISK", count: result.high, color: "text-red-400", border: "border-red-500/30", bg: "bg-red-500/10" },
                             { label: "MEDIUM RISK", count: result.medium, color: "text-orange-400", border: "border-orange-500/30", bg: "bg-orange-500/10" },
                             { label: "LOW RISK", count: result.low, color: "text-yellow-400", border: "border-yellow-500/30", bg: "bg-yellow-500/10" },
+                            { label: "INFO", count: result.info, color: "text-cyan-400", border: "border-cyan-500/30", bg: "bg-cyan-500/10" },
                             { label: "TOTAL", count: result.total, color: "text-purple-400", border: "border-purple-500/30", bg: "bg-purple-500/10" },
                         ].map((card) => (
                             <div key={card.label} className={`rounded-xl border-2 ${card.border} ${card.bg} p-4 text-center`}>
@@ -539,7 +561,7 @@ export default function WebsiteScannerPage() {
                             <div className="flex items-center justify-between">
                                 <p className="text-xs text-slate-500">{filteredFindings.length} Findings</p>
                                 <div className="flex gap-1">
-                                    {(["all", "high", "medium", "low"] as const).map((sev) => (
+                                    {(["all", "critical", "high", "medium", "low", "info"] as const).map((sev) => (
                                         <button
                                             key={sev}
                                             onClick={() => setSeverityFilter(sev)}
@@ -547,10 +569,14 @@ export default function WebsiteScannerPage() {
                                                 severityFilter === sev
                                                     ? sev === "all"
                                                         ? "bg-slate-600 text-white"
+                                                        : sev === "critical"
+                                                        ? "bg-fuchsia-500 text-white"
                                                         : sev === "high"
                                                         ? "bg-red-500 text-white"
                                                         : sev === "medium"
                                                         ? "bg-orange-500 text-white"
+                                                        : sev === "info"
+                                                        ? "bg-cyan-500 text-white"
                                                         : "bg-yellow-600 text-white"
                                                     : "bg-white/[0.04] text-slate-400 hover:bg-white/[0.08]"
                                             }`}

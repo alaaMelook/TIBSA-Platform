@@ -2,9 +2,12 @@
 TIBSA - Threat Intelligence-Based Security Application
 FastAPI Backend Entry Point
 """
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 from app.config import settings
 from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     virustotal_api_key: str = ""
 
     # ─── CORS ─────────────────────────────────────────────────
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     # ─── Malice Docker AV ─────────────────────────────────────
     malice_engines: str = ""
