@@ -7,11 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.config import settings
-<<<<<<< HEAD
-from app.routers import auth, users, scans, threats, notifications, website_scanner
-=======
 from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling
->>>>>>> b4a826d (edit threat modeling)
 
 
 @asynccontextmanager
@@ -49,10 +45,7 @@ app.include_router(scans.router, prefix="/api/v1/scans", tags=["Scans"])
 app.include_router(threats.router, prefix="/api/v1/threats", tags=["Threat Intelligence"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(website_scanner.router, prefix="/api/v1/website-scanner", tags=["Website Scanner"])
-<<<<<<< HEAD
-=======
 app.include_router(threat_modeling.router, prefix="/api/v1/threat-modeling", tags=["Threat Modeling"])
->>>>>>> b4a826d (edit threat modeling)
 
 
 # ─── Health Check ─────────────────────────────────────────────

@@ -17,6 +17,8 @@ from app.services import malice_service
 from app.services.ml_engine import MLEngine
 from app.services.notification_service import NotificationService
 from app.services.threat_scoring import compute_threat_score
+from app.services.malware_analyst import analyze_malware
+from app.services.url_analyst import analyze_url
 
 logger = logging.getLogger(__name__)
 
@@ -413,6 +415,13 @@ class ScanService:
                 ai_confidence=ai_confidence,
             )
 
+            # ── URL Analyst — structured threat assessment ────────────
+            url_analysis = analyze_url(
+                url=url,
+                vt_data=vt_data if not vt_data.get("error") else None,
+                ai_data=ai_data if ai_data.get("model") != "model_not_loaded" else None,
+            )
+
             # ── Build summary ─────────────────────────────────────────
             summary_parts = []
             if vt_data and not vt_data.get("error"):
@@ -431,11 +440,17 @@ class ScanService:
             else:
                 summary_parts.append("AI Model: not loaded")
 
+            summary_parts.append(
+                f"URL Analysis: {url_analysis.classification} "
+                f"(risk: {url_analysis.risk_level}, "
+                f"confidence: {url_analysis.confidence}%)"
+            )
+
             summary = ". ".join(summary_parts) + f". Threat Score: {threat_score:.2f} ({verdict}). Overall threat level: {final_level}."
 
             logger.info(
-                "URL scan %s — VT: %s/%s malicious, AI: %s (%.2f), Score: %.2f, Verdict: %s, level: %s",
-                scan_id, vt_malicious, vt_total, ai_label, ai_confidence, threat_score, verdict, final_level,
+                "URL scan %s — VT: %s/%s malicious, AI: %s (%.2f), Score: %.2f, Verdict: %s, level: %s, URL-class: %s",
+                scan_id, vt_malicious, vt_total, ai_label, ai_confidence, threat_score, verdict, final_level, url_analysis.classification,
             )
 
             self.supabase.table("scans").update({
@@ -453,8 +468,9 @@ class ScanService:
                     "threat_score": threat_score,
                     "verdict": verdict,
                     "threat_level": final_level,
+                    "url_analyst": url_analysis.to_dict(),
                 },
-                "indicators": [],
+                "indicators": url_analysis.signals,
             }).execute()
 
             self._notify_completion(scan_id, final_level)
@@ -557,6 +573,12 @@ class ScanService:
             else:
                 final_level = "high"
 
+            # ── Malware Analyst — structured verdict ──────────────────────
+            analyst_result = analyze_malware(
+                vt_data=vt_data if not vt_data.get("error") else None,
+                malice_data=malice_data if not malice_data.get("error") else None,
+            )
+
             # ── Stats for summary ─────────────────────────────────────────
             vt_total      = vt_data.get("total_engines", 0)
             mal_detected  = malice_data.get("detected_by", 0)
@@ -577,6 +599,10 @@ class ScanService:
                     f"Local AV engines: {mal_detected}/{mal_total} detected malware"
                     + (f" ({top_threat})" if top_threat and mal_detected else "")
                 )
+            summary_parts.append(
+                f"Analyst verdict: {analyst_result.verdict} "
+                f"(confidence: {analyst_result.confidence}%)"
+            )
             summary = ". ".join(summary_parts) + f". Overall threat level: {final_level}."
 
             self.supabase.table("scans").update({
@@ -593,8 +619,9 @@ class ScanService:
                     "malice": malice_data,
                     "threat_level": final_level,
                     "threat_count": threat_count,
+                    "analyst": analyst_result.to_dict(),
                 },
-                "indicators": [],
+                "indicators": analyst_result.key_indicators,
             }).execute()
 
             self._notify_completion(scan_id, final_level)

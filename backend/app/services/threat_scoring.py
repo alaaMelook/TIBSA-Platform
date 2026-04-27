@@ -27,15 +27,17 @@ def compute_threat_score(
     ai_score = ai_confidence if ai_is_phishing else 0.0
 
     # 3. Weighted combination
-    threat_score = (0.6 * ai_score) + (0.4 * vt_score)
+    threat_score = (0.5 * ai_score) + (0.5 * vt_score)
 
-    # 4. Verdict mapping
-    if threat_score >= 0.75:
+    # 4. Verdict mapping with overrides for confirmed VT hits
+    if vt_malicious >= 10 or threat_score >= 0.75:
         verdict = "Malicious"
         final_level = "high"
-    elif threat_score >= 0.50:
+        threat_score = max(threat_score, 0.80)
+    elif vt_malicious >= 3 or threat_score >= 0.50:
         verdict = "Suspicious"
         final_level = "medium"
+        threat_score = max(threat_score, 0.50)
     elif threat_score >= 0.30:
         verdict = "Warning"
         final_level = "low"

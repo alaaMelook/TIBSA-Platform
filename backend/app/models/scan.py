@@ -31,5 +31,5 @@ class ScanReportResponse(BaseModel):
     scan_id: str
     summary: str
     details: Dict[str, Any] = {}
-    indicators: List[Dict[str, Any]] = []
+    indicators: List[Any] = []
     created_at: Optional[datetime] = None

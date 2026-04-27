@@ -210,6 +210,25 @@ interface AIClassifierDetails {
     model: string;
 }
 
+// ─── Malware Analyst Result ───────────────────────────────────────
+
+interface MalwareAnalystResult {
+    verdict: string;       // Malicious | Suspicious | Clean
+    confidence: number;    // 0-100
+    reason: string;
+    key_indicators: string[];
+}
+
+// ─── URL Analyst Result ───────────────────────────────────────────
+
+interface URLAnalystResult {
+    classification: string;  // Phishing | Malicious | Suspicious | Legitimate
+    confidence: number;      // 0-100
+    risk_level: string;      // Critical | High | Medium | Low | None
+    explanation: string;
+    signals: string[];
+}
+
 // ─── Combined report details (new format) ─────────────────────────
 
 interface CombinedDetails {
@@ -219,6 +238,8 @@ interface CombinedDetails {
     threat_level?: string;
     threat_score?: number;
     verdict?: string;
+    analyst?: MalwareAnalystResult;
+    url_analyst?: URLAnalystResult;
 }
 
 // ─── VirusTotal Stats Display ──────────────────────────────────────
@@ -302,7 +323,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
     return (
         <div className="space-y-4">
             {/* Detection Score */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${malicious >= 5 ? "bg-red-500/10 border-red-500/20" :
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${effectiveTotal === 0 ? "bg-slate-500/10 border-slate-500/20" : malicious >= 5 ? "bg-red-500/10 border-red-500/20" :
                     malicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
                         suspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
                             "bg-green-500/10 border-green-500/20"
@@ -310,13 +331,15 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                 <div>
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
                     <p className="text-5xl font-black mt-1 tabular-nums">
-                        <span className={malicious > 0 ? "text-red-400" : "text-green-400"}>{malicious}</span>
+                        <span className={effectiveTotal === 0 ? "text-slate-400" : malicious > 0 ? "text-red-400" : "text-green-400"}>{malicious}</span>
                         <span className="text-slate-600 text-3xl font-light"> / {effectiveTotal}</span>
                     </p>
                     <p className="text-xs text-slate-500 mt-1.5">
-                        {malicious === 0
-                            ? `File is clean — ${clean} engine${clean !== 1 ? "s" : ""} found no threats`
-                            : `${malicious} engine${malicious > 1 ? "s" : ""} flagged this as malicious`}
+                        {effectiveTotal === 0
+                            ? "No engines returned a decisive result"
+                            : malicious === 0
+                                ? `Target is clean — ${clean} engine${clean !== 1 ? "s" : ""} found no threats`
+                                : `${malicious} engine${malicious > 1 ? "s" : ""} flagged this as malicious`}
                     </p>
                     {nonDecisive > 0 && (
                         <p className="text-[10px] text-slate-600 mt-1">
@@ -324,9 +347,11 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                         </p>
                     )}
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${malicious >= 5 ? "bg-red-500/15" : malicious > 0 ? "bg-orange-500/15" : suspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${effectiveTotal === 0 ? "bg-slate-500/15" : malicious >= 5 ? "bg-red-500/15" : malicious > 0 ? "bg-orange-500/15" : suspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
                     }`}>
-                    {malicious >= 5 ? (
+                    {effectiveTotal === 0 ? (
+                        <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    ) : malicious >= 5 ? (
                         <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : malicious > 0 ? (
                         <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -754,7 +779,7 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
             )}
 
             {/* Combined Detection Summary */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${totalMalicious >= 5 ? "bg-red-500/10 border-red-500/20" :
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${totalEngines === 0 ? "bg-slate-500/10 border-slate-500/20" : totalMalicious >= 5 ? "bg-red-500/10 border-red-500/20" :
                     totalMalicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
                         totalSuspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
                             "bg-green-500/10 border-green-500/20"
@@ -762,13 +787,15 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                 <div>
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
                     <p className="text-5xl font-black mt-1 tabular-nums">
-                        <span className={totalMalicious > 0 ? "text-red-400" : "text-green-400"}>{totalMalicious}</span>
+                        <span className={totalEngines === 0 ? "text-slate-400" : totalMalicious > 0 ? "text-red-400" : "text-green-400"}>{totalMalicious}</span>
                         <span className="text-slate-600 text-3xl font-light"> / {totalEngines}</span>
                     </p>
                     <p className="text-xs text-slate-500 mt-1.5">
-                        {totalMalicious === 0
-                            ? `File is clean — ${totalClean} engine${totalClean !== 1 ? "s" : ""} found no threats`
-                            : `${totalMalicious} engine${totalMalicious > 1 ? "s" : ""} flagged this as malicious`}
+                        {totalEngines === 0
+                            ? "No engines returned a decisive result"
+                            : totalMalicious === 0
+                                ? `Target is clean — ${totalClean} engine${totalClean !== 1 ? "s" : ""} found no threats`
+                                : `${totalMalicious} engine${totalMalicious > 1 ? "s" : ""} flagged this as malicious`}
                     </p>
                     {totalNonDecisive > 0 && (
                         <p className="text-[10px] text-slate-600 mt-1">
@@ -776,9 +803,11 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                         </p>
                     )}
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${totalMalicious >= 5 ? "bg-red-500/15" : totalMalicious > 0 ? "bg-orange-500/15" : totalSuspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${totalEngines === 0 ? "bg-slate-500/15" : totalMalicious >= 5 ? "bg-red-500/15" : totalMalicious > 0 ? "bg-orange-500/15" : totalSuspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
                     }`}>
-                    {totalMalicious >= 5 ? (
+                    {totalEngines === 0 ? (
+                        <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    ) : totalMalicious >= 5 ? (
                         <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : totalMalicious > 0 ? (
                         <svg className="w-7 h-7 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
@@ -876,6 +905,161 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
         </div>
     );
 }
+// ─── Malware Analyst Display ──────────────────────────────────────
+
+function MalwareAnalystDisplay({ data }: { data: MalwareAnalystResult }) {
+    const verdictConfig: Record<string, { color: string; bg: string; border: string; icon: string }> = {
+        Malicious: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" },
+        Suspicious: { color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", icon: "M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+        Clean: { color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+    };
+    const cfg = verdictConfig[data.verdict] || verdictConfig.Clean;
+
+    return (
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-slate-200">Malware Analyst Verdict</p>
+                    <p className="text-[10px] text-slate-500">Multi-engine intelligence analysis</p>
+                </div>
+            </div>
+
+            {/* Verdict card */}
+            <div className={`rounded-xl p-5 border-2 ${cfg.bg} ${cfg.border}`}>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Analyst Verdict</p>
+                        <p className={`text-3xl font-black mt-1 ${cfg.color}`}>{data.verdict}</p>
+                        <p className="text-xs text-slate-500 mt-1.5">{data.reason}</p>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${cfg.bg}`}>
+                            <svg className={`w-7 h-7 ${cfg.color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d={cfg.icon} />
+                            </svg>
+                        </div>
+                        <span className={`text-lg font-bold tabular-nums ${cfg.color}`}>{data.confidence}%</span>
+                        <span className="text-[10px] text-slate-500">Confidence</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Key Indicators */}
+            {data.key_indicators.length > 0 && (
+                <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Key Indicators</p>
+                    <div className="space-y-1">
+                        {data.key_indicators.map((indicator, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs">
+                                <svg className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-slate-400">{indicator}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── URL Analyst Display ──────────────────────────────────────────
+
+function URLAnalystDisplay({ data }: { data: URLAnalystResult }) {
+    const classConfig: Record<string, { color: string; bg: string; border: string; ring: string }> = {
+        Phishing: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", ring: "stroke-red-500" },
+        Malicious: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", ring: "stroke-red-500" },
+        Suspicious: { color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", ring: "stroke-orange-400" },
+        Legitimate: { color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/20", ring: "stroke-green-500" },
+    };
+    const riskConfig: Record<string, { color: string; bg: string }> = {
+        Critical: { color: "text-red-400", bg: "bg-red-500/20" },
+        High: { color: "text-orange-400", bg: "bg-orange-500/20" },
+        Medium: { color: "text-yellow-400", bg: "bg-yellow-500/20" },
+        Low: { color: "text-blue-400", bg: "bg-blue-500/20" },
+        None: { color: "text-green-400", bg: "bg-green-500/20" },
+    };
+
+    const cls = classConfig[data.classification] || classConfig.Legitimate;
+    const rsk = riskConfig[data.risk_level] || riskConfig.None;
+
+    const radius = 44;
+    const circumference = 2 * Math.PI * radius;
+    const dashOffset = circumference - (data.confidence / 100) * circumference;
+
+    return (
+        <div className="space-y-4">
+            {/* Header */}
+            <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-teal-500/15 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-slate-200">URL Threat Analysis</p>
+                    <p className="text-[10px] text-slate-500">Heuristic + Intelligence + AI</p>
+                </div>
+            </div>
+
+            {/* Classification card with gauge */}
+            <div className={`rounded-xl p-5 border-2 ${cls.bg} ${cls.border}`}>
+                <div className="flex items-center gap-5">
+                    {/* Confidence gauge */}
+                    <div className="relative flex-shrink-0">
+                        <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
+                            <circle cx="50" cy="50" r={radius} fill="none" stroke="currentColor" className="text-white/[0.06]" strokeWidth="6" />
+                            <circle cx="50" cy="50" r={radius} fill="none" className={cls.ring} strokeWidth="6" strokeLinecap="round"
+                                strokeDasharray={circumference} strokeDashoffset={dashOffset}
+                                style={{ transition: "stroke-dashoffset 1s ease-out" }} />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className={`text-xl font-black tabular-nums ${cls.color}`}>{data.confidence}</span>
+                            <span className="text-[9px] text-slate-500">/ 100</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                        <div>
+                            <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Classification</p>
+                            <p className={`text-2xl font-black mt-0.5 ${cls.color}`}>{data.classification}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${rsk.bg} ${rsk.color}`}>
+                                {data.risk_level} Risk
+                            </span>
+                        </div>
+                        <p className="text-xs text-slate-500">{data.explanation}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Signals */}
+            {data.signals.length > 0 && (
+                <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Detected Signals</p>
+                    <div className="space-y-1">
+                        {data.signals.map((signal, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs">
+                                <svg className="w-3.5 h-3.5 text-teal-500/60 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                <span className="text-slate-400">{signal}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ─── Scan Detail Modal ────────────────────────────────────────────
 
@@ -890,9 +1074,13 @@ function ScanDetailModal({
 }) {
     const [report, setReport] = useState<ScanReport | null>(null);
     const [reportLoading, setReportLoading] = useState(false);
+    const fetchedRef = useRef(false);
 
     useEffect(() => {
         if (scan.status !== "completed" || !token) return;
+        if (fetchedRef.current) return;
+        
+        fetchedRef.current = true;
         setReportLoading(true);
         api.get<ScanReport>(`/api/v1/scans/${scan.id}`, token)
             .then(setReport)
@@ -922,6 +1110,12 @@ function ScanDetailModal({
         : null;
     const aiDetails: AIClassifierDetails | null = isCombined
         ? ((rawDetails as CombinedDetails)?.ai_classifier ?? null)
+        : null;
+    const analystDetails: MalwareAnalystResult | null = isCombined
+        ? ((rawDetails as CombinedDetails)?.analyst ?? null)
+        : null;
+    const urlAnalystDetails: URLAnalystResult | null = isCombined
+        ? ((rawDetails as CombinedDetails)?.url_analyst ?? null)
         : null;
 
     return (
@@ -1010,7 +1204,7 @@ function ScanDetailModal({
                                 </svg>
                                 <p className="text-sm text-slate-500">Loading scan results…</p>
                             </div>
-                        ) : (vtDetails || maliceDetails || aiDetails) ? (
+                        ) : (vtDetails || maliceDetails || aiDetails || analystDetails || urlAnalystDetails) ? (
                             <div className="space-y-6">
                                 {/* VirusTotal + Local AV (file scans or URL-with-VT) */}
                                 {(vtDetails || maliceDetails) && (
@@ -1043,6 +1237,15 @@ function ScanDetailModal({
                                         />
                                     </div>
                                 )}
+
+                                {/* URL Threat Analyst (URL scans) */}
+                                {urlAnalystDetails && (
+                                    <div className="border-t border-white/[0.06] pt-6">
+                                        <URLAnalystDisplay data={urlAnalystDetails} />
+                                    </div>
+                                )}
+
+
 
                                 {/* Summary */}
                                 {report?.summary && (
@@ -1259,7 +1462,18 @@ export default function ScansPage() {
     // History state
     const [activeTab, setActiveTab] = useState<"all" | "url" | "file">("all");
     const [selectedScanId, setSelectedScanId] = useState<string | null>(null);
-    const selectedScan = selectedScanId ? (scans.find(s => s.id === selectedScanId) ?? null) : null;
+    const [modalScan, setModalScan] = useState<Scan | null>(null);
+
+    // Keep modalScan updated without unmounting if missing momentarily
+    useEffect(() => {
+        if (selectedScanId) {
+            const found = scans.find(s => s.id === selectedScanId);
+            if (found) setModalScan(found);
+        } else {
+            setModalScan(null);
+        }
+    }, [selectedScanId, scans]);
+
     const [cancellingId, setCancellingId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -1979,11 +2193,14 @@ export default function ScansPage() {
             </div>
 
             {/* ── Scan Detail Modal ── */}
-            {selectedScan && (
+            {modalScan && (
                 <ScanDetailModal
-                    scan={selectedScan}
+                    scan={modalScan}
                     token={token ?? undefined}
-                    onClose={() => setSelectedScanId(null)}
+                    onClose={() => {
+                        setSelectedScanId(null);
+                        setModalScan(null);
+                    }}
                 />
             )}
         </div>
