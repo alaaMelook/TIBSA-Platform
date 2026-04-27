@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Card, Button, Input } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { ScanHistory } from "./scan-history";
 
 // ─────────────────────────────────────────────────────────────────────
 // Types
@@ -17,13 +18,6 @@ type DatabaseType   = "PostgreSQL" | "MySQL / MariaDB" | "MongoDB" | "Redis" | "
 type ProtocolType   = "HTTPS" | "HTTP (plain)" | "WebSocket / WSS" | "gRPC" | "GraphQL" | "REST" | "MQTT" | "AMQP" | "FTP / SFTP" | "SSH";
 type FrameworkType  = "React" | "Next.js" | "Vue" | "Angular" | "Svelte" | "Django" | "FastAPI" | "Flask" | "Express" | "NestJS" | "Spring Boot" | "Laravel" | "Rails" | "ASP.NET";
 type LanguageType   = "TypeScript" | "JavaScript" | "Python" | "Java" | "Go" | "PHP" | "Ruby" | "C#" | "Rust" | "C / C++";
-
-interface UploadedEntry {
-    name:  string;
-    size:  number;
-    kind:  "file" | "folder";
-    path:  string;
-}
 
 interface FormState {
     // Section 1 – Basic
@@ -43,8 +37,6 @@ interface FormState {
     // Section 4 – Data & Protocols
     databases:  DatabaseType[];
     protocols:  ProtocolType[];
-    // Section 5 – Files
-    uploads: UploadedEntry[];
 }
 
 interface ThreatItem {
@@ -54,6 +46,8 @@ interface ThreatItem {
     category:    string;
     description: string;
     mitigation:  string;
+    priority?:   number;
+    stride_category?: string;
 }
 
 interface AnalysisResult {
@@ -88,7 +82,6 @@ const initialForm: FormState = {
     frameworks: [], languages: [],
     deployEnvs: [], deployTypes: [],
     databases: [], protocols: [],
-    uploads: [],
 };
 
 // ─────────────────────────────────────────────────────────────────────
@@ -122,6 +115,10 @@ function getRiskLabel(score: number): string {
     if (score >= 35) return "Medium";
     return "Low";
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Threat generation engine
+// ─────────────────────────────────────────────────────────────────────
 
 
 // ─────────────────────────────────────────────────────────────────────
@@ -343,12 +340,6 @@ function downloadAsJSON(form: FormState, result: AnalysisResult) {
             environments: form.deployEnvs,
             types: form.deployTypes
         },
-        uploaded_files: form.uploads.map(u => ({
-            name: u.name,
-            path: u.path,
-            size: u.size,
-            kind: u.kind
-        })),
         analysis: {
             risk_score: result.riskScore,
             risk_label: getRiskLabel(result.riskScore),
@@ -377,17 +368,16 @@ function downloadAsJSON(form: FormState, result: AnalysisResult) {
 }
 
 export default function ThreatModelingPage() {
-    const { token } = useAuth();
+    const { token, isLoading, isAuthenticated } = useAuth();
     const [form, setForm]         = useState<FormState>(initialForm);
     const [result, setResult]     = useState<AnalysisResult | null>(null);
     const [saveMsg, setSaveMsg]   = useState("");
     const [saveErr, setSaveErr]   = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [nameError, setNameErr] = useState("");
-    const [dragOver, setDragOver] = useState(false);
 
-    const fileInputRef   = useRef<HTMLInputElement>(null);
-    const folderInputRef = useRef<HTMLInputElement>(null);
+    const canSubmit = !!token && !isLoading;
+    const canSave   = !!token && !isSaving;
 
     // Generic array toggle
     const toggleArr = useCallback(<T extends string>(key: keyof FormState, val: T) => {
@@ -401,40 +391,37 @@ export default function ThreatModelingPage() {
     const toggleBool = (key: keyof FormState) =>
         setForm(prev => ({ ...prev, [key]: !prev[key] }));
 
-    // File / folder ingestion
-    const ingestFiles = useCallback((fileList: FileList | null, kind: "file" | "folder" = "file") => {
-        if (!fileList || fileList.length === 0) return;
-        const entries: UploadedEntry[] = [];
-        for (let i = 0; i < fileList.length; i++) {
-            const f = fileList[i];
-            // When coming from a folder input, webkitRelativePath contains the folder structure
-            const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
-            entries.push({ name: f.name, size: f.size, kind, path });
-        }
-        setForm(prev => ({ ...prev, uploads: [...prev.uploads, ...entries] }));
-    }, []);
-
-    const removeUpload = (path: string) =>
-        setForm(prev => ({ ...prev, uploads: prev.uploads.filter(u => u.path !== path) }));
-
-    const clearUploads = () => setForm(prev => ({ ...prev, uploads: [] }));
-
-    // Drop zone
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragOver(false);
-        ingestFiles(e.dataTransfer.files, "file");
-    };
-
     // Form submit
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.projectName.trim()) { setNameErr("Project name is required."); return; }
         setNameErr("");
 
-        // Set loading state
+        if (!token) {
+            setResult({
+                threats: [{
+                    id: "auth-required",
+                    title: "Authentication Required",
+                    risk: "High",
+                    category: "Authorization",
+                    description: "Please sign in and reload the page before generating a threat model.",
+                    mitigation: "Log in and try again.",
+                }],
+                riskScore: 0,
+            });
+            return;
+        }
+
+        // Set loading state with analysis info
         const loadingResult: AnalysisResult = {
-            threats: [],
+            threats: [{
+                id: "analysis-loading",
+                title: "Analyzing your system…",
+                risk: "Low",
+                category: "Analysis",
+                description: `Scanning threat landscape based on your inputs: ${form.appType} application using ${form.frameworks.length > 0 ? form.frameworks.join(", ") : "selected frameworks"} with ${form.databases.length > 0 ? form.databases.join(", ") : "selected databases"}. This analysis evaluates all STRIDE threat categories.`,
+                mitigation: "Please wait while the threat modeling engine generates detailed vulnerability assessments...",
+            }],
             riskScore: 0
         };
         setResult(loadingResult);
@@ -458,17 +445,31 @@ export default function ThreatModelingPage() {
             };
 
             // Call STRIDE analysis endpoint
-            const response = await api.post("/api/v1/threat-modeling/analyze/stride", requestData);
+            const response = await api.post<{
+                threats: Array<{
+                    id?: string;
+                    title: string;
+                    risk: string;
+                    category: string;
+                    description: string;
+                    mitigation: string;
+                    priority_score?: number;
+                    stride_category?: string;
+                }>;
+                risk_score: number;
+            }>("/api/v1/threat-modeling/analyze/stride", requestData, token);
 
             // Transform backend response to frontend format
             const analysisResult: AnalysisResult = {
-                threats: response.threats.map((threat: any) => ({
-                    id: threat.title.toLowerCase().replace(/\s+/g, "-"),
+                threats: response.threats.map((threat) => ({
+                    id: threat.id || threat.title.toLowerCase().replace(/\s+/g, "-"),
                     title: threat.title,
-                    risk: threat.risk,
+                    risk: threat.risk as RiskLevel,
                     category: threat.category,
                     description: threat.description,
                     mitigation: threat.mitigation,
+                    priority: threat.priority_score,
+                    stride_category: threat.stride_category,
                 })),
                 riskScore: response.risk_score,
             };
@@ -702,127 +703,20 @@ export default function ThreatModelingPage() {
                         </div>
                     </Card>
 
-                    {/* ── Card 5: Project Upload ── */}
-                    <Card
-                        title="Upload Project Files or Folder"
-                        description="Upload individual files or your entire project folder for richer context. Files are analyzed locally — nothing is sent to a server."
-                    >
-                        <div className="mt-1 space-y-4">
-
-                            {/* Drop zone */}
-                            <div
-                                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                                onDragLeave={() => setDragOver(false)}
-                                onDrop={handleDrop}
-                                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
-                                    dragOver
-                                        ? "border-blue-500 bg-blue-500/10"
-                                        : "border-white/[0.12] hover:border-blue-400/50 hover:bg-blue-500/5"
-                                }`}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <svg className="w-8 h-8 mx-auto text-slate-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                                </svg>
-                                <p className="text-sm font-medium text-slate-300 mb-1">
-                                    Drag & drop files here, or click to browse
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    Supports any file type — config files, diagrams, source code, docs
-                                </p>
-
-                                {/* Hidden file input */}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    multiple
-                                    className="hidden"
-                                    onChange={e => { ingestFiles(e.target.files, "file"); e.target.value = ""; }}
-                                />
-                            </div>
-
-                            {/* Folder upload button (separate — uses webkitdirectory) */}
-                            <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => folderInputRef.current?.click()}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:border-blue-400/50 hover:text-blue-400 transition-colors"
-                                >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                    </svg>
-                                    Upload Entire Project Folder
-                                </button>
-                                <span className="text-xs text-slate-500">
-                                    Scans your folder structure for security context
-                                </span>
-                                {/* Hidden folder input — webkitdirectory is non-standard, so we cast */}
-                                <input
-                                    ref={folderInputRef}
-                                    type="file"
-                                    multiple
-                                    className="hidden"
-                                    {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)}
-                                    onChange={e => { ingestFiles(e.target.files, "folder"); e.target.value = ""; }}
-                                />
-                            </div>
-
-                            {/* Uploaded entries list */}
-                            {form.uploads.length > 0 && (
-                                <div className="rounded-lg border border-white/[0.08] overflow-hidden">
-                                    <div className="flex items-center justify-between px-4 py-2.5 bg-white/[0.04] border-b border-white/[0.06]">
-                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                                            {form.uploads.length} file{form.uploads.length !== 1 ? "s" : ""} staged
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={clearUploads}
-                                            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
-                                        >
-                                            Clear all
-                                        </button>
-                                    </div>
-                                    <ul className="divide-y divide-white/[0.06] max-h-64 overflow-y-auto">
-                                        {form.uploads.map(entry => (
-                                            <li key={entry.path} className="flex items-center gap-3 px-4 py-2.5">
-                                                {/* Icon */}
-                                                {entry.kind === "folder"
-                                                    ? <svg className="w-4 h-4 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                                      </svg>
-                                                    : <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                      </svg>
-                                                }
-                                                {/* Details */}
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-slate-200 truncate">{entry.name}</p>
-                                                    {entry.path !== entry.name && (
-                                                        <p className="text-xs text-slate-500 truncate font-mono">{entry.path}</p>
-                                                    )}
-                                                </div>
-                                                <span className="text-xs text-slate-500 flex-shrink-0">{formatBytes(entry.size)}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeUpload(entry.path)}
-                                                    className="text-slate-600 hover:text-red-400 transition-colors ml-1 flex-shrink-0"
-                                                    aria-label="Remove"
-                                                >
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+                        {!isAuthenticated && !isLoading && (
+                        <div className="rounded-lg border border-yellow-400 bg-yellow-500/10 text-yellow-800 px-4 py-3 mb-4">
+                            You must be signed in to generate and save threat models.
                         </div>
-                    </Card>
+                    )}
+                    {isLoading && (
+                        <div className="rounded-lg border border-slate-400 bg-slate-500/10 text-slate-200 px-4 py-3 mb-4">
+                            Checking authentication…
+                        </div>
+                    )}
 
                     {/* ── Submit ── */}
                     <div className="flex justify-end pt-1">
-                        <Button type="submit" size="lg">
+                        <Button type="submit" size="lg" disabled={!canSubmit}>
                             <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
@@ -845,7 +739,6 @@ export default function ThreatModelingPage() {
                             </h2>
                             <p className="text-sm text-slate-400 mt-0.5">
                                 {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
-                                {form.uploads.length > 0 && ` · ${form.uploads.length} file${form.uploads.length !== 1 ? "s" : ""} uploaded`}
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2 flex-shrink-0">
@@ -861,7 +754,7 @@ export default function ThreatModelingPage() {
                                 </svg>
                                 Download JSON
                             </Button>
-                            <Button variant="secondary" size="sm" onClick={handleSave} disabled={isSaving}>
+                            <Button variant="secondary" size="sm" onClick={handleSave} disabled={!canSave}>
                                 <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                 </svg>
@@ -929,26 +822,6 @@ export default function ThreatModelingPage() {
                     </Card>
 
                     {/* ── Uploaded files in report ── */}
-                    {form.uploads.length > 0 && (
-                        <Card title="Project Files Analyzed" description={`${form.uploads.length} file${form.uploads.length !== 1 ? "s" : ""} included in this analysis`}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                                {form.uploads.map(u => (
-                                    <div key={u.path} className="flex items-center gap-2.5 text-sm text-slate-400">
-                                        {u.kind === "folder"
-                                            ? <svg className="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-                                              </svg>
-                                            : <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                              </svg>
-                                        }
-                                        <span className="truncate font-medium">{u.name}</span>
-                                        <span className="text-slate-500 text-xs flex-shrink-0">{formatBytes(u.size)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    )}
 
                     {/* ── Threats list ── */}
                     <div>
@@ -984,12 +857,19 @@ export default function ThreatModelingPage() {
                                                 <span className="text-xs text-slate-500">{threat.category}</span>
                                             </div>
                                         </div>
-                                        <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
-                                            {threat.risk} Risk
-                                        </span>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {threat.stride_category && (
+                                                <span className="text-xs font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                    {threat.stride_category}
+                                                </span>
+                                            )}
+                                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
+                                                {threat.risk} Risk
+                                            </span>
+                                        </div>
                                     </div>
                                     {/* Threat body */}
-                                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="px-5 py-4 space-y-4">
                                         <div>
                                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                                                 Description
@@ -998,7 +878,7 @@ export default function ThreatModelingPage() {
                                                 {threat.description}
                                             </p>
                                         </div>
-                                        <div className="md:border-l md:border-white/[0.06] md:pl-4">
+                                        <div className="border-t border-white/[0.06] pt-4">
                                             <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
                                                 ✓ Mitigation
                                             </p>
@@ -1006,6 +886,18 @@ export default function ThreatModelingPage() {
                                                 {threat.mitigation}
                                             </p>
                                         </div>
+                                        {threat.priority && (
+                                            <div className="flex items-center gap-2 text-xs">
+                                                <span className="font-semibold text-slate-500">Priority Score:</span>
+                                                <div className="flex-1 bg-white/[0.06] rounded-full h-2">
+                                                    <div
+                                                        className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
+                                                        style={{ width: `${Math.min(threat.priority, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-slate-400">{threat.priority}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -1021,6 +913,14 @@ export default function ThreatModelingPage() {
                             Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore}/100 ({riskLabel})
                         </p>
                     </div>
+                </div>
+            )}
+
+            {/* ════════════════════ SCAN HISTORY ════════════════════ */}
+            {!result && (
+                <div className="print:hidden">
+                    <h2 className="text-xl font-bold text-white mb-4">Scan History</h2>
+                    <ScanHistory />
                 </div>
             )}
         </div>

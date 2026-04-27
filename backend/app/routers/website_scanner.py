@@ -73,9 +73,12 @@ async def scan_website(
                 "medium": result["medium"],
                 "low": result["low"],
                 "total": result["total"],
-                "endpoints_found": result["endpoints_found"],
+                "endpoints_found": result.get("endpoints_found", 0),
                 "duration": result["duration"],
                 "started_at": result["started_at"],
+                **({
+                    "error": result["error"]
+                } if result.get("error") else {}),
             },
         }).execute()
     except Exception as exc:

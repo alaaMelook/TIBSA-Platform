@@ -27,6 +27,7 @@ app = FastAPI(
     description="Threat Intelligence-Based Security Application API",
     version="1.0.0",
     lifespan=lifespan,
+    redirect_slashes=False
 )
 
 # ─── CORS Middleware ──────────────────────────────────────────

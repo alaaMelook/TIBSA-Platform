@@ -230,48 +230,47 @@ class ThreatModelCreateRequest(BaseModel):
 
 
 # ─── Response Models ──────────────────────────────────────────
-
 class ThreatModelAnalysisResponse(BaseModel):
     """Full analysis result returned by the API."""
-    id:         str
-    user_id:    Optional[str] = None
 
-    # Inputs (echoed back)
-    project_name:          str
-    app_type:              str
-    uses_auth:             bool
-    uses_database:         bool
-    has_admin_panel:       bool
-    uses_external_apis:    bool
+    id: str
+    user_id: Optional[str] = None
+
+    # Inputs
+    project_name: str
+    app_type: str
+    uses_auth: bool
+    uses_database: bool
+    has_admin_panel: bool
+    uses_external_apis: bool
     stores_sensitive_data: bool
-    frameworks:            List[str]
-    languages:             List[str]
-    deploy_envs:           List[str]
-    deploy_types:          List[str]
-    databases:             List[str]
-    protocols:             List[str]
+    frameworks: List[str]
+    languages: List[str]
+    deploy_envs: List[str]
+    deploy_types: List[str]
+    databases: List[str]
+    protocols: List[str]
 
-    # Enhanced inputs
-    system_metadata: Dict[str, Any]
-    architecture_diagram: Optional[ArchitectureDiagram]
-    assets: List[Asset]
-    entry_points: List[EntryPoint]
-    trust_boundaries: List[TrustBoundary]
-    auth_questions: Dict[str, Any]
-    data_questions: Dict[str, Any]
-    control_questions: Dict[str, Any]
+    # Enhanced inputs (SAFE DEFAULTS)
+    system_metadata: Dict[str, Any] = Field(default_factory=dict)
+    architecture_diagram: Optional[ArchitectureDiagram] = None
+    assets: List[Asset] = Field(default_factory=list)
+    entry_points: List[EntryPoint] = Field(default_factory=list)
+    trust_boundaries: List[TrustBoundary] = Field(default_factory=list)
+    auth_questions: Dict[str, Any] = Field(default_factory=dict)
+    data_questions: Dict[str, Any] = Field(default_factory=dict)
+    control_questions: Dict[str, Any] = Field(default_factory=dict)
 
     # Results
-    risk_score: int                   # 0 – 100
-    risk_label: RiskLabel             # Low / Medium / High / Critical
-    threats:    List[ThreatItem]
-    mitigations: List[Mitigation]
-    heatmap_data: List[HeatmapData]
+    risk_score: int
+    risk_label: RiskLabel
+    threats: List[ThreatItem] = Field(default_factory=list)
+    mitigations: List[Mitigation] = Field(default_factory=list)
+    heatmap_data: List[HeatmapData] = Field(default_factory=list)
 
-    # Timestamps
+    # timestamps
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-
 
 class ThreatModelAnalysis(BaseModel):
     """Complete threat model analysis with all enhanced features."""
@@ -293,6 +292,7 @@ class ThreatModelAnalysis(BaseModel):
     heatmap_data: Optional[HeatmapData] = None
 
 
+
 class ThreatModelListItem(BaseModel):
     """Lightweight summary used in the list endpoint."""
     id:           str
@@ -301,7 +301,7 @@ class ThreatModelListItem(BaseModel):
     risk_score:   int
     risk_label:   str
     threat_count: int
-    mitigation_count: int
+    mitigation_count: int = 0
     created_at:   Optional[datetime] = None
 
 
@@ -349,3 +349,46 @@ class BacklogSyncResponse(BaseModel):
 class DeleteResponse(BaseModel):
     message: str
     id:      str
+
+
+# ─── Scan History Models ──────────────────────────────────────
+
+class ThreatModelScanHistoryItem(BaseModel):
+    """Individual scan history entry."""
+    id: str
+    user_id: str
+    analysis_id: str
+    project_name: str
+    app_type: str
+    risk_score: int
+    risk_label: RiskLabel
+    threat_count: int
+    mitigation_count: int
+    status: Literal["pending", "completed", "failed"]
+    error_message: Optional[str] = None
+    analysis_type: Literal["legacy", "comprehensive", "stride"]
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+class ThreatModelScanHistoryResponse(BaseModel):
+    """Response with list of scan history items."""
+    total_scans: int
+    scans: List[ThreatModelScanHistoryItem]
+    average_risk_score: Optional[float] = None
+    high_risk_count: int
+    medium_risk_count: int
+    low_risk_count: int
+
+
+class ThreatModelScanHistorySummary(BaseModel):
+    """Summary statistics for scan history."""
+    total_scans: int
+    completed_scans: int
+    failed_scans: int
+    average_risk_score: float
+    high_risk_threats: int
+    medium_risk_threats: int
+    low_risk_threats: int
+    last_scan_date: Optional[datetime] = None
+    most_common_threat: Optional[str] = None

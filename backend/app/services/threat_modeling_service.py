@@ -16,6 +16,9 @@ from app.models.threat_modeling import (
     ThreatModelListItem,
     ThreatModelAnalysis,
     ExportFormat,
+    ThreatModelScanHistoryItem,
+    ThreatModelScanHistoryResponse,
+    ThreatModelScanHistorySummary,
 )
 from app.services.threat_modeling_engine import analyze, analyze_comprehensive
 from app.services.export_service import ExportService
@@ -38,6 +41,7 @@ class ThreatModelingService:
         """
         Run the legacy threat engine and persist the results to Supabase.
         Returns the full stored analysis.
+        Automatically records the scan in the history.
         """
         result = analyze(req)
 
@@ -60,6 +64,7 @@ class ThreatModelingService:
             "risk_label":           result.risk_label,
             # Supabase expects JSON-serialisable value for JSONB columns
             "threats":              [t.model_dump() for t in result.threats],
+            "analysis_type":        "legacy",
         }
 
         response = self.db.table(self.TABLE).insert(row).execute()
@@ -67,7 +72,28 @@ class ThreatModelingService:
         if not response.data:
             raise RuntimeError("Failed to persist threat model analysis")
 
-        return self._row_to_response(response.data[0])
+        analysis_data = response.data[0]
+        analysis_response = self._row_to_response(analysis_data)
+
+        # Record scan in history
+        if user_id:
+            try:
+                await self.record_scan(
+                    user_id=user_id,
+                    analysis_id=analysis_data["id"],
+                    project_name=req.project_name,
+                    app_type=req.app_type,
+                    risk_score=result.risk_score,
+                    risk_label=result.risk_label,
+                    threat_count=len(result.threats),
+                    mitigation_count=0,
+                    analysis_type="legacy",
+                )
+            except Exception as e:
+                # Log but don't fail the analysis if scan history recording fails
+                print(f"Warning: Failed to record scan history: {str(e)}")
+
+        return analysis_response
 
     # ─── Create (Enhanced) ─────────────────────────────────────────────
 
@@ -81,6 +107,7 @@ class ThreatModelingService:
         """
         Run the enhanced threat modeling engine with all features enabled.
         Persists the comprehensive analysis to Supabase.
+        Automatically records the scan in the history.
         """
         # Generate comprehensive analysis
         analysis = analyze_comprehensive(req, generate_heatmap, include_summaries)
@@ -125,7 +152,27 @@ class ThreatModelingService:
 
         # Convert back to ThreatModelAnalysis
         stored_row = response.data[0]
-        return self._row_to_comprehensive_analysis(stored_row)
+        analysis_result = self._row_to_comprehensive_analysis(stored_row)
+
+        # Record scan in history
+        if user_id:
+            try:
+                await self.record_scan(
+                    user_id=user_id,
+                    analysis_id=stored_row["id"],
+                    project_name=req.project_name,
+                    app_type=req.app_type,
+                    risk_score=row["risk_score"],
+                    risk_label=row["risk_label"],
+                    threat_count=len(analysis.threats or []),
+                    mitigation_count=len(analysis.mitigations or []),
+                    analysis_type="comprehensive",
+                )
+            except Exception as e:
+                # Log but don't fail the analysis if scan history recording fails
+                print(f"Warning: Failed to record scan history: {str(e)}")
+
+        return analysis_result
 
     # ─── Export ───────────────────────────────────────────────────────
 
@@ -230,8 +277,8 @@ class ThreatModelingService:
                 risk_score=row["risk_score"],
                 risk_label=row["risk_label"],
                 threat_count=len(threats),
+                mitigation_count=0,
                 created_at=row.get("created_at"),
-                analysis_type=row.get("analysis_type", "legacy"),
             ))
         return items
 
@@ -251,6 +298,148 @@ class ThreatModelingService:
 
         response = query.execute()
         return bool(response.data)
+
+    # ─── Scan History ─────────────────────────────────────────────────
+
+    async def record_scan(
+        self,
+        user_id: str,
+        analysis_id: str,
+        project_name: str,
+        app_type: str,
+        risk_score: int,
+        risk_label: str,
+        threat_count: int,
+        mitigation_count: int,
+        analysis_type: str = "legacy",
+        status: str = "completed",
+        error_message: Optional[str] = None,
+    ) -> ThreatModelScanHistoryItem:
+        """
+        Record a threat modeling scan in the history.
+        Called automatically when a new analysis is created.
+        """
+        scan_data = {
+            "user_id": user_id,
+            "analysis_id": analysis_id,
+            "project_name": project_name,
+            "app_type": app_type,
+            "risk_score": risk_score,
+            "risk_label": risk_label,
+            "threat_count": threat_count,
+            "mitigation_count": mitigation_count,
+            "analysis_type": analysis_type,
+            "status": status,
+            "error_message": error_message,
+            "completed_at": datetime.utcnow().isoformat() if status == "completed" else None,
+        }
+
+        print(f"🔍 Recording scan: user={user_id}, analysis={analysis_id}, project={project_name}")
+        response = self.db.table("threat_modeling_scan_history").insert(scan_data).execute()
+        print(f"📝 Scan record response: {response}")
+
+        if not response.data:
+            print(f"❌ SCAN RECORD FAILED - No data in response: {response}")
+            raise RuntimeError(f"Failed to record scan history: {response}")
+
+        print(f"✅ Scan recorded successfully with ID: {response.data[0]['id']}")
+        return self._row_to_scan_history_item(response.data[0])
+
+    async def get_scan_history(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> ThreatModelScanHistoryResponse:
+        """
+        Retrieve scan history for a user with statistics.
+        Returns list of scans and statistics about those scans.
+        """
+        # Get scan history
+        response = (
+            self.db.table("threat_modeling_scan_history")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+
+        scans: List[ThreatModelScanHistoryItem] = []
+        for row in (response.data or []):
+            scans.append(self._row_to_scan_history_item(row))
+
+        # Calculate statistics
+        all_scans_response = (
+            self.db.table("threat_modeling_scan_history")
+            .select("risk_score, risk_label, threat_count")
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        all_scans = all_scans_response.data or []
+        high_risk_count = len([s for s in all_scans if s.get("risk_label") == "High"])
+        medium_risk_count = len([s for s in all_scans if s.get("risk_label") == "Medium"])
+        low_risk_count = len([s for s in all_scans if s.get("risk_label") == "Low"])
+
+        avg_risk_score = None
+        if all_scans:
+            avg_risk_score = sum(s.get("risk_score", 0) for s in all_scans) / len(all_scans)
+
+        return ThreatModelScanHistoryResponse(
+            total_scans=len(all_scans),
+            scans=scans,
+            average_risk_score=avg_risk_score,
+            high_risk_count=high_risk_count,
+            medium_risk_count=medium_risk_count,
+            low_risk_count=low_risk_count,
+        )
+
+    async def get_scan_history_summary(self, user_id: str) -> ThreatModelScanHistorySummary:
+        """
+        Get a summary of scan history statistics for a user.
+        """
+        response = (
+            self.db.table("threat_modeling_scan_history")
+            .select("*")
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        scans = response.data or []
+        if not scans:
+            return ThreatModelScanHistorySummary(
+                total_scans=0,
+                completed_scans=0,
+                failed_scans=0,
+                average_risk_score=0.0,
+                high_risk_threats=0,
+                medium_risk_threats=0,
+                low_risk_threats=0,
+                last_scan_date=None,
+                most_common_threat=None,
+            )
+
+        completed_scans = len([s for s in scans if s.get("status") == "completed"])
+        failed_scans = len([s for s in scans if s.get("status") == "failed"])
+        high_risk = len([s for s in scans if s.get("risk_label") == "High"])
+        medium_risk = len([s for s in scans if s.get("risk_label") == "Medium"])
+        low_risk = len([s for s in scans if s.get("risk_label") == "Low"])
+
+        avg_risk_score = sum(s.get("risk_score", 0) for s in scans) / len(scans)
+        last_scan = max(scans, key=lambda s: s.get("created_at", ""), default=None)
+
+        return ThreatModelScanHistorySummary(
+            total_scans=len(scans),
+            completed_scans=completed_scans,
+            failed_scans=failed_scans,
+            average_risk_score=round(avg_risk_score, 2),
+            high_risk_threats=high_risk,
+            medium_risk_threats=medium_risk,
+            low_risk_threats=low_risk,
+            last_scan_date=last_scan.get("created_at") if last_scan else None,
+            most_common_threat=None,  # Can be enhanced to track common threat types
+        )
 
     # ─── Internal ─────────────────────────────────────────────────────
 
@@ -344,3 +533,23 @@ class ThreatModelingService:
             return "Medium"
         else:
             return "Low"
+
+    @staticmethod
+    def _row_to_scan_history_item(row: dict) -> ThreatModelScanHistoryItem:
+        """Convert a scan history database row to a ThreatModelScanHistoryItem."""
+        return ThreatModelScanHistoryItem(
+            id=row["id"],
+            user_id=row["user_id"],
+            analysis_id=row["analysis_id"],
+            project_name=row["project_name"],
+            app_type=row["app_type"],
+            risk_score=row["risk_score"],
+            risk_label=row["risk_label"],
+            threat_count=row.get("threat_count", 0),
+            mitigation_count=row.get("mitigation_count", 0),
+            status=row.get("status", "completed"),
+            error_message=row.get("error_message"),
+            analysis_type=row.get("analysis_type", "legacy"),
+            created_at=row.get("created_at"),
+            completed_at=row.get("completed_at"),
+        )
