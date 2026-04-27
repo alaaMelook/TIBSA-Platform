@@ -96,3 +96,20 @@ SQL schemas are in the `database/` folder, split by module. Run them **in order*
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `VIRUSTOTAL_API_KEY` — required for URL/hash scans via VirusTotal
 - `CORS_ORIGINS` — Vercel frontend URL
+
+
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Mahmoud Update (27/4/2026): 1-npm run setup
+                            2-npm run dev
+
+
+If Not Install Image OF AV Run this please : docker compose up -d
+
+and open docker desktop when run the project to make sure the project is running properly
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
