@@ -87,11 +87,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // ─── Auth Actions ─────────────────────────────────────────
     const login = async (credentials: LoginCredentials) => {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
             email: credentials.email,
             password: credentials.password,
         });
         if (error) throw new Error(error.message);
+        // Proactively fetch user profile immediately instead of waiting
+        // for the onAuthStateChange listener (saves ~1-2s of loading)
+        if (data.session?.access_token) {
+            await fetchUser(data.session.access_token);
+        }
     };
 
     const register = async (credentials: RegisterCredentials) => {

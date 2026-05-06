@@ -30,7 +30,7 @@ class ScanService:
         self.supabase = supabase
         api_key = settings.virustotal_api_key
         self.vt: VirusTotalService | None = (
-            VirusTotalService(api_key) if api_key else None
+            VirusTotalService(api_key, demo_mode=settings.demo_mode) if api_key else None
         )
         self.ml = MLEngine()
         self.notifs = NotificationService(supabase)

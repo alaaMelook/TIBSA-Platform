@@ -27,7 +27,15 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         config.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    let response: Response;
+    try {
+        response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    } catch {
+        throw new Error(
+            `Cannot connect to the backend server at ${API_BASE_URL}. ` +
+            `Make sure the backend is running (uvicorn app.main:app --reload).`
+        );
+    }
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: "An error occurred" }));
