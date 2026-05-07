@@ -69,6 +69,11 @@ const IconThreatModeling = () => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
     </svg>
 );
+const IconAIAnalysis = () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/>
+    </svg>
+);
 
 const sidebarLinks: SidebarLink[] = [
     { href: "/dashboard",                   label: "Dashboard",       icon: <IconDashboard /> },
@@ -76,6 +81,7 @@ const sidebarLinks: SidebarLink[] = [
     { href: "/dashboard/website-scanner",  label: "Pen Test",         icon: <IconWebsiteScanner /> },
     { href: "/dashboard/threats",           label: "Threats",         icon: <IconThreats /> },
     { href: "/dashboard/threat-modeling",   label: "Threat Modeling", icon: <IconThreatModeling /> },
+    { href: "/dashboard/ai-malware-analysis", label: "AI Analysis",  icon: <IconAIAnalysis /> },
     { href: "/dashboard/reports",           label: "Reports",         icon: <IconReports /> },
     { href: "/dashboard/profile",           label: "Profile",         icon: <IconProfile /> },
 ];

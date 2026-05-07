@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 sys.stdout.reconfigure(encoding="utf-8")
 
 from app.config import settings
-from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling
+from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis
 
 
 @asynccontextmanager
@@ -50,6 +50,7 @@ app.include_router(threats.router, prefix="/api/v1/threats", tags=["Threat Intel
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(website_scanner.router, prefix="/api/v1/website-scanner", tags=["Website Scanner"])
 app.include_router(threat_modeling.router, prefix="/api/v1/threat-modeling", tags=["Threat Modeling"])
+app.include_router(ai_analysis.router, prefix="/api/v1/ai-analysis", tags=["AI Analysis"])
 
 
 # ─── Health Check ─────────────────────────────────────────────

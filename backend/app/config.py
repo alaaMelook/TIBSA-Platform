@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     malice_container_timeout: int = 120
     malice_helper_image: str = "alpine:latest"
 
+    # ─── OpenRouter AI ────────────────────────────────────────
+    openrouter_api_key: str = ""
+
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"
     debug: bool = False
