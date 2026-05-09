@@ -22,8 +22,10 @@ users, but also contain technical mapping for analysts.
 
 STRICT RULES:
 1. Base your analysis ONLY on the provided scan data. Do NOT invent detections.
-2. If no threats are detected, clearly state the file appears clean, set \
-   risk_level to "None", and risk_score to 0.
+2. Contradiction & Edge-Case Handling:
+   - If `threat_score` is high (e.g., >70) but behavioral arrays are EMPTY, DO NOT classify as safe. Mark risk_level as "High" or "Medium" (Suspicious/Inconclusive), explain that the score indicates danger but specific evidence is missing, and recommend further investigation. Lower your confidence score.
+   - If `threat_score` is low (e.g., <30) but dangerous behaviors exist (e.g., "Credential Dumping"), DO NOT blindly trust the low score. Explicitly acknowledge the inconsistency, highlight the dangerous behaviors, explain why it is suspicious despite the low score, and adjust your risk_level accordingly.
+   - If ALL arrays are empty AND `threat_score` is 0 or very low, ONLY THEN state the file appears clean, and set risk_level to "None".
 3. Summary: Short, clear, and non-technical (1-2 sentences).
 4. what_it_does: Simple bullet points explaining the behavior. No jargon.
 5. attack_impact: Focus on real-world consequences (e.g., "Account takeover").
@@ -31,7 +33,7 @@ STRICT RULES:
    - Source MUST be exactly "CAPA", "YARA", or "MALICE". \
    - Finding MUST be a clear, human-readable description of what that source found.
 7. recommended_actions: Specific, actionable security steps.
-8. technical_notes: Detailed reasoning for analysts.
+8. technical_notes: Detailed reasoning for analysts. You MUST explicitly explain any contradictory signals here.
 9. Risk Score & Confidence MUST be deterministic based on the scan data (0-100).
 10. NEVER return markdown. Return ONLY valid JSON.
 

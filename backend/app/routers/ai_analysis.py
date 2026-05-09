@@ -16,10 +16,11 @@ Rate limiting:
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
 from collections import defaultdict
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import (
     APIRouter,
@@ -113,6 +114,57 @@ def _compute_threat_score(
     return min(100, total)
 
 
+def _is_json_upload(filename: str, content_type: str | None) -> bool:
+    """Detect JSON uploads by extension OR content type."""
+    if filename.lower().endswith(".json"):
+        return True
+    if content_type and content_type.lower().strip() in (
+        "application/json", "text/json"
+    ):
+        return True
+    return False
+
+
+def _parse_and_validate_scan_json(
+    filename: str, content: bytes
+) -> MalwareScanInput:
+    """
+    Parse and validate a JSON file.
+    Raises HTTPException (400) if JSON is malformed or validation fails.
+    """
+    from app.services.ai.validators import validate_scan_json, ScanValidationError
+    
+    try:
+        data = json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON format. The uploaded file contains malformed JSON that cannot be parsed."
+        )
+
+    try:
+        clean_data, warnings = validate_scan_json(data)
+    except ScanValidationError as exc:
+        error_str = "Validation Error: " + " | ".join(exc.errors)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=error_str
+        )
+
+    for warning in warnings:
+        logger.warning(warning)
+
+    return MalwareScanInput(
+        file_name=clean_data["file_name"],
+        file_type=clean_data["file_type"],
+        detections=clean_data["detections"],
+        detection_count=clean_data["detection_count"],
+        yara_matches=clean_data["yara_matches"],
+        capa_behaviors=clean_data["capa_behaviors"],
+        threat_score=clean_data["threat_score"],
+    )
+
+
 @router.post(
     "/explain",
     response_model=AIExplanationResponse,
@@ -158,6 +210,34 @@ async def explain_file(
         current_user["auth_user"].id,
         client_ip,
     )
+
+    # ── Check for JSON scan data shortcut ─────────────────────────
+    # If the user uploaded a .json file containing pre-formatted scan
+    # results, use that data directly instead of running empty scanners.
+    if _is_json_upload(filename, file.content_type):
+        json_scan_input = _parse_and_validate_scan_json(filename, content)
+        logger.info(
+            "JSON scan data detected — skipping pipeline, using embedded data. "
+            "file=%s, detections=%d, yara=%d, capa=%d, score=%d",
+            json_scan_input.file_name,
+            json_scan_input.detection_count,
+            len(json_scan_input.yara_matches),
+            len(json_scan_input.capa_behaviors),
+            json_scan_input.threat_score,
+        )
+        try:
+            result = await explain_malware(json_scan_input)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(exc),
+            )
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"AI analysis failed: {exc}",
+            )
+        return result
 
     # ── Run analysis pipeline concurrently ────────────────────────
     # Malice, YARA, and CAPA run in parallel for performance
