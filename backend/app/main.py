@@ -9,6 +9,16 @@ from contextlib import asynccontextmanager
 
 sys.stdout.reconfigure(encoding="utf-8")
 
+import sys
+import asyncio
+
+if sys.platform == "win32":
+    # Required for Playwright/Subprocess on Windows + Python 3.13
+    print("[INIT] Setting WindowsProactorEventLoopPolicy for Playwright support...")
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+
+
 from app.config import settings
 from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis
 
