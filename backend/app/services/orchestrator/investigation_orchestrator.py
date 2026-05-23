@@ -1,0 +1,292 @@
+"""
+Master Investigation Orchestrator.
+Coordinates the entire threat intelligence and modeling ingestion pipeline.
+"""
+import logging
+import asyncio
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# Models
+from app.models.investigation import Investigation
+from app.models.finding import Finding
+from app.models.asset import Asset
+from app.models.ti_report import TIReport
+from app.models.tm_report import TMReport
+
+# Repositories
+from app.repositories.investigation_repository import InvestigationRepository
+from app.repositories.finding_repository import FindingRepository
+from app.repositories.report_repository import ReportRepository
+
+# Services
+from app.services.scanners.scanner_adapter import ScannerAdapter
+from app.services.translators.finding_normalizer import FindingNormalizer
+
+logger = logging.getLogger(__name__)
+
+# Basic category-to-STRIDE threat mapping
+CATEGORY_TO_STRIDE = {
+    "Client-Side Security": "Tampering",
+    "Session Security": "Spoofing",
+    "Authentication Security": "Spoofing",
+    "Authorization Security": "Elevation of Privilege",
+    "API Security": "Tampering",
+    "Injection Vulnerability": "Tampering",
+    "Information Disclosure": "Information Disclosure",
+    "Hardening": "Information Disclosure",
+    "Informational": "Information Disclosure"
+}
+
+# Basic category-to-Mitigation mapping
+CATEGORY_TO_MITIGATION = {
+    "Client-Side Security": "Implement strong Content Security Policies (CSP) and input validation.",
+    "Session Security": "Configure cookies with Secure, HttpOnly, and SameSite flags.",
+    "Authentication Security": "Implement rate limiting, multi-factor authentication, and strong password complexity policies.",
+    "Authorization Security": "Apply strict broken-access-control defenses and role-based permissions.",
+    "API Security": "Authenticate CORS origins strictly and sanitize all input parameters.",
+    "Injection Vulnerability": "Use parameterized queries and ORM frameworks to prevent execution injections.",
+    "Information Disclosure": "Disable directory listing, restrict access to backup files, and filter technical error traces.",
+    "Hardening": "Enforce HTTP Strict Transport Security (HSTS) and remove unsafe response headers.",
+    "Informational": "Maintain standard security monitoring and periodic dependency audits."
+}
+
+class InvestigationOrchestrator:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.investigation_repo = InvestigationRepository(session)
+        self.finding_repo = FindingRepository(session)
+        self.report_repo = ReportRepository(session)
+
+    async def create_investigation(self, target: str, tests: List[str], mode: str = "safe", include_ti: bool = True, tm_mode: str = "enhanced") -> Investigation:
+        """Create a new investigation in pending state."""
+        import time
+        scan_id = f"SCAN-{int(time.time())}"
+        investigation = Investigation(
+            scan_id=scan_id,
+            target=target,
+            status="pending",
+            risk_score=0.0,
+            started_at=datetime.utcnow(),
+            include_ti=include_ti,
+            tm_mode=tm_mode,
+            current_stage="Pending",
+            progress_percent=0.0
+        )
+        return await self.investigation_repo.create(investigation)
+
+    async def run_investigation_pipeline(self, investigation_id: str, tests: List[str], mode: str = "safe") -> None:
+        """
+        Coordinates scanning, normalization, asset discovery, threat context interpretation,
+        and database storage for an investigation.
+        """
+        from app.services.threat_context.context_interpreter import interpret_context
+
+        # Fetch the investigation
+        investigation = await self.investigation_repo.get_by_id(investigation_id)
+        if not investigation:
+            logger.error(f"Investigation with ID {investigation_id} not found.")
+            return
+
+        # Transition status to running & stage 1
+        investigation.status = "running"
+        investigation.current_stage = "Pentest Scanning"
+        investigation.progress_percent = 25.0
+        investigation.pipeline_state = {
+            "stage": "Pentest Scanning",
+            "progress": 25.0,
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        await self.investigation_repo.update(investigation)
+
+        try:
+            # 1. Run scanner
+            print(f"[ORCHESTRATOR] Launching scanner for target: {investigation.target}")
+            raw_output = await ScannerAdapter.run_scan(investigation.target, tests, mode)
+            
+            # Temporary debug logging for analysis
+            print("--- DEBUG SCANNER OUTPUT ---")
+            print("RAW SCAN RESULTS KEYS:", list(raw_output.keys()) if isinstance(raw_output, dict) else "Not a dict")
+            if isinstance(raw_output, dict):
+                print("RAW FINDINGS COUNT:", len(raw_output.get("findings", [])))
+                print("SCANNER_JSON FINDINGS COUNT:", len(raw_output.get("scanner_json", {}).get("findings", [])))
+                print("RAW TECHS COUNT:", len(raw_output.get("detected_technologies", [])))
+                print("SCANNER_JSON TECHS COUNT:", len(raw_output.get("scanner_json", {}).get("detected_technologies", [])))
+                print("RAW ASSETS COUNT:", len(raw_output.get("detected_assets", [])))
+                print("SCANNER_JSON ASSETS COUNT:", len(raw_output.get("scanner_json", {}).get("detected_assets", [])))
+                print("RAW RISK SCORE:", raw_output.get("risk_score"))
+            print("----------------------------")
+
+            # Extract basic result details
+            risk_score = raw_output.get("risk_score", 0.0)
+            raw_findings = raw_output.get("findings", [])
+            detected_techs = raw_output.get("detected_technologies", [])
+            detected_assets = raw_output.get("detected_assets", [])
+
+            # Fallback validation warning
+            if not raw_findings:
+                logger.warning(f"Scanner completed with zero findings for target {investigation.target}")
+                print(f"[WARNING] Scanner completed with zero findings for target {investigation.target}")
+
+            # 2. Transition to stage 2: Normalization
+            investigation.current_stage = "Finding Normalization"
+            investigation.progress_percent = 50.0
+            investigation.pipeline_state = {
+                "stage": "Finding Normalization",
+                "progress": 50.0,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            await self.investigation_repo.update(investigation)
+
+            # Retrieve orchestration controls from the database row
+            include_ti = getattr(investigation, "include_ti", True)
+            tm_mode = getattr(investigation, "tm_mode", "enhanced")
+
+            normalized_findings: List[Finding] = []
+            stride_counts = {"Spoofing": 0, "Tampering": 0, "Repudiation": 0, "Information Disclosure": 0, "Denial of Service": 0, "Elevation of Privilege": 0}
+            mitigation_roadmap = {}
+
+            for raw in raw_findings:
+                # Support nested structures if raw findings are raw dictionaries
+                f_dict = raw if isinstance(raw, dict) else raw.model_dump() if hasattr(raw, "model_dump") else getattr(raw, "__dict__", {})
+                
+                # Pass include_ti parameter to normalize selectively
+                norm = FindingNormalizer.normalize(f_dict, default_url=investigation.target, include_ti=include_ti)
+                
+                finding = Finding(
+                    investigation_id=investigation.id,
+                    finding_id=norm.finding_id,
+                    title=norm.title,
+                    severity=norm.severity,
+                    category=norm.category,
+                    affected_url=norm.affected_url,
+                    evidence=norm.evidence,
+                    tags=norm.tags
+                )
+                normalized_findings.append(finding)
+
+                # Determine category used by Threat Modeling based on modes
+                if include_ti and tm_mode == "enhanced":
+                    # Mode 1: TI-Enhanced Threat Modeling (uses interpreted category)
+                    tm_category = norm.category
+                else:
+                    # Mode 2: Standalone Threat Modeling (uses raw category before interpretation)
+                    tm_category = f_dict.get("classification") or f_dict.get("category") or f_dict.get("type") or "Informational"
+
+                # Collect threat modeling indicators
+                stride_cat = CATEGORY_TO_STRIDE.get(tm_category) or CATEGORY_TO_STRIDE.get(interpret_context(norm.title, tm_category), "Information Disclosure")
+                stride_counts[stride_cat] = stride_counts.get(stride_cat, 0) + 1
+                
+                mitigation = CATEGORY_TO_MITIGATION.get(tm_category) or CATEGORY_TO_MITIGATION.get(interpret_context(norm.title, tm_category), "Remediate according to security guidelines.")
+                mitigation_roadmap[tm_category] = mitigation
+
+            # Save normalized findings
+            await self.finding_repo.create_many(normalized_findings)
+
+            # 3. Process and save Assets (technologies & domains)
+            assets_to_save: List[Asset] = []
+            
+            # Save the primary target URL itself as an asset
+            assets_to_save.append(
+                Asset(
+                    investigation_id=investigation.id,
+                    asset_type="target",
+                    url=investigation.target,
+                    technology=None
+                )
+            )
+
+            # Save technologies found
+            for tech in detected_techs:
+                assets_to_save.append(
+                    Asset(
+                        investigation_id=investigation.id,
+                        asset_type="technology",
+                        url=investigation.target,
+                        technology=tech.get("name")
+                    )
+                )
+
+            # Save detected sub-assets / assets
+            for asset in detected_assets:
+                assets_to_save.append(
+                    Asset(
+                        investigation_id=investigation.id,
+                        asset_type=asset.get("type") or "sub-asset",
+                        url=asset.get("url") or investigation.target,
+                        technology=asset.get("technology")
+                    )
+                )
+
+            self.session.add_all(assets_to_save)
+
+            # 4. Conditionally generate and save Threat Intelligence (TI) report
+            if include_ti:
+                investigation.current_stage = "Threat Intelligence Enrichment"
+                investigation.progress_percent = 75.0
+                investigation.pipeline_state = {
+                    "stage": "Threat Intelligence Enrichment",
+                    "progress": 75.0,
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                await self.investigation_repo.update(investigation)
+
+                ti_report = TIReport(
+                    investigation_id=investigation.id,
+                    overall_risk=risk_score,
+                    risk_summary=f"Analysis completed on {datetime.utcnow().strftime('%Y-%m-%d')}. "
+                                 f"Discovered {len(normalized_findings)} findings across "
+                                 f"{len(detected_techs)} technologies. Risk score: {risk_score}."
+                )
+                await self.report_repo.create_ti_report(ti_report)
+
+            # 5. Generate and save Threat Modeling (TM) report
+            investigation.current_stage = "Threat Modeling"
+            investigation.progress_percent = 90.0
+            investigation.pipeline_state = {
+                "stage": "Threat Modeling",
+                "progress": 90.0,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            await self.investigation_repo.update(investigation)
+
+            tm_report = TMReport(
+                investigation_id=investigation.id,
+                stride_summary=stride_counts,
+                mitigations=mitigation_roadmap
+            )
+            await self.report_repo.create_tm_report(tm_report)
+
+            # 6. Finalize investigation state
+            investigation.status = "completed"
+            investigation.current_stage = "Completed"
+            investigation.progress_percent = 100.0
+            investigation.risk_score = risk_score
+            investigation.completed_at = datetime.utcnow()
+            investigation.pipeline_state = {
+                "stage": "Completed",
+                "progress": 100.0,
+                "updated_at": investigation.completed_at.isoformat()
+            }
+            investigation.final_result = {
+                "scan_id": investigation.scan_id,
+                "target": investigation.target,
+                "status": "completed",
+                "risk_score": risk_score,
+                "findings_count": len(normalized_findings),
+                "assets_count": len(assets_to_save),
+                "ti_enriched": include_ti,
+                "tm_mode": tm_mode,
+                "completed_at": investigation.completed_at.isoformat()
+            }
+            await self.investigation_repo.update(investigation)
+            print(f"[ORCHESTRATOR] Investigation completed for {investigation.target}.")
+
+        except Exception as e:
+            logger.exception(f"Pipeline execution failed for investigation {investigation_id}: {e}")
+            investigation.status = "failed"
+            investigation.current_stage = "Failed"
+            investigation.completed_at = datetime.utcnow()
+            await self.investigation_repo.update(investigation)
+            print(f"[ORCHESTRATOR] Investigation failed for {investigation.target}. Error: {e}")
