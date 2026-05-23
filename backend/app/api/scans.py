@@ -1,0 +1,23 @@
+"""
+Scans API Router.
+Placeholder to support future scan-specific endpoints.
+"""
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database.session import get_db
+from app.dependencies import get_current_user
+from app.schemas.responses import APIResponse
+
+router = APIRouter()
+
+@router.get("/", response_model=APIResponse[dict], summary="List all scans (metadata)")
+async def list_scans(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Placeholder endpoint for direct scanner operations."""
+    return APIResponse(
+        success=True,
+        message="Scanner engine is active and operational.",
+        data={"scans": []}
+    )

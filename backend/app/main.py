@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 sys.stdout.reconfigure(encoding="utf-8")
+# uvicorn_reload_trigger = True
 
 import sys
 import asyncio
@@ -21,6 +22,10 @@ if sys.platform == "win32":
 
 from app.config import settings
 from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis
+from app.database.init_db import init_models
+from app.api import investigations as api_investigations
+from app.api import scans as api_scans
+from app.api import health as api_health
 
 
 @asynccontextmanager
@@ -31,6 +36,10 @@ async def lifespan(app: FastAPI):
         print("WARNING: VIRUSTOTAL_API_KEY is not set — URL/file scans will fail!")
     else:
         print("VirusTotal API key loaded")
+    
+    # Initialize database models/tables
+    await init_models()
+    
     yield
     print("TIBSA Backend shutting down...")
 
@@ -61,6 +70,11 @@ app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["
 app.include_router(website_scanner.router, prefix="/api/v1/website-scanner", tags=["Website Scanner"])
 app.include_router(threat_modeling.router, prefix="/api/v1/threat-modeling", tags=["Threat Modeling"])
 app.include_router(ai_analysis.router, prefix="/api/v1/ai-analysis", tags=["AI Analysis"])
+
+# New infrastructure routers
+app.include_router(api_investigations.router, prefix="/api/v1/investigations", tags=["Investigations"])
+app.include_router(api_scans.router, prefix="/api/v1/investigation-scans", tags=["Investigation Scans"])
+app.include_router(api_health.router, prefix="/api/v1/health", tags=["Health"])
 
 
 # ─── Health Check ─────────────────────────────────────────────
