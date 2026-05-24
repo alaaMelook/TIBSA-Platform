@@ -23,7 +23,10 @@ class Settings(BaseSettings):
     malice_helper_image: str = "alpine:latest"
 
     # ─── OpenRouter AI ────────────────────────────────────────
+    ai_provider: str = "openrouter"
     openrouter_api_key: str = ""
+    openrouter_model: str = "openrouter/auto"
+    openrouter_max_tokens: int = 500
 
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"

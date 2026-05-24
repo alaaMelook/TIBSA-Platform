@@ -87,35 +87,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // ─── Auth Actions ─────────────────────────────────────────
     const login = async (credentials: LoginCredentials) => {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: credentials.email,
-            password: credentials.password,
-        });
-        if (error) throw new Error(error.message);
-        // Proactively fetch user profile immediately instead of waiting
-        // for the onAuthStateChange listener (saves ~1-2s of loading)
-        if (data.session?.access_token) {
-            await fetchUser(data.session.access_token);
+        // Use secure backend endpoint (enforces rate limits and auditing)
+        try {
+            const res = await api.post<{ access_token: string, refresh_token: string }>("/api/v1/auth/login", credentials);
+            if (res.access_token && res.refresh_token) {
+                const { error } = await supabase.auth.setSession({
+                    access_token: res.access_token,
+                    refresh_token: res.refresh_token
+                });
+                if (error) throw new Error(error.message);
+                await fetchUser(res.access_token);
+            }
+        } catch (err: any) {
+            throw new Error(err.message || "Invalid credentials");
         }
     };
 
     const register = async (credentials: RegisterCredentials) => {
-        // 1. Register with Supabase Auth
-        const { data, error } = await supabase.auth.signUp({
-            email: credentials.email,
-            password: credentials.password,
-            options: {
-                data: { full_name: credentials.full_name },
-            },
-        });
-        if (error) throw new Error(error.message);
-
-        // 2. Create user profile in backend (role defaults to "user")
-        if (data.session?.access_token) {
-            await api.post("/api/v1/users/register", {
-                email: credentials.email,
-                full_name: credentials.full_name,
-            }, data.session.access_token);
+        // Use secure backend endpoint (enforces password policies and rate limits)
+        try {
+            const res = await api.post<{ access_token: string, refresh_token: string }>("/api/v1/auth/register", credentials);
+            if (res.access_token && res.refresh_token) {
+                const { error } = await supabase.auth.setSession({
+                    access_token: res.access_token,
+                    refresh_token: res.refresh_token
+                });
+                if (error) throw new Error(error.message);
+                await fetchUser(res.access_token);
+            }
+        } catch (err: any) {
+            // Use generic error for user enumeration protection where possible
+            throw new Error(err.message || "Registration failed. Please check your inputs.");
         }
     };
 
