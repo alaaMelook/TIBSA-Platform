@@ -5,14 +5,20 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 
 // Local Interfaces to ensure zero typescript build errors
-interface TestFinding {
-    id: string;
+interface TIFinding {
+    id?: string;
     finding_id: string;
     title: string;
     severity: string;
     category: string;
-    affected_url: string;
-    evidence: string;
+    confidence: number;
+    false_positive_probability: number;
+    verification_status: string;
+    exploitability: string;
+    affected_asset: string;
+    risk_score: number;
+    risk_multiplier: number;
+    evidence?: string;
     tags: string[];
 }
 
@@ -38,24 +44,21 @@ interface TestTMReport {
 }
 
 interface InvestigationStatusData {
-    id: string;
-    scan_id: string;
+    investigation_id: string;
     status: string;
     risk_score: number;
-    started_at: string;
-    completed_at?: string | null;
-    current_stage: string;
-    progress_percent: number;
+    summary: any;
+    ti_findings: TIFinding[];
+    reputation_context: any;
 }
 
 interface InvestigationFullData extends InvestigationStatusData {
-    target: string;
-    include_ti: boolean;
-    tm_mode: string;
-    findings: TestFinding[];
-    assets: TestAsset[];
-    ti_reports: TestTIReport[];
-    tm_reports: TestTMReport[];
+    target?: string;
+    include_ti?: boolean;
+    tm_mode?: string;
+    assets?: TestAsset[];
+    ti_reports?: TestTIReport[];
+    tm_reports?: TestTMReport[];
 }
 
 interface ApiResponseWrapper<T> {
@@ -73,28 +76,48 @@ export default function Dev1TestPage() {
     const [authError, setAuthError] = useState("");
     const [authSubmitting, setAuthSubmitting] = useState(false);
 
-    // Scan parameters State
-    const [targetUrl, setTargetUrl] = useState("https://example.com");
+    // Scan parameters State (Removed manual target URL and manual tests)
     const [scanMode, setScanMode] = useState("safe");
     const [includeTi, setIncludeTi] = useState(true);
     const [tmMode, setTmMode] = useState("enhanced");
-    const [selectedTests, setSelectedTests] = useState<string[]>([
-        "security_headers",
-        "xss",
-        "sqli",
-        "cookie_analysis",
-        "misconfiguration"
-    ]);
+
+    // History selection state
+    const [scanHistory, setScanHistory] = useState<any[]>([]);
+    const [selectedHistoryId, setSelectedHistoryId] = useState<string>("");
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
     // Active pipeline state
     const [isLaunching, setIsLaunching] = useState(false);
     const [investigationId, setInvestigationId] = useState<string | null>(null);
-    const [scanId, setScanId] = useState<string | null>(null);
     const [statusInfo, setStatusInfo] = useState<InvestigationStatusData | null>(null);
     const [fullResults, setFullResults] = useState<InvestigationFullData | null>(null);
     const [pollingError, setPollingError] = useState("");
-    const [activeTab, setActiveTab] = useState<"findings" | "assets" | "reports" | "raw">("findings");
+    const [activeTab, setActiveTab] = useState<"findings" | "reports" | "raw">("findings");
     const [expandedFinding, setExpandedFinding] = useState<string | null>(null);
+
+    // Fetch history when user is authenticated
+    useEffect(() => {
+        if (!token || !isAuthenticated) return;
+        
+        const fetchHistory = async () => {
+            setIsLoadingHistory(true);
+            try {
+                const res = await api.get<any[]>("/api/v1/website-scanner/history", token);
+                // Based on standard FastAPI returning direct list or wrapped
+                const data = Array.isArray(res) ? res : ((res as any).data || []);
+                setScanHistory(data);
+                if (data.length > 0) {
+                    setSelectedHistoryId(data[0].id);
+                }
+            } catch (err: unknown) {
+                console.error("Failed to load history:", err);
+            } finally {
+                setIsLoadingHistory(false);
+            }
+        };
+
+        fetchHistory();
+    }, [token, isAuthenticated]);
 
     // Run custom login with provided credentials
     const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -110,97 +133,40 @@ export default function Dev1TestPage() {
         }
     };
 
-    // Toggle specific pentest scan check
-    const toggleTest = (testName: string) => {
-        if (selectedTests.includes(testName)) {
-            setSelectedTests(selectedTests.filter(t => t !== testName));
-        } else {
-            setSelectedTests([...selectedTests, testName]);
-        }
-    };
-
-    // Dispatch background orchestrator investigation
-    const launchInvestigation = async () => {
-        if (!token) return;
+    // Generate TI Report from selected history
+    const generateTIReport = async () => {
+        if (!token || !selectedHistoryId) return;
         setIsLaunching(true);
         setPollingError("");
         setInvestigationId(null);
-        setScanId(null);
         setStatusInfo(null);
         setFullResults(null);
+        setActiveTab("findings");
 
         try {
-            const res = await api.post<ApiResponseWrapper<InvestigationFullData>>(
-                "/api/v1/investigations/start",
-                {
-                    target: targetUrl,
-                    tests: selectedTests,
-                    mode: scanMode,
-                    include_ti: includeTi,
-                    tm_mode: tmMode
-                },
+            // Hitting the history detail route which we refactored to apply TI Processing
+            const res = await api.get<InvestigationFullData | ApiResponseWrapper<InvestigationFullData>>(
+                `/api/v1/website-scanner/history/${selectedHistoryId}`,
                 token
             );
             
-            if (res.success && res.data) {
-                setInvestigationId(res.data.id);
-                setScanId(res.data.scan_id);
-                setStatusInfo(res.data);
+            // Depending on if the API wraps in ApiResponseWrapper or returns direct object
+            const data = ("success" in res && "data" in res) ? (res as ApiResponseWrapper<InvestigationFullData>).data : (res as InvestigationFullData);
+            
+            if (data && (data.investigation_id || (data as any).id)) {
+                const iId = data.investigation_id || (data as any).id;
+                setInvestigationId(iId);
+                setStatusInfo(data);
+                setFullResults(data);
             } else {
                 throw new Error("Invalid response format from server");
             }
         } catch (err: unknown) {
-            setPollingError(err instanceof Error ? err.message : "Failed to launch pipeline");
+            setPollingError(err instanceof Error ? err.message : "Failed to generate TI report");
         } finally {
             setIsLaunching(false);
         }
     };
-
-    // Poll live status until completed/failed
-    useEffect(() => {
-        if (!investigationId || !token) return;
-
-        let isMounted = true;
-        const intervalId = setInterval(async () => {
-            try {
-                const res = await api.get<ApiResponseWrapper<InvestigationStatusData>>(
-                    `/api/v1/investigations/${investigationId}/status`,
-                    token
-                );
-                
-                if (!isMounted) return;
-                
-                if (res.success && res.data) {
-                    setStatusInfo(res.data);
-                    
-                    // Stop polling if completed or failed
-                    if (res.data.status === "completed" || res.data.status === "failed") {
-                        clearInterval(intervalId);
-                        
-                        // Retrieve full results details
-                        const fullRes = await api.get<ApiResponseWrapper<InvestigationFullData>>(
-                            `/api/v1/investigations/${investigationId}`,
-                            token
-                        );
-                        
-                        if (isMounted && fullRes.success && fullRes.data) {
-                            setFullResults(fullRes.data);
-                        }
-                    }
-                }
-            } catch (err: unknown) {
-                if (isMounted) {
-                    setPollingError(err instanceof Error ? err.message : "Error polling status");
-                    clearInterval(intervalId);
-                }
-            }
-        }, 3000);
-
-        return () => {
-            isMounted = false;
-            clearInterval(intervalId);
-        };
-    }, [investigationId, token]);
 
     // Helpers to render colors
     const getSeverityColor = (sev: string) => {
@@ -286,32 +252,46 @@ export default function Dev1TestPage() {
                         /* Control Panel */
                         <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
                             <h2 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">
-                                🕹️ Ingestion Parameters
+                                🕹️ Threat Intelligence Pipeline
                             </h2>
                             
-                            {/* Target Input */}
+                            {/* History Selection */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs text-slate-400 font-medium">Target Scan URL</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
-                                    value={targetUrl}
-                                    onChange={(e) => setTargetUrl(e.target.value)}
-                                />
+                                <label className="block text-xs text-slate-400 font-medium">Select Past Pentest Investigation</label>
+                                {isLoadingHistory ? (
+                                    <div className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-500 animate-pulse">
+                                        Loading investigations...
+                                    </div>
+                                ) : (
+                                    <select
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+                                        value={selectedHistoryId}
+                                        onChange={(e) => setSelectedHistoryId(e.target.value)}
+                                        disabled={scanHistory.length === 0}
+                                    >
+                                        {scanHistory.length === 0 ? (
+                                            <option value="">No past investigations found</option>
+                                        ) : (
+                                            scanHistory.map((h) => (
+                                                <option key={h.id} value={h.id}>
+                                                    {new Date(h.created_at).toLocaleDateString()} - {h.target}
+                                                </option>
+                                            ))
+                                        )}
+                                    </select>
+                                )}
                             </div>
 
                             {/* Options */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs text-slate-400 font-medium font-sans">Scanning Mode</label>
+                                    <label className="block text-xs text-slate-400 font-medium font-sans">Scanning Mode (SAFE overrides UI)</label>
                                     <select
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+                                        className="w-full bg-slate-950/50 border border-slate-800/50 rounded-lg px-2.5 py-2 text-xs text-slate-500 cursor-not-allowed"
                                         value={scanMode}
-                                        onChange={(e) => setScanMode(e.target.value)}
+                                        disabled
                                     >
                                         <option value="safe">Safe / Non-Intrusive</option>
-                                        <option value="passive">Passive Scan</option>
-                                        <option value="aggressive">Aggressive Audit</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">
@@ -330,8 +310,8 @@ export default function Dev1TestPage() {
                             {/* Threat Intel Switch */}
                             <div className="flex items-center justify-between bg-slate-950/60 p-3 rounded-lg border border-slate-800/40">
                                 <div>
-                                    <span className="block text-xs font-semibold text-slate-200">Include Threat Intel</span>
-                                    <span className="block text-[10px] text-slate-400">Flag malices via external API</span>
+                                    <span className="block text-xs font-semibold text-slate-200">Enforce TI Pipeline</span>
+                                    <span className="block text-[10px] text-slate-400">Process raw findings into TI findings</span>
                                 </div>
                                 <button
                                     onClick={() => setIncludeTi(!includeTi)}
@@ -347,40 +327,13 @@ export default function Dev1TestPage() {
                                 </button>
                             </div>
 
-                            {/* Vulnerability Checks */}
-                            <div className="space-y-2">
-                                <label className="block text-xs text-slate-400 font-medium">Core Scan Modules</label>
-                                <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
-                                    {[
-                                        { key: "security_headers", label: "Missing Security Headers" },
-                                        { key: "xss", label: "Cross-Site Scripting (XSS)" },
-                                        { key: "sqli", label: "SQL Injection (SQLi)" },
-                                        { key: "cookie_analysis", label: "Insecure Cookie Settings" },
-                                        { key: "misconfiguration", label: "Server Misconfigurations" }
-                                    ].map((test) => (
-                                        <label
-                                            key={test.key}
-                                            className="flex items-center gap-2.5 bg-slate-950/30 border border-slate-800/30 px-3 py-1.5 rounded-lg text-xs hover:border-slate-700/60 cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedTests.includes(test.key)}
-                                                onChange={() => toggleTest(test.key)}
-                                                className="rounded border-slate-800 text-cyan-500 focus:ring-cyan-500 bg-slate-950"
-                                            />
-                                            <span className="text-slate-300">{test.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
                             {/* Action Button */}
                             <button
-                                onClick={launchInvestigation}
-                                disabled={isLaunching || selectedTests.length === 0}
+                                onClick={generateTIReport}
+                                disabled={isLaunching || !selectedHistoryId || scanHistory.length === 0}
                                 className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs py-3 rounded-lg shadow-lg hover:shadow-cyan-900/20 transition-all cursor-pointer disabled:opacity-40"
                             >
-                                {isLaunching ? "Initiating Orchestrator..." : "Launch Investigation Flow"}
+                                {isLaunching ? "Processing TI Layer..." : "Generate TI Report"}
                             </button>
                         </div>
                     )}
@@ -393,7 +346,7 @@ export default function Dev1TestPage() {
                         <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">
-                                    🔄 Real-Time Pipeline tracker
+                                    🔄 Real-Time Pipeline Tracker
                                 </h2>
                                 {statusInfo && (
                                     <span className={`text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 border rounded-full ${
@@ -416,74 +369,23 @@ export default function Dev1TestPage() {
                                 </div>
                                 <div>
                                     <span className="block text-slate-400">Scan Ingestion Ref</span>
-                                    <span className="font-mono text-slate-200 block">{scanId || "-"}</span>
+                                    <span className="font-mono text-slate-200 block">{investigationId || "-"}</span>
                                 </div>
                                 <div>
-                                    <span className="block text-slate-400">Completed Level</span>
+                                    <span className="block text-slate-400">Total Findings (TI)</span>
                                     <span className="font-semibold text-slate-200 block">
-                                        {statusInfo ? `${statusInfo.progress_percent}%` : "0%"}
+                                        {statusInfo?.ti_findings?.length || 0}
                                     </span>
                                 </div>
                                 <div>
-                                    <span className="block text-slate-400">Initial Risk Score</span>
+                                    <span className="block text-slate-400">TI Risk Score</span>
                                     <span className="font-semibold text-slate-200 block">
-                                        {statusInfo ? statusInfo.risk_score.toFixed(1) : "-"}
+                                        {statusInfo?.risk_score?.toFixed(1) || "-"}
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Stepper Steps */}
-                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                                {[
-                                    { name: "Pentest Scanning", threshold: 25 },
-                                    { name: "Finding Normalization", threshold: 50 },
-                                    { name: "Threat Intel Enrichment", threshold: 75, condition: includeTi },
-                                    { name: "Threat Modeling", threshold: 100 }
-                                ].map((step, idx) => {
-                                    if (step.condition === false) return null;
-                                    const isDone = statusInfo && statusInfo.progress_percent >= step.threshold;
-                                    const isActive = statusInfo && statusInfo.current_stage === step.name;
-                                    
-                                    return (
-                                        <div
-                                            key={step.name}
-                                            className={`p-3 rounded-lg border text-xs transition-all ${
-                                                isDone
-                                                    ? "bg-green-950/20 border-green-500/20 text-green-400"
-                                                    : isActive
-                                                    ? "bg-cyan-950/40 border-cyan-500/40 text-cyan-300 shadow-md shadow-cyan-950/30"
-                                                    : "bg-slate-950/30 border-slate-800 text-slate-500"
-                                            }`}
-                                        >
-                                            <div className="flex items-center justify-between mb-1 font-semibold">
-                                                <span>Stage {idx + 1}</span>
-                                                {isDone ? (
-                                                    <span>✓</span>
-                                                ) : isActive ? (
-                                                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping" />
-                                                ) : null}
-                                            </div>
-                                            <span className="block text-[11px] truncate">{step.name}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Progress bar */}
-                            {statusInfo && (
-                                <div className="space-y-1">
-                                    <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800">
-                                        <div
-                                            className="bg-gradient-to-r from-cyan-500 to-indigo-500 h-full rounded-full transition-all duration-500"
-                                            style={{ width: `${statusInfo.progress_percent}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                                        <span>In Progress stage: {statusInfo.current_stage}</span>
-                                        <span>{statusInfo.progress_percent}%</span>
-                                    </div>
-                                </div>
-                            )}
+                            {/* Progress info hidden as it doesn't map directly to the strict TI schema anymore */}
 
                             {pollingError && (
                                 <div className="text-xs bg-red-950/40 border border-red-900/30 text-red-300 p-3 rounded-lg">
@@ -499,10 +401,9 @@ export default function Dev1TestPage() {
                             {/* Tabs Header */}
                             <div className="flex border-b border-slate-800 gap-1 overflow-x-auto">
                                 {[
-                                    { key: "findings", label: `Normalized Findings (${fullResults.findings?.length || 0})` },
-                                    { key: "assets", label: `Discovered Assets (${fullResults.assets?.length || 0})` },
-                                    { key: "reports", label: "Compliance Reports" },
-                                    { key: "raw", label: "Full JSON Payload" }
+                                    { key: "findings", label: `TI Findings (${fullResults.ti_findings?.length || 0})` },
+                                    { key: "reports", label: "Threat Summary" },
+                                    { key: "raw", label: "Strict TI Schema Payload" }
                                 ].map((tab) => (
                                     <button
                                         key={tab.key}
@@ -523,17 +424,18 @@ export default function Dev1TestPage() {
                                 {/* ─── FINDINGS TAB ─── */}
                                 {activeTab === "findings" && (
                                     <div className="space-y-3">
-                                        {fullResults.findings && fullResults.findings.length > 0 ? (
-                                            fullResults.findings.map((f) => {
-                                                const isExpanded = expandedFinding === f.id;
+                                        {fullResults.ti_findings && fullResults.ti_findings.length > 0 ? (
+                                            fullResults.ti_findings.map((f, i) => {
+                                                const uniqueId = f.finding_id + i;
+                                                const isExpanded = expandedFinding === uniqueId;
                                                 return (
                                                     <div
-                                                        key={f.id}
+                                                        key={uniqueId}
                                                         className="bg-slate-950/60 rounded-xl border border-slate-800/60 overflow-hidden shadow-md"
                                                     >
                                                         {/* Accordion header */}
                                                         <div
-                                                            onClick={() => setExpandedFinding(isExpanded ? null : f.id)}
+                                                            onClick={() => setExpandedFinding(isExpanded ? null : uniqueId)}
                                                             className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-950/90 transition-colors"
                                                         >
                                                             <div className="space-y-1">
@@ -544,29 +446,58 @@ export default function Dev1TestPage() {
                                                                     <span className="text-[10px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-md">
                                                                         {f.category}
                                                                     </span>
+                                                                    {f.verification_status && (
+                                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                                                            f.verification_status === "confirmed" || f.verification_status === "verified"
+                                                                                ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                                                                                : "bg-amber-950 text-amber-400 border-amber-800"
+                                                                        }`}>
+                                                                            {f.verification_status}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 <h3 className="text-xs font-bold text-slate-200 mt-1">{f.title}</h3>
                                                             </div>
-                                                            <span className="text-slate-500 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="text-right">
+                                                                    <span className="block text-[10px] text-slate-500">Confidence</span>
+                                                                    <span className="text-xs font-bold text-cyan-400">{(f.confidence * 100).toFixed(0)}%</span>
+                                                                </div>
+                                                                <span className="text-slate-500 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                                                            </div>
                                                         </div>
 
                                                         {/* Accordion body */}
                                                         {isExpanded && (
                                                             <div className="p-4 border-t border-slate-900 bg-slate-950/40 space-y-3 text-xs">
-                                                                <div>
-                                                                    <span className="block text-[10px] text-slate-400 font-semibold mb-1">Affected Endpoint</span>
-                                                                    <span className="font-mono text-slate-300 break-all">{f.affected_url}</span>
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Affected Endpoint</span>
+                                                                        <span className="font-mono text-slate-300 break-all">{f.affected_asset}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Exploitability</span>
+                                                                        <span className="font-mono text-slate-300 capitalize">{f.exploitability}</span>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <span className="block text-[10px] text-slate-400 font-semibold mb-1">Normalized Finding ID Slug</span>
-                                                                    <span className="font-mono text-slate-300">{f.finding_id}</span>
+                                                                
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">FP Probability</span>
+                                                                        <span className="font-mono text-slate-300">{(f.false_positive_probability * 100).toFixed(0)}%</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Risk Multiplier</span>
+                                                                        <span className="font-mono text-slate-300">{f.risk_multiplier}x</span>
+                                                                    </div>
                                                                 </div>
+
                                                                 {f.tags && f.tags.length > 0 && (
                                                                     <div>
                                                                         <span className="block text-[10px] text-slate-400 font-semibold mb-1">Tags</span>
                                                                         <div className="flex flex-wrap gap-1">
-                                                                            {f.tags.map(t => (
-                                                                                <span key={t} className="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded">
+                                                                            {f.tags.map((t, idx) => (
+                                                                                <span key={idx} className="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded">
                                                                                     {t}
                                                                                 </span>
                                                                             ))}
@@ -592,112 +523,23 @@ export default function Dev1TestPage() {
                                     </div>
                                 )}
 
-                                {/* ─── ASSETS TAB ─── */}
-                                {activeTab === "assets" && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {fullResults.assets && fullResults.assets.length > 0 ? (
-                                            fullResults.assets.map((asset) => (
-                                                <div
-                                                    key={asset.id}
-                                                    className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/60 space-y-2 text-xs"
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] uppercase font-bold text-cyan-400 bg-cyan-950/20 border border-cyan-800/30 px-2 py-0.5 rounded">
-                                                            {asset.asset_type}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="block text-[10px] text-slate-400">Endpoint/Asset Path</span>
-                                                        <span className="font-mono text-slate-200 truncate block">{asset.url}</span>
-                                                    </div>
-                                                    {asset.technology && (
-                                                        <div>
-                                                            <span className="block text-[10px] text-slate-400">Detected Tech Stack</span>
-                                                            <span className="font-bold text-indigo-300">{asset.technology}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-12 text-slate-500 text-xs col-span-2">
-                                                No specific assets mapped in the database yet.
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+
 
                                 {/* ─── REPORTS COMPLIANCE TAB ─── */}
                                 {activeTab === "reports" && (
                                     <div className="space-y-6">
-                                        {/* Threat Intelligence Report */}
                                         <div className="bg-slate-950/60 border border-slate-800/60 p-5 rounded-xl space-y-3">
                                             <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                                                <h3 className="text-xs font-bold text-slate-200">🔍 Threat Intelligence (TI) Enrichment Report</h3>
-                                                {fullResults.ti_reports && fullResults.ti_reports[0] && (
-                                                    <span className="text-xs font-semibold text-cyan-400">
-                                                        Risk Index: {fullResults.ti_reports[0].overall_risk.toFixed(1)}
-                                                    </span>
-                                                )}
+                                                <h3 className="text-xs font-bold text-slate-200">🔍 Threat Summary</h3>
+                                                <span className="text-xs font-semibold text-cyan-400">
+                                                    Risk Index: {fullResults.risk_score?.toFixed(1) || 0}
+                                                </span>
                                             </div>
-                                            {fullResults.ti_reports && fullResults.ti_reports.length > 0 ? (
-                                                fullResults.ti_reports.map((ti) => (
-                                                    <div key={ti.id} className="text-xs space-y-1">
-                                                        <span className="block text-slate-400">Ingested Summary</span>
-                                                        <p className="text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-900">
-                                                            {ti.risk_summary}
-                                                        </p>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-slate-500 text-xs py-2">
-                                                    Threat intelligence report disabled or not populated.
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Threat Modeling Report */}
-                                        <div className="bg-slate-950/60 border border-slate-800/60 p-5 rounded-xl space-y-4">
-                                            <div className="border-b border-slate-900 pb-2">
-                                                <h3 className="text-xs font-bold text-slate-200">🧠 Automated STRIDE Threat Model</h3>
+                                            <div className="text-xs space-y-1">
+                                                <pre className="text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-900 whitespace-pre-wrap font-sans">
+                                                    {JSON.stringify(fullResults.summary, null, 2)}
+                                                </pre>
                                             </div>
-                                            
-                                            {fullResults.tm_reports && fullResults.tm_reports.length > 0 ? (
-                                                fullResults.tm_reports.map((tm) => (
-                                                    <div key={tm.id} className="space-y-4">
-                                                        {/* STRIDE COUNTS */}
-                                                        <div>
-                                                            <span className="block text-[10px] text-slate-400 font-semibold mb-2">STRIDE Threat Vectors Discovered</span>
-                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                                                {Object.entries(tm.stride_summary).map(([category, count]) => (
-                                                                    <div key={category} className="bg-slate-950 p-2 border border-slate-900 rounded-lg text-center">
-                                                                        <span className="block text-[10px] text-slate-400">{category}</span>
-                                                                        <span className={`text-base font-bold ${count > 0 ? "text-amber-400" : "text-slate-500"}`}>
-                                                                            {count}
-                                                                        </span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* MITIGATION ROADMAP */}
-                                                        <div>
-                                                            <span className="block text-[10px] text-slate-400 font-semibold mb-2">Automated Remediation Roadmap</span>
-                                                            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                                                                {Object.entries(tm.mitigations).map(([cat, mit]) => (
-                                                                    <div key={cat} className="bg-slate-950/80 p-3 border border-slate-900 rounded-lg text-xs">
-                                                                        <span className="font-bold text-cyan-400 block mb-0.5">{cat} Mitigation</span>
-                                                                        <p className="text-slate-300">{mit}</p>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-slate-500 text-xs py-2">
-                                                    Threat modeling report is not generated yet.
-                                                </p>
-                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -719,9 +561,9 @@ export default function Dev1TestPage() {
                             <div className="bg-slate-900/30 border border-slate-800/60 rounded-xl py-20 text-center text-slate-400 flex flex-col items-center justify-center space-y-4">
                                 <span className="text-4xl">🚀</span>
                                 <div>
-                                    <h3 className="text-sm font-bold text-slate-200">Investigation Sandbox Ready</h3>
+                                    <h3 className="text-sm font-bold text-slate-200">TI Pipeline Sandbox Ready</h3>
                                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-                                        Submit a website URL on the left panel to execute and inspect the live pipeline, translation, reputation enrichment, and threat modeling components.
+                                        Select a past Pentest Investigation on the left panel to dynamically route its raw findings through the TI Normalization and Risk Inference engines, displaying ONLY the refined findings here.
                                     </p>
                                 </div>
                             </div>

@@ -143,46 +143,44 @@ class InvestigationOrchestrator:
             include_ti = getattr(investigation, "include_ti", True)
             tm_mode = getattr(investigation, "tm_mode", "enhanced")
 
-            normalized_findings: List[Finding] = []
+            # Use findings directly from the Pentest TI layer
+            raw_findings = raw_output.get("shared_state", {}).get("raw_findings", [])
+            ti_findings = raw_output.get("ti_findings", [])
+            normalized_findings = raw_output.get("shared_state", {}).get("normalized_findings", [])
+            
+            # Since the TI Processing Service handles False Positive Reduction, we just use its output
+            normalized_findings_objs: List[Finding] = []
+            
+            for f_dict in normalized_findings:
+                finding = Finding(
+                    investigation_id=investigation.id,
+                    finding_id=f_dict.get("finding_id", "generic"),
+                    title=f_dict.get("title", "Unknown"),
+                    severity=f_dict.get("severity", "info"),
+                    category=f_dict.get("category", "informational"),
+                    affected_url=f_dict.get("affected_url", investigation.target),
+                    evidence=f_dict.get("evidence", ""),
+                    tags=f_dict.get("tags", [])
+                )
+                normalized_findings_objs.append(finding)
+
+            # Save basic normalized findings to DB for TM layer usage (as requested by existing TM)
+            if normalized_findings_objs:
+                await self.finding_repo.create_many(normalized_findings_objs)
+
+            # We can still extract TM category metrics from ti_findings to populate TM report
             stride_counts = {"Spoofing": 0, "Tampering": 0, "Repudiation": 0, "Information Disclosure": 0, "Denial of Service": 0, "Elevation of Privilege": 0}
             mitigation_roadmap = {}
 
-            for raw in raw_findings:
-                # Support nested structures if raw findings are raw dictionaries
-                f_dict = raw if isinstance(raw, dict) else raw.model_dump() if hasattr(raw, "model_dump") else getattr(raw, "__dict__", {})
+            for ti in ti_findings:
+                tm_category = ti.get("category", "Informational")
+                title = ti.get("title", "Unknown")
                 
-                # Pass include_ti parameter to normalize selectively
-                norm = FindingNormalizer.normalize(f_dict, default_url=investigation.target, include_ti=include_ti)
-                
-                finding = Finding(
-                    investigation_id=investigation.id,
-                    finding_id=norm.finding_id,
-                    title=norm.title,
-                    severity=norm.severity,
-                    category=norm.category,
-                    affected_url=norm.affected_url,
-                    evidence=norm.evidence,
-                    tags=norm.tags
-                )
-                normalized_findings.append(finding)
-
-                # Determine category used by Threat Modeling based on modes
-                if include_ti and tm_mode == "enhanced":
-                    # Mode 1: TI-Enhanced Threat Modeling (uses interpreted category)
-                    tm_category = norm.category
-                else:
-                    # Mode 2: Standalone Threat Modeling (uses raw category before interpretation)
-                    tm_category = f_dict.get("classification") or f_dict.get("category") or f_dict.get("type") or "Informational"
-
-                # Collect threat modeling indicators
-                stride_cat = CATEGORY_TO_STRIDE.get(tm_category) or CATEGORY_TO_STRIDE.get(interpret_context(norm.title, tm_category), "Information Disclosure")
+                stride_cat = CATEGORY_TO_STRIDE.get(tm_category) or CATEGORY_TO_STRIDE.get(interpret_context(title, tm_category), "Information Disclosure")
                 stride_counts[stride_cat] = stride_counts.get(stride_cat, 0) + 1
                 
-                mitigation = CATEGORY_TO_MITIGATION.get(tm_category) or CATEGORY_TO_MITIGATION.get(interpret_context(norm.title, tm_category), "Remediate according to security guidelines.")
+                mitigation = CATEGORY_TO_MITIGATION.get(tm_category) or CATEGORY_TO_MITIGATION.get(interpret_context(title, tm_category), "Remediate according to security guidelines.")
                 mitigation_roadmap[tm_category] = mitigation
-
-            # Save normalized findings
-            await self.finding_repo.create_many(normalized_findings)
 
             # 3. Process and save Assets (technologies & domains)
             assets_to_save: List[Asset] = []
@@ -236,7 +234,7 @@ class InvestigationOrchestrator:
                     investigation_id=investigation.id,
                     overall_risk=risk_score,
                     risk_summary=f"Analysis completed on {datetime.utcnow().strftime('%Y-%m-%d')}. "
-                                 f"Discovered {len(normalized_findings)} findings across "
+                                 f"Discovered {len(ti_findings)} TI-validated findings across "
                                  f"{len(detected_techs)} technologies. Risk score: {risk_score}."
                 )
                 await self.report_repo.create_ti_report(ti_report)
@@ -267,7 +265,12 @@ class InvestigationOrchestrator:
             investigation.pipeline_state = {
                 "stage": "Completed",
                 "progress": 100.0,
-                "updated_at": investigation.completed_at.isoformat()
+                "updated_at": investigation.completed_at.isoformat(),
+                "raw_findings": raw_findings,
+                "normalized_findings": normalized_findings,
+                "ti_findings": ti_findings,
+                "reputation_context": raw_output.get("shared_state", {}).get("reputation_context", {}),
+                "risk_summary": raw_output.get("shared_state", {}).get("risk_summary", {})
             }
             investigation.final_result = {
                 "scan_id": investigation.scan_id,
