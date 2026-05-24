@@ -886,7 +886,7 @@ export default function WebsiteScannerPage() {
                     activeTab === "findings" ? "border-purple-500 text-white bg-purple-500/5" : "border-transparent text-slate-400 hover:text-white"
                   }`}
                 >
-                  <ShieldAlert className="w-4 h-4" /> Findings ({currentResult.findings.length})
+                  <ShieldAlert className="w-4 h-4" /> Findings ({currentResult.findings?.length || 0})
                 </button>
 
                 {/* Export Scanner JSON Button */}
@@ -1277,7 +1277,7 @@ export default function WebsiteScannerPage() {
 
                 {activeTab === "findings" && (
                   <div className="space-y-8">
-                    {currentResult.findings.map((finding: any) => (
+                    {(currentResult.findings || []).map((finding: any) => (
                       <div key={finding.id} className="bg-[#0D1525] border border-white/5 rounded-2xl overflow-hidden shadow-2xl relative group/card transition-all hover:border-white/10">
                         {/* Header Section */}
                         <div className="px-6 py-5 bg-gradient-to-r from-slate-900/80 to-transparent border-b border-white/5 flex items-center justify-between">

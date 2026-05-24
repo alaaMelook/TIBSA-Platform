@@ -19,3 +19,4 @@ sqlalchemy>=2.0.38
 asyncpg>=0.30.0
 aiosqlite>=0.20.0
 requests>=2.32.3
+fpdf2>=2.7.0
