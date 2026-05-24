@@ -17,7 +17,10 @@ const PAGE_TITLES: Record<string, string> = {
     "/admin":                    "Admin Overview",
     "/admin/users":              "User Management",
     "/admin/threats":            "Threat Feeds",
-    "/admin/system":             "System Settings",
+    "/admin/analytics":          "Platform Analytics",
+    "/admin/system":             "System Health",
+    "/admin/audit":              "Audit Log",
+    "/admin/settings":           "System Settings",
 };
 
 // ── Notification types ───────────────────────────────────────

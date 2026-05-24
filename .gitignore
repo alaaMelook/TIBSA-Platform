@@ -40,3 +40,5 @@ __pycache__/
 venv/
 
 backend/env
+
+.kilo
