@@ -2,8 +2,10 @@
 Investigations API Router.
 """
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+from io import BytesIO
 
 from app.database.session import get_db
 from app.dependencies import get_current_user
@@ -156,3 +158,123 @@ async def get_investigation_results(
         success=True,
         data=InvestigationResponse.model_validate(investigation)
     )
+
+
+# ─── Export Endpoints ─────────────────────────────────────────────
+
+
+@router.get("/{id}/export/json", summary="Export investigation report as JSON")
+async def export_investigation_json(
+    id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Export a completed investigation as a structured JSON file.
+    Returns a downloadable JSON file containing all pipeline outputs.
+    """
+    repo = InvestigationRepository(db)
+    investigation = await repo.get_by_id(id)
+    if not investigation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Investigation not found."
+        )
+
+    if investigation.status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Investigation is not completed yet. Current status: {investigation.status}"
+        )
+
+    try:
+        from app.services.investigation.report_exporter import ReportExporter
+
+        exporter = ReportExporter()
+        investigation_data = {
+            "target": investigation.target,
+            "status": investigation.status,
+            "risk_score": investigation.risk_score,
+            "started_at": investigation.started_at,
+            "completed_at": investigation.completed_at,
+            "scan_id": investigation.scan_id,
+            "findings": investigation.findings,
+            "assets": investigation.assets,
+            "final_result": investigation.final_result,
+            "pipeline_state": investigation.pipeline_state,
+        }
+
+        result = await exporter.export_json(id, investigation_data)
+
+        return StreamingResponse(
+            BytesIO(result["content"]),
+            media_type=result["mime_type"],
+            headers={
+                "Content-Disposition": f'attachment; filename="{result["filename"]}"',
+                "Content-Length": str(result["size_bytes"]),
+            },
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export JSON: {str(e)}"
+        )
+
+
+@router.get("/{id}/export/pdf", summary="Export investigation report as PDF")
+async def export_investigation_pdf(
+    id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Export a completed investigation as a professional PDF report.
+    Includes metadata, risk score, findings, correlated threats,
+    STRIDE matrix, AI summaries, and recommendations.
+    """
+    repo = InvestigationRepository(db)
+    investigation = await repo.get_by_id(id)
+    if not investigation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Investigation not found."
+        )
+
+    if investigation.status != "completed":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Investigation is not completed yet. Current status: {investigation.status}"
+        )
+
+    try:
+        from app.services.investigation.report_exporter import ReportExporter
+
+        exporter = ReportExporter()
+        investigation_data = {
+            "target": investigation.target,
+            "status": investigation.status,
+            "risk_score": investigation.risk_score,
+            "started_at": investigation.started_at,
+            "completed_at": investigation.completed_at,
+            "scan_id": investigation.scan_id,
+            "findings": investigation.findings,
+            "assets": investigation.assets,
+            "final_result": investigation.final_result,
+            "pipeline_state": investigation.pipeline_state,
+        }
+
+        result = await exporter.export_pdf(id, investigation_data)
+
+        return StreamingResponse(
+            BytesIO(result["content"]),
+            media_type=result["mime_type"],
+            headers={
+                "Content-Disposition": f'attachment; filename="{result["filename"]}"',
+                "Content-Length": str(result["size_bytes"]),
+            },
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to export PDF: {str(e)}"
+        )

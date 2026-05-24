@@ -258,30 +258,169 @@ class InvestigationOrchestrator:
             )
             await self.report_repo.create_tm_report(tm_report)
 
-            # 6. Finalize investigation state
+            # ──────────────────────────────────────────────────────────
+            # Stages 4-6: Advanced Intelligence (Developer 2)
+            # These stages extend the pipeline with correlation, STRIDE
+            # modeling, and AI-powered reporting. Each stage is wrapped
+            # in try/except so failures don't crash the pipeline.
+            # ──────────────────────────────────────────────────────────
+
+            # Prepare finding dicts for stages 4-6
+            finding_dicts = []
+            for f in normalized_findings:
+                finding_dicts.append({
+                    "finding_id": f.finding_id,
+                    "title": f.title,
+                    "severity": f.severity,
+                    "category": f.category,
+                    "affected_url": f.affected_url,
+                    "evidence": f.evidence,
+                    "tags": f.tags or [],
+                })
+
+            # Initialize final_result with base data
+            final_result_data = {
+                "scan_id": investigation.scan_id,
+                "target": investigation.target,
+                "risk_score": risk_score,
+                "findings_count": len(normalized_findings),
+                "assets_count": len(assets_to_save),
+                "ti_enriched": include_ti,
+                "tm_mode": tm_mode,
+            }
+
+            # ── Stage 4: Threat Correlation Engine ─────────────────
+            correlation_output = None
+            try:
+                from app.services.investigation.correlation_engine import ThreatCorrelationEngine
+
+                investigation.current_stage = "Threat Correlation"
+                investigation.progress_percent = 92.0
+                investigation.pipeline_state = {
+                    "stage": "Threat Correlation",
+                    "progress": 92.0,
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                await self.investigation_repo.update(investigation)
+
+                correlation_engine = ThreatCorrelationEngine()
+                correlation_output = await correlation_engine.correlate(
+                    investigation_id=investigation.id,
+                    findings=finding_dicts,
+                    risk_score=risk_score,
+                    stride_summary=stride_counts,
+                    ti_reports=[],
+                )
+                final_result_data["correlation"] = correlation_output.model_dump(mode="json")
+                print(f"[ORCHESTRATOR] Stage 4 (Correlation) completed: {correlation_output.unique_threats_identified} threats")
+            except Exception as e:
+                logger.warning(f"Stage 4 (Correlation) failed: {e}")
+                print(f"[ORCHESTRATOR] Stage 4 (Correlation) failed: {e}")
+                final_result_data["correlation"] = {"error": str(e)}
+
+            # ── Stage 5: Automated STRIDE Threat Modeling ──────────
+            stride_output = None
+            try:
+                from app.services.investigation.threat_modeler import AutomatedSTRIDEModeler
+
+                investigation.current_stage = "STRIDE Modeling"
+                investigation.progress_percent = 95.0
+                investigation.pipeline_state = {
+                    "stage": "STRIDE Modeling",
+                    "progress": 95.0,
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                await self.investigation_repo.update(investigation)
+
+                stride_modeler = AutomatedSTRIDEModeler()
+                corr_threats_dicts = []
+                if correlation_output:
+                    corr_threats_dicts = [
+                        t.model_dump(mode="json") for t in correlation_output.correlated_threats
+                    ]
+
+                stride_output = await stride_modeler.model(
+                    investigation_id=investigation.id,
+                    findings=finding_dicts,
+                    correlated_threats=corr_threats_dicts,
+                )
+                final_result_data["stride"] = stride_output.model_dump(mode="json")
+                print(f"[ORCHESTRATOR] Stage 5 (STRIDE) completed: {len(stride_output.stride_threats)} threats")
+            except Exception as e:
+                logger.warning(f"Stage 5 (STRIDE) failed: {e}")
+                print(f"[ORCHESTRATOR] Stage 5 (STRIDE) failed: {e}")
+                final_result_data["stride"] = {"error": str(e)}
+
+            # ── Stage 6: AI Security Reporter ──────────────────────
+            try:
+                from app.services.investigation.ai_reporter import AISecurityReporter
+
+                investigation.current_stage = "AI Analysis"
+                investigation.progress_percent = 97.0
+                investigation.pipeline_state = {
+                    "stage": "AI Analysis",
+                    "progress": 97.0,
+                    "updated_at": datetime.utcnow().isoformat()
+                }
+                await self.investigation_repo.update(investigation)
+
+                ai_reporter = AISecurityReporter()
+                corr_threats_for_report = []
+                if correlation_output:
+                    corr_threats_for_report = [
+                        t.model_dump(mode="json") for t in correlation_output.correlated_threats
+                    ]
+                stride_threats_for_report = []
+                stride_matrix_for_report = {}
+                if stride_output:
+                    stride_threats_for_report = [
+                        t.model_dump(mode="json") for t in stride_output.stride_threats
+                    ]
+                    stride_matrix_for_report = stride_output.stride_matrix.model_dump()
+
+                # Compute global risk from correlation or fallback to pentest risk
+                global_risk = risk_score
+                if correlation_output:
+                    global_risk = correlation_output.global_risk_score
+
+                reporter_output = await ai_reporter.generate_report(
+                    investigation_id=investigation.id,
+                    target=investigation.target,
+                    risk_score=global_risk,
+                    findings=finding_dicts,
+                    correlated_threats=corr_threats_for_report,
+                    stride_threats=stride_threats_for_report,
+                    stride_matrix=stride_matrix_for_report,
+                )
+                final_result_data["reporter"] = reporter_output.model_dump(mode="json")
+                print(f"[ORCHESTRATOR] Stage 6 (AI Reporter) completed")
+            except Exception as e:
+                logger.warning(f"Stage 6 (AI Reporter) failed: {e}")
+                print(f"[ORCHESTRATOR] Stage 6 (AI Reporter) failed: {e}")
+                final_result_data["reporter"] = {"error": str(e)}
+
+            # ── Finalize investigation state ───────────────────────
+            # Use the global risk from correlation if available
+            final_risk = risk_score
+            if correlation_output:
+                final_risk = correlation_output.global_risk_score
+
             investigation.status = "completed"
             investigation.current_stage = "Completed"
             investigation.progress_percent = 100.0
-            investigation.risk_score = risk_score
+            investigation.risk_score = final_risk
             investigation.completed_at = datetime.utcnow()
             investigation.pipeline_state = {
                 "stage": "Completed",
                 "progress": 100.0,
                 "updated_at": investigation.completed_at.isoformat()
             }
-            investigation.final_result = {
-                "scan_id": investigation.scan_id,
-                "target": investigation.target,
-                "status": "completed",
-                "risk_score": risk_score,
-                "findings_count": len(normalized_findings),
-                "assets_count": len(assets_to_save),
-                "ti_enriched": include_ti,
-                "tm_mode": tm_mode,
-                "completed_at": investigation.completed_at.isoformat()
-            }
+            final_result_data["status"] = "completed"
+            final_result_data["risk_score"] = final_risk
+            final_result_data["completed_at"] = investigation.completed_at.isoformat()
+            investigation.final_result = final_result_data
             await self.investigation_repo.update(investigation)
-            print(f"[ORCHESTRATOR] Investigation completed for {investigation.target}.")
+            print(f"[ORCHESTRATOR] Investigation completed for {investigation.target} (risk={final_risk:.1f}).")
 
         except Exception as e:
             logger.exception(f"Pipeline execution failed for investigation {investigation_id}: {e}")
