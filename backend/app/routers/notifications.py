@@ -2,16 +2,16 @@
 Notifications router.
 Lists, marks-read, and manages user notifications.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from supabase import Client
 
 from app.dependencies import get_supabase, get_current_user
 from app.models.notification import NotificationResponse
 from app.services.notification_service import NotificationService
+import httpx
 
 router = APIRouter()
-
 
 @router.get("/", response_model=List[NotificationResponse], summary="List notifications")
 async def list_notifications(
@@ -21,7 +21,13 @@ async def list_notifications(
     """Get the current user's recent notifications (newest first)."""
     service = NotificationService(supabase)
     auth_user = current_user["auth_user"]
-    return service.list_for_user(auth_user.id)
+    try:
+        return service.list_for_user(auth_user.id)
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reach the database service. Please check your network connection."
+        )
 
 
 @router.get("/unread-count", summary="Unread notification count")

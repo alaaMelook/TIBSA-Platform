@@ -2,7 +2,7 @@
 Authentication router.
 Handles login, register, token refresh, and MFA verification.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from supabase import Client
 
 from app.dependencies import get_supabase
@@ -13,25 +13,30 @@ from app.models.user import (
     RefreshTokenRequest,
 )
 from app.services.auth_service import AuthService
+from app.utils.limiter import limiter
 
 router = APIRouter()
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest, supabase: Client = Depends(get_supabase)):
+@limiter.limit("5/minute")
+async def login(request: Request, payload: LoginRequest, supabase: Client = Depends(get_supabase)):
     """Authenticate user and return access token."""
+    print("[RATE LIMIT] login limiter active")
     service = AuthService(supabase)
-    return await service.login(request.email, request.password)
+    return await service.login(payload.email, payload.password)
 
 
 @router.post("/register", response_model=TokenResponse)
-async def register(request: RegisterRequest, supabase: Client = Depends(get_supabase)):
+@limiter.limit("3/minute")
+async def register(request: Request, payload: RegisterRequest, supabase: Client = Depends(get_supabase)):
     """Register a new user (defaults to 'user' role)."""
+    print("[RATE LIMIT] register limiter active")
     service = AuthService(supabase)
     return await service.register(
-        email=request.email,
-        password=request.password,
-        full_name=request.full_name,
+        email=payload.email,
+        password=payload.password,
+        full_name=payload.full_name,
     )
 
 

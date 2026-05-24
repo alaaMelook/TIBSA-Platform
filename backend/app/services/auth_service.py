@@ -6,6 +6,28 @@ from fastapi import HTTPException, status
 from supabase import Client
 
 
+import logging
+
+logger = logging.getLogger("security")
+logger.setLevel(logging.INFO)
+# Basic console handler for security logs
+if not logger.handlers:
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - SECURITY - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+def mask_email(email: str) -> str:
+    """Mask email for security logging."""
+    if not email or "@" not in email:
+        return "***"
+    try:
+        username, domain = email.split("@", 1)
+        masked_username = username[0] + "***" if username else "***"
+        return f"{masked_username}@{domain}"
+    except Exception:
+        return "***"
+
 class AuthService:
     def __init__(self, supabase: Client):
         self.supabase = supabase
@@ -19,6 +41,7 @@ class AuthService:
             })
 
             if not response.session:
+                logger.warning(f"Failed login attempt for email: {mask_email(email)}")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid credentials",
@@ -31,6 +54,7 @@ class AuthService:
                 .single() \
                 .execute()
 
+            logger.info(f"Successful login for email: {mask_email(email)}")
             return {
                 "access_token": response.session.access_token,
                 "refresh_token": response.session.refresh_token,
@@ -40,9 +64,10 @@ class AuthService:
         except HTTPException:
             raise
         except Exception as e:
+            logger.warning(f"Failed login attempt for email: {mask_email(email)}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Login failed: {str(e)}",
+                detail="Invalid credentials",
             )
 
     async def register(self, email: str, password: str, full_name: str) -> dict:
@@ -56,6 +81,7 @@ class AuthService:
             })
 
             if not response.user:
+                logger.warning(f"Failed registration attempt for email: {mask_email(email)}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Registration failed",
@@ -70,6 +96,7 @@ class AuthService:
                 "is_active": True,
             }).execute()
 
+            logger.info(f"Successful registration for email: {mask_email(email)}")
             return {
                 "access_token": response.session.access_token if response.session else "",
                 "refresh_token": response.session.refresh_token if response.session else "",
@@ -78,9 +105,10 @@ class AuthService:
         except HTTPException:
             raise
         except Exception as e:
+            logger.warning(f"Failed registration attempt for email: {mask_email(email)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Registration failed: {str(e)}",
+                detail="Registration failed",
             )
 
     async def refresh_token(self, refresh_token: str) -> dict:
@@ -93,7 +121,8 @@ class AuthService:
                 "token_type": "bearer",
             }
         except Exception as e:
+            logger.warning(f"Failed token refresh attempt")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Token refresh failed: {str(e)}",
+                detail="Token refresh failed",
             )
