@@ -1,50 +1,42 @@
 """
 Pydantic schemas for Investigations, Assets, and Reports.
 """
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from app.schemas.finding import FindingResponse
 
-# ─── Asset Schemas ───────────────────────────────────────────
-class AssetBase(BaseModel):
-    asset_type: str
-    url: str
-    technology: Optional[str] = None
-
-class AssetCreate(AssetBase):
-    pass
-
-class AssetResponse(AssetBase):
-    id: str
-    investigation_id: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# ─── Threat Intelligence Report Schemas ───────────────────────
-class TIReportResponse(BaseModel):
-    id: str
-    investigation_id: str
-    overall_risk: float
-    risk_summary: Optional[str] = None
-    created_at: datetime
+# ─── TI Schema ───────────────────────────────────────────
+class TIFinding(BaseModel):
+    finding_id: str
+    title: str
+    category: str
+    classification: str
+    severity: str
+    confidence: float
+    false_positive_probability: float
+    verification_status: str
+    exploitability: str
+    affected_asset: str
+    risk_score: float
+    risk_multiplier: float
+    reputation_context: Optional[Dict[str, Any]] = None
+    source_modules: List[str] = []
+    evidence: Optional[str] = None
+    tags: List[str] = []
 
     model_config = ConfigDict(from_attributes=True)
 
-
-# ─── Threat Modeling Report Schemas ───────────────────────────
-class TMReportResponse(BaseModel):
-    id: str
+class TIInvestigationResponse(BaseModel):
     investigation_id: str
-    stride_summary: Dict[str, Any]
-    mitigations: Dict[str, Any]
-    created_at: datetime
+    status: str
+    risk_score: float
+    summary: Dict[str, Any]
+    ti_findings: List[TIFinding]
+    reputation_context: Dict[str, Any]
 
     model_config = ConfigDict(from_attributes=True)
 
-
-# ─── Investigation Schemas ────────────────────────────────────
+# ─── Investigation Schemas (Creation & Status) ───────────────────────────
 class InvestigationBase(BaseModel):
     target: str
 
@@ -61,27 +53,7 @@ class InvestigationCreate(InvestigationBase):
     ]
     mode: Optional[str] = "safe"
     include_ti: Optional[bool] = True
-    tm_mode: Optional[str] = "enhanced"  # "enhanced" or "standalone"
-
-class InvestigationResponse(InvestigationBase):
-    id: str
-    scan_id: str
-    status: str
-    risk_score: float
-    started_at: datetime
-    completed_at: Optional[datetime] = None
-    include_ti: bool
-    tm_mode: str
-    current_stage: str
-    progress_percent: float
-    pipeline_state: Optional[Dict[str, Any]] = None
-    final_result: Optional[Dict[str, Any]] = None
-    findings: List[FindingResponse] = []
-    assets: List[AssetResponse] = []
-    ti_reports: List[TIReportResponse] = []
-    tm_reports: List[TMReportResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
+    tm_mode: Optional[str] = "enhanced"
 
 class InvestigationStatusResponse(BaseModel):
     id: str
@@ -94,3 +66,6 @@ class InvestigationStatusResponse(BaseModel):
     progress_percent: float
 
     model_config = ConfigDict(from_attributes=True)
+
+class InvestigationResponse(TIInvestigationResponse):
+    pass
