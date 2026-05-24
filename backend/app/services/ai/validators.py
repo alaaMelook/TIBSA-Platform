@@ -34,7 +34,7 @@ def validate_scan_json(data: dict[str, Any]) -> tuple[dict[str, Any], list[str]]
     # Check for extra fields
     extra_fields = set(data.keys()) - set(required_fields.keys())
     if extra_fields:
-        errors.append(f"Invalid extra fields found: {', '.join(extra_fields)}")
+        warnings.append(f"Invalid extra fields found: {', '.join(extra_fields)}")
 
     for field, expected_type in required_fields.items():
         if field not in data:

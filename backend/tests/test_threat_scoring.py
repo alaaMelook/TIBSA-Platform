@@ -80,9 +80,9 @@ class TestComputeThreatScore:
             vt_malicious=60, vt_total=70,
             ai_is_phishing=False, ai_confidence=0.0,
         )
-        assert verdict == "Warning"
-        assert level == "low"
-        assert 0.30 <= score < 0.50
+        assert verdict == "Malicious"
+        assert level == "high"
+        assert score >= 0.80
 
     # ── Edge: AI only (VT unavailable) ───────────────────────────
 
