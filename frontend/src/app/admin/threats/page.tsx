@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 import {
     StatCard,
     AdminSectionCard,
@@ -13,13 +14,7 @@ import {
 import type { Column } from "../components";
 import type { InvestigationContext } from "../components/InvestigationDrawer";
 import type { TopThreat, ThreatFeedConfig } from "../types";
-import {
-    mockAdminStats,
-    mockThreatTrends,
-    mockThreatDistribution,
-    mockTopThreats,
-    mockThreatFeeds,
-} from "../mock";
+// Removed mock imports
 
 // ─── Icons ──────────────────────────────────────────────────
 const IconShield = () => (
@@ -94,14 +89,76 @@ function CategoryBadge({ category }: { category: string }) {
 export default function ThreatIntelligencePage() {
     const [activeTab, setActiveTab] = useState<"overview" | "threats" | "feeds">("overview");
     const [drawerContext, setDrawerContext] = useState<InvestigationContext | null>(null);
+    const { token } = useAuth();
+    
+    // Real Data States
+    const [threats, setThreats] = useState<TopThreat[]>([]);
+    const [stats, setStats] = useState({ threatsDetected: 0, threatsToday: 0 });
+    const [charts, setCharts] = useState<{
+        trends: any[];
+        distribution: any[];
+    } | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [pageOffset, setPageOffset] = useState(0);
 
-    const stats = mockAdminStats;
-    const activeFeeds = mockThreatFeeds.filter((f) => f.is_active).length;
-    const totalIndicators = mockThreatFeeds.reduce((sum, f) => sum + f.indicators_count, 0);
+    const activeFeeds = 0;
+    const totalIndicators = 0;
 
-    // SOC Threat Scoring & Aggregation System
+    const fetchThreats = async (offset = 0, append = false) => {
+        if (!token) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/threats/top?limit=100&offset=${offset}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setThreats(prev => append ? [...prev, ...data.threats] : data.threats);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchStatsAndCharts = async () => {
+        if (!token) return;
+        try {
+            const [statsRes, chartsRes] = await Promise.all([
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/stats`, { headers: { Authorization: `Bearer ${token}` }}),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/charts`, { headers: { Authorization: `Bearer ${token}` }})
+            ]);
+            
+            if (statsRes.ok) {
+                const s = await statsRes.json();
+                setStats({ threatsDetected: s.threats.total, threatsToday: s.threats.critical });
+            }
+            if (chartsRes.ok) {
+                const c = await chartsRes.json();
+                const coloredDist = c.threatDistribution.map((item: any, i: number) => ({
+                    ...item,
+                    color: ["#ef4444", "#f97316", "#eab308", "#dc2626", "#a855f7", "#ec4899", "#6b7280"][i % 7]
+                }));
+                setCharts({ trends: c.threatTrends, distribution: coloredDist });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        if (token) {
+            setIsLoading(true);
+            Promise.all([fetchThreats(0), fetchStatsAndCharts()]).finally(() => setIsLoading(false));
+        }
+    }, [token]);
+
+    const handleLoadMore = () => {
+        const nextOffset = pageOffset + 100;
+        setPageOffset(nextOffset);
+        fetchThreats(nextOffset, true);
+    };
+
     const scoredTopThreats = useMemo(() => {
-        return mockTopThreats.map(threat => {
+        return threats.map(threat => {
             // 1. Standardize name based on type
             let name = "Unknown Indicator";
             if (threat.type === "ip") name = "Malicious Host / Botnet";
@@ -304,13 +361,13 @@ export default function ThreatIntelligencePage() {
                             description="14-day severity breakdown"
                             className="lg:col-span-2"
                         >
-                            <ThreatTrendChart data={mockThreatTrends} />
+                            <ThreatTrendChart data={charts?.trends || []} />
                         </AdminSectionCard>
                         <AdminSectionCard
                             title="Threat Categories"
-                            description="Distribution by type"
+                            description="All-time distribution"
                         >
-                            <ThreatDistributionChart data={mockThreatDistribution} />
+                            <ThreatDistributionChart data={charts?.distribution || []} />
                         </AdminSectionCard>
                     </div>
 
@@ -329,10 +386,20 @@ export default function ThreatIntelligencePage() {
                     >
                         <DataTable
                             columns={threatColumns}
-                            data={mockTopThreats}
+                            data={scoredTopThreats}
                             pageSize={5}
-                            emptyMessage="No threats detected"
+                            emptyMessage={isLoading ? "Loading threats..." : "No threats detected"}
                         />
+                        {threats.length >= 100 && (
+                            <div className="flex justify-center mt-4">
+                                <button 
+                                    onClick={handleLoadMore}
+                                    className="px-4 py-2 text-sm text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                >
+                                    Load More
+                                </button>
+                            </div>
+                        )}
                     </AdminSectionCard>
                 </div>
             )}
@@ -366,12 +433,12 @@ export default function ThreatIntelligencePage() {
                 >
                     <DataTable
                         columns={feedColumns}
-                        data={mockThreatFeeds}
+                        data={[]}
                         searchable
                         searchPlaceholder="Search feeds..."
                         searchKeys={["name", "provider", "category"]}
                         pageSize={10}
-                        emptyMessage="No feeds configured"
+                        emptyMessage="No active threat feeds configured."
                     />
                 </AdminSectionCard>
             )}

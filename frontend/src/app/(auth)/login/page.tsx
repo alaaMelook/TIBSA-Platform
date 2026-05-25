@@ -27,8 +27,15 @@ function LoginForm() {
         setError("");
         setIsLoading(true);
 
+        const target = e.target as HTMLFormElement;
+        const emailInput = target.querySelector('input[type="email"]') as HTMLInputElement;
+        const passwordInput = target.querySelector('input[type="password"]') as HTMLInputElement;
+        
+        const submittedEmail = email || emailInput?.value || "";
+        const submittedPassword = password || passwordInput?.value || "";
+
         try {
-            await login({ email, password });
+            await login({ email: submittedEmail, password: submittedPassword });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
             setIsLoading(false);

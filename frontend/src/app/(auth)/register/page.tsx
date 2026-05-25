@@ -75,23 +75,29 @@ export default function RegisterPage() {
                         required
                     />
 
-                    <Input
-                        label="Password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={8}
-                    />
+                    <div className="space-y-1">
+                        <Input
+                            label="Password"
+                            type="password"
+                            placeholder="••••••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            minLength={12}
+                        />
+                        <p className="text-[10px] text-slate-500">
+                            Must be at least 12 characters, including uppercase, lowercase, number, and special character.
+                        </p>
+                    </div>
 
                     <Input
                         label="Confirm Password"
                         type="password"
-                        placeholder="••••••••"
+                        placeholder="••••••••••••"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
+                        minLength={12}
                     />
 
                     <Button type="submit" className="w-full" isLoading={isLoading}>

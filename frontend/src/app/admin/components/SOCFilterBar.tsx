@@ -65,8 +65,10 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
                     <option value="all">All Actions</option>
                     <option value="LOGIN">Logins</option>
                     <option value="LOGIN_FAILED">Failed Logins</option>
+                    <option value="SIGNUP">Signups</option>
+                    <option value="SIGNUP_FAILED">Failed Signups</option>
                     <option value="USER_ROLE_CHANGE">Role Changes</option>
-                    <option value="SYSTEM_CONFIG_CHANGE">System Config</option>
+                    <option value="system_config_update">System Config</option>
                 </select>
 
                 {/* User Dropdown */}

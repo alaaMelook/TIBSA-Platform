@@ -11,20 +11,18 @@ from supabase import Client
 from app.dependencies import get_supabase, get_current_user
 from app.models.website_scan import (
     WebsiteScanRequest,
+    WebsiteScanResponse,
     WebsiteScanHistoryItem,
     WebsiteScanDetail,
 )
-from app.schemas.investigation import TIInvestigationResponse
 from app.services.pentest import PentestOrchestrator
 from app.services.pentest.models import ScanConfig
-from app.services.translators.finding_normalizer import FindingNormalizer
-from app.services.ti_processing_service import TIProcessingService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.post("/scan", response_model=TIInvestigationResponse, summary="Scan a website for vulnerabilities")
+@router.post("/scan", response_model=WebsiteScanResponse, summary="Scan a website for vulnerabilities")
 async def scan_website(
     request: WebsiteScanRequest,
     current_user: dict = Depends(get_current_user),
@@ -113,28 +111,12 @@ async def scan_website(
     except Exception as exc:
         logger.warning("Failed to save website scan to DB: %s", exc)
 
-    print(f"[API RESPONSE] TI Findings count = {len(result.get('ti_findings', []))}")
+    print(f"[API RESPONSE] detected_technologies count = {len(result.get('detected_technologies', []))}")
+    print(f"[API RESPONSE] detected_assets count = {len(result.get('detected_assets', []))}")
+    print(f"[API RESPONSE] technology_metadata count = {len(result.get('technology_metadata', []))}")
+    print(f"[API RESPONSE] scanner_json exists = {'true' if result.get('scanner_json') else 'false'}")
 
-    # Ensure frontend only receives TI results
-    investigation_id = result.get("scan_id", str(uuid.uuid4()))
-    ti_response = {
-        "investigation_id": investigation_id,
-        "status": "completed" if not result.get("error") else "failed",
-        "risk_score": result.get("risk_score", 0.0),
-        "summary": {
-            "duration": result.get("duration", 0.0),
-            "critical": result.get("critical", 0),
-            "high": result.get("high", 0),
-            "medium": result.get("medium", 0),
-            "low": result.get("low", 0),
-            "info": result.get("info", 0),
-            "total": result.get("total", 0),
-        },
-        "ti_findings": result.get("ti_findings", []),
-        "reputation_context": result.get("shared_state", {}).get("reputation_context", {})
-    }
-
-    return ti_response
+    return result
 
 
 # ─── History Endpoints ────────────────────────────────────────
@@ -161,7 +143,7 @@ async def list_scan_history(
         raise HTTPException(status_code=500, detail="Could not load history.")
 
 
-@router.get("/history/{scan_id}", response_model=TIInvestigationResponse, summary="Get a past scan")
+@router.get("/history/{scan_id}", response_model=WebsiteScanDetail, summary="Get a past scan")
 async def get_scan_detail(
     scan_id: str,
     current_user: dict = Depends(get_current_user),
@@ -184,30 +166,37 @@ async def get_scan_detail(
         data = resp.data
         summary = data.get("summary") or {}
         
-        # Process raw findings through TI layer dynamically
-        raw_findings = data.get("findings", [])
-        
-        normalized_base = []
-        for raw in raw_findings:
-            n_f = FindingNormalizer.normalize(raw, default_url=data.get("target", ""), include_ti=True)
-            normalized_base.append(n_f)
-            
-        ti_findings_objs = TIProcessingService.process_findings(normalized_base)
-        ti_findings_dicts = [t.model_dump() for t in ti_findings_objs]
-        overall_risk = sum([t.risk_score for t in ti_findings_objs]) / max(len(ti_findings_objs), 1)
+        # Robustly handle nullable/empty/incorrectly typed fields for historical scans
+        findings = data.get("findings")
+        data["findings"] = findings if isinstance(findings, list) else []
 
-        # Build TI response for history detail
-        investigation_id = data.get("id", str(uuid.uuid4()))
-        ti_response = {
-            "investigation_id": investigation_id,
-            "status": "completed" if not data.get("error") else "failed",
-            "risk_score": min(overall_risk, 100.0),
-            "summary": summary,
-            "ti_findings": ti_findings_dicts,
-            "reputation_context": {}
-        }
-        
-        return ti_response
+        headers = data.get("headers")
+        data["headers"] = headers if isinstance(headers, dict) else {}
+
+        endpoints = data.get("endpoints")
+        data["endpoints"] = endpoints if isinstance(endpoints, list) else []
+
+        false_positives = data.get("false_positives_filtered")
+        data["false_positives_filtered"] = false_positives if isinstance(false_positives, list) else []
+
+        detected_technologies = summary.get("detected_technologies")
+        data["detected_technologies"] = detected_technologies if isinstance(detected_technologies, list) else []
+
+        detected_assets = summary.get("detected_assets")
+        data["detected_assets"] = detected_assets if isinstance(detected_assets, list) else []
+
+        technology_metadata = summary.get("technology_metadata")
+        data["technology_metadata"] = technology_metadata if isinstance(technology_metadata, list) else []
+
+        scanner_json = summary.get("scanner_json")
+        data["scanner_json"] = scanner_json if isinstance(scanner_json, dict) else {}
+
+        print(f"[HISTORY RESPONSE] detected_technologies count = {len(data['detected_technologies'])}")
+        print(f"[HISTORY RESPONSE] detected_assets count = {len(data['detected_assets'])}")
+        print(f"[HISTORY RESPONSE] technology_metadata count = {len(data['technology_metadata'])}")
+        print(f"[HISTORY RESPONSE] scanner_json exists = {'true' if data['scanner_json'] else 'false'}")
+
+        return data
     except HTTPException:
         raise
     except Exception as exc:

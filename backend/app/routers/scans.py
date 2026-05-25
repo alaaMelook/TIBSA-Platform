@@ -2,7 +2,7 @@
 Scans router.
 Handles URL scanning, file hash scanning, file upload scanning, and scan reports.
 """
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status, Request
 from typing import List
 from supabase import Client
 
@@ -18,40 +18,87 @@ MAX_FILE_SIZE = 32 * 1024 * 1024
 
 @router.post("/url", response_model=ScanResponse, summary="Scan a URL")
 async def scan_url(
-    request: ScanRequest,
+    request: Request,
+    payload: ScanRequest,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
 ):
     """Submit a URL for VirusTotal scanning. Returns immediately; result is saved in the background."""
+    client_ip = request.client.host if request.client else "0.0.0.0"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
     service = ScanService(supabase)
     auth_user = current_user["auth_user"]
+    
+    try:
+        from app.services.auth_service import parse_user_agent
+        supabase.table("audit_logs").insert({
+            "user_id": auth_user.id,
+            "action_type": "SCAN_CREATED",
+            "severity": "info",
+            "message": f"User started scan for target: {payload.target}",
+            "ip_address": client_ip,
+            "metadata": {
+                "resource": "scan",
+                "target": payload.target,
+                "scan_type": "url",
+                "user_agent": parse_user_agent(user_agent)
+            }
+        }).execute()
+    except Exception:
+        pass
+
     return await service.scan_url(
         user_id=auth_user.id,
-        url=request.target,
+        url=payload.target,
         background_tasks=background_tasks,
     )
 
 
 @router.post("/file", response_model=ScanResponse, summary="Scan a file by hash")
 async def scan_file_hash(
-    request: ScanRequest,
+    request: Request,
+    payload: ScanRequest,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
 ):
     """Look up a file hash (MD5 / SHA-1 / SHA-256) on VirusTotal."""
+    client_ip = request.client.host if request.client else "0.0.0.0"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
     service = ScanService(supabase)
     auth_user = current_user["auth_user"]
+    
+    try:
+        from app.services.auth_service import parse_user_agent
+        supabase.table("audit_logs").insert({
+            "user_id": auth_user.id,
+            "action_type": "SCAN_CREATED",
+            "severity": "info",
+            "message": f"User started scan for target hash: {payload.target}",
+            "ip_address": client_ip,
+            "metadata": {
+                "resource": "scan",
+                "target": payload.target,
+                "scan_type": "file_hash",
+                "user_agent": parse_user_agent(user_agent)
+            }
+        }).execute()
+    except Exception:
+        pass
+
     return await service.scan_file(
         user_id=auth_user.id,
-        file_hash=request.target,
+        file_hash=payload.target,
         background_tasks=background_tasks,
     )
 
 
 @router.post("/file/upload", response_model=ScanResponse, summary="Upload and scan a file")
 async def scan_file_upload(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(..., description="File to scan (max 32 MB)"),
     current_user: dict = Depends(get_current_user),
@@ -61,6 +108,9 @@ async def scan_file_upload(
     Upload a file directly for VirusTotal scanning.
     The scan runs in the background — poll GET /scans/{id} for the result.
     """
+    client_ip = request.client.host if request.client else "0.0.0.0"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(
@@ -70,6 +120,25 @@ async def scan_file_upload(
 
     service = ScanService(supabase)
     auth_user = current_user["auth_user"]
+    
+    try:
+        from app.services.auth_service import parse_user_agent
+        supabase.table("audit_logs").insert({
+            "user_id": auth_user.id,
+            "action_type": "SCAN_CREATED",
+            "severity": "info",
+            "message": f"User uploaded and started scan for file: {file.filename or 'unknown'}",
+            "ip_address": client_ip,
+            "metadata": {
+                "resource": "scan",
+                "target": file.filename or "unknown",
+                "scan_type": "file_upload",
+                "user_agent": parse_user_agent(user_agent)
+            }
+        }).execute()
+    except Exception:
+        pass
+
     return await service.scan_uploaded_file(
         user_id=auth_user.id,
         filename=file.filename or "unknown",

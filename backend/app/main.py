@@ -23,7 +23,7 @@ if sys.platform == "win32":
 
 
 from app.config import settings
-from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis, ai_chatbot
+from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis, ai_chatbot, admin
 from app.database.init_db import init_models
 from app.api import investigations as api_investigations
 from app.api import scans as api_scans
@@ -117,6 +117,7 @@ app.include_router(website_scanner.router, prefix="/api/v1/website-scanner", tag
 app.include_router(threat_modeling.router, prefix="/api/v1/threat-modeling", tags=["Threat Modeling"])
 app.include_router(ai_analysis.router, prefix="/api/v1/ai-analysis", tags=["AI Analysis"])
 app.include_router(ai_chatbot.router, prefix="/api/v1/ai-chatbot", tags=["AI Chatbot"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 
 # New infrastructure routers
 app.include_router(api_investigations.router, prefix="/api/v1/investigations", tags=["Investigations"])

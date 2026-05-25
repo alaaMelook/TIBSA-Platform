@@ -30,6 +30,7 @@ export interface AdminUser {
     created_at: string;
     updated_at: string;
     last_login: string | null;
+    is_online?: boolean;
     total_scans: number;
     threats_found: number;
     storage_used: number; // MB
@@ -124,6 +125,8 @@ export interface AuditLogEntry {
     timestamp: string;
     user_email: string;
     user_name: string;
+    user_role?: string;
+    user_agent?: string;
     action: string;
     resource: string;
     details: string;

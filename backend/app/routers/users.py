@@ -2,7 +2,7 @@
 Users router.
 Handles user profiles, role management (admin-only), and user CRUD.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import List
 from supabase import Client
 
@@ -77,14 +77,112 @@ async def list_users(
 
 @router.patch("/{user_id}/role")
 async def update_user_role(
+    request: Request,
     user_id: str,
     data: UpdateRoleRequest,
     _admin: dict = Depends(require_admin),
     supabase: Client = Depends(get_supabase),
 ):
     """Change a user's role (admin only). This is how admins promote users."""
+    client_ip = request.client.host if request.client else "0.0.0.0"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
+    # 1. Fetch user email
+    email = "Unknown User"
+    try:
+        user_res = supabase.table("users").select("email").eq("id", user_id).single().execute()
+        if user_res.data:
+            email = user_res.data.get("email")
+    except Exception:
+        pass
+        
     service = UserService(supabase)
-    return await service.update_role(user_id, data.role)
+    result = await service.update_role(user_id, data.role)
+    
+    # 2. Write USER_ROLE_CHANGE audit log
+    try:
+        from app.services.auth_service import parse_user_agent
+        auth_user = _admin["auth_user"]
+        supabase.table("audit_logs").insert({
+            "user_id": auth_user.id,
+            "action_type": "USER_ROLE_CHANGE",
+            "severity": "warning",
+            "message": f"Administrator changed role of user {email} to {data.role}.",
+            "ip_address": client_ip,
+            "metadata": {
+                "resource": "users",
+                "target_user_id": user_id,
+                "target_email": email,
+                "new_role": data.role,
+                "user_agent": parse_user_agent(user_agent)
+            }
+        }).execute()
+    except Exception:
+        pass
+        
+    return result
+
+
+@router.patch("/{user_id}/status")
+async def update_user_status(
+    request: Request,
+    user_id: str,
+    data: dict,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """Change a user's active status (admin only)."""
+    client_ip = request.client.host if request.client else "0.0.0.0"
+    user_agent = request.headers.get("user-agent", "Unknown")
+    
+    is_active = data.get("is_active")
+    if is_active is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing is_active field in request body",
+        )
+        
+    # 1. Fetch user details
+    email = "Unknown User"
+    try:
+        user_res = supabase.table("users").select("email").eq("id", user_id).single().execute()
+        if user_res.data:
+            email = user_res.data.get("email")
+    except Exception:
+        pass
+
+    # 2. Update user status in Supabase
+    res = supabase.table("users").update({"is_active": is_active}).eq("id", user_id).execute()
+    if not res.data:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found",
+        )
+        
+    # 3. Write USER_STATUS_CHANGE audit log
+    try:
+        from app.services.auth_service import parse_user_agent
+        auth_user = _admin["auth_user"]
+        action = "Enabled" if is_active else "Disabled"
+        severity = "info" if is_active else "critical"
+        supabase.table("audit_logs").insert({
+            "user_id": auth_user.id,
+            "action_type": "USER_STATUS_CHANGE",
+            "severity": severity,
+            "message": f"Administrator {action} account for user {email}.",
+            "ip_address": client_ip,
+            "metadata": {
+                "resource": "users",
+                "target_user_id": user_id,
+                "target_email": email,
+                "is_active": is_active,
+                "user_agent": parse_user_agent(user_agent)
+            }
+        }).execute()
+    except Exception:
+        pass
+
+    return {"message": f"User account active status set to {is_active}", "user": res.data[0]}
 
 
 @router.get("/dashboard/stats")

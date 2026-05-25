@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 import {
     StatCard,
     AdminSectionCard,
@@ -13,7 +14,7 @@ import type { Column } from "../components";
 import type { InvestigationContext } from "../components/InvestigationDrawer";
 import type { SOCFilters } from "../components/SOCFilterBar";
 import type { AuditLogEntry } from "../types";
-import { mockAuditLog } from "../mock";
+// Removed mock imports
 
 // ─── Icons ──────────────────────────────────────────────────
 const IconAudit = () => (
@@ -41,6 +42,8 @@ const IconWarn = () => (
 const ACTION_STYLES: Record<string, { bg: string; text: string }> = {
     LOGIN: { bg: "bg-blue-500/10", text: "text-blue-400" },
     LOGIN_FAILED: { bg: "bg-red-500/10", text: "text-red-400" },
+    SIGNUP: { bg: "bg-teal-500/10", text: "text-teal-400" },
+    SIGNUP_FAILED: { bg: "bg-rose-500/10", text: "text-rose-400" },
     SCAN_CREATED: { bg: "bg-cyan-500/10", text: "text-cyan-400" },
     USER_ROLE_CHANGE: { bg: "bg-purple-500/10", text: "text-purple-400" },
     THREAT_FEED_UPDATE: { bg: "bg-amber-500/10", text: "text-amber-400" },
@@ -61,14 +64,95 @@ export default function AuditLogPage() {
     const [drawerContext, setDrawerContext] = useState<InvestigationContext | null>(null);
     const [isExporting, setIsExporting] = useState(false);
 
-    const logs = mockAuditLog;
+    const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [pageOffset, setPageOffset] = useState(0);
+    const [refreshing, setRefreshing] = useState(false);
+    const { token } = useAuth();
+
+    const fetchLogs = async (offset = 0, append = false) => {
+        if (!token) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/audit/list?limit=100&offset=${offset}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setLogs(prev => append ? [...prev, ...data.logs] : data.logs);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchLogs(0, false);
+        setRefreshing(false);
+    };
+
+    const [isLive, setIsLive] = useState(() => {
+        if (typeof window !== "undefined") {
+            return localStorage.getItem("tibsa_live_audit") !== "false";
+        }
+        return true;
+    });
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            localStorage.setItem("tibsa_live_audit", String(isLive));
+        }
+    }, [isLive]);
+
+    useEffect(() => {
+        if (!token) return;
+
+        // First mount shows the spinner
+        setIsLoading(true);
+        fetchLogs(0);
+
+        // Silent refresh every 3 seconds in the background only if auto-refresh is active
+        if (!isLive) return;
+        const interval = setInterval(() => {
+            fetchLogs(0, false);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [token, isLive]);
+
+    const handleLoadMore = () => {
+        const nextOffset = pageOffset + 100;
+        setPageOffset(nextOffset);
+        fetchLogs(nextOffset, true);
+    };
 
     const filteredLogs = logs.filter((l) => {
+        // 1. Date Range Filter
+        const logTime = new Date(l.timestamp).getTime();
+        const now = Date.now();
+        let cutoff = 0;
+        if (socFilters.dateRange === "1h") cutoff = now - 60 * 60 * 1000;
+        else if (socFilters.dateRange === "24h") cutoff = now - 24 * 60 * 60 * 1000;
+        else if (socFilters.dateRange === "7d") cutoff = now - 7 * 24 * 60 * 60 * 1000;
+        else if (socFilters.dateRange === "30d") cutoff = now - 30 * 24 * 60 * 60 * 1000;
+        
+        if (cutoff > 0 && logTime < cutoff) return false;
+
+        // 2. Severity Filter
         if (socFilters.severity !== "all" && l.status !== socFilters.severity) return false;
+
+        // 3. Action Filter
         if (socFilters.action !== "all" && l.action !== socFilters.action) return false;
-        if (socFilters.user === "admin" && l.user_name.toLowerCase() === "unknown") return false; // Mock logic
-        if (socFilters.user === "system" && l.user_name.toLowerCase() !== "system") return false;
+
+        // 4. User Filter (admin, system, all)
+        if (socFilters.user === "admin" && l.user_role !== "admin") return false;
+        if (socFilters.user === "system" && l.user_role !== "system" && l.user_name.toLowerCase() !== "system") return false;
+
+        // 5. IP Address Filter
         if (socFilters.ipSearch && !l.ip_address.includes(socFilters.ipSearch)) return false;
+
         return true;
     });
 
@@ -128,9 +212,17 @@ export default function AuditLogPage() {
             key: "details",
             label: "Details",
             render: (entry) => (
-                <p className="text-xs text-slate-400 max-w-[300px] truncate" title={entry.details}>
-                    {entry.details}
-                </p>
+                <div className="space-y-0.5 max-w-[350px]">
+                    <p className="text-xs text-slate-300 whitespace-normal" title={entry.details}>
+                        {entry.details}
+                    </p>
+                    {entry.user_agent && entry.user_agent !== "Unknown Device" && (
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1 font-mono" title="Device Details">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                            {entry.user_agent}
+                        </p>
+                    )}
+                </div>
             ),
         },
         {
@@ -189,14 +281,38 @@ export default function AuditLogPage() {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-6 max-w-[1400px]">
             {/* ── Header ─────────────────────────────────── */}
-            <div>
-                <div className="flex items-center gap-3 mb-1">
-                    <h1 className="text-2xl font-bold text-white">Security Event Timeline</h1>
-                    <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/20 text-amber-400 rounded-full">
-                        Security
-                    </span>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <div className="flex items-center gap-3 mb-1">
+                        <h1 className="text-2xl font-bold text-white">Security Event Timeline</h1>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/20 text-amber-400 rounded-full">
+                            Security
+                        </span>
+                    </div>
+                    <p className="text-sm text-slate-400">Track all security events, admin actions, and system changes</p>
                 </div>
-                <p className="text-sm text-slate-400">Track all security events, admin actions, and system changes</p>
+                <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] rounded-lg p-2 backdrop-blur-md">
+                    <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+                    >
+                        <svg className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {refreshing ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <div className="w-px h-4 bg-white/[0.1]" />
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-400 font-mono">AUTO-REFRESH</span>
+                        <button 
+                            onClick={() => setIsLive(!isLive)}
+                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-slate-700'}`}
+                        >
+                            <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isLive ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* ── Stats ──────────────────────────────────── */}
@@ -227,8 +343,19 @@ export default function AuditLogPage() {
                     searchPlaceholder="Search by user, action, or details..."
                     searchKeys={["user_name", "user_email", "action", "details", "ip_address"]}
                     pageSize={10}
-                    emptyMessage="No audit events found matching your filters"
+                    emptyMessage={isLoading ? "Loading audit logs..." : "No audit logs found matching your filters."}
                 />
+                    
+                {logs.length >= 100 && (
+                    <div className="flex justify-center mt-4">
+                        <button 
+                            onClick={handleLoadMore}
+                            className="px-4 py-2 text-sm text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg transition-colors"
+                        >
+                            Load More
+                        </button>
+                    </div>
+                )}
             </AdminSectionCard>
 
             <InvestigationDrawer

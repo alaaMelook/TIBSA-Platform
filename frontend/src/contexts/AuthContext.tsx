@@ -122,6 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = async () => {
+        try {
+            if (state.token) {
+                await api.post("/api/v1/auth/logout", {}, state.token);
+            }
+        } catch (err) {
+            console.error("Failed to log out on backend:", err);
+        }
         await supabase.auth.signOut();
         setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
     };

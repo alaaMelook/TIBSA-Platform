@@ -12,7 +12,9 @@ interface StatCardProps {
     color: "blue" | "green" | "red" | "amber" | "purple" | "cyan";
     trend?: "up" | "down" | "neutral";
     delay?: number;
+    children?: React.ReactNode;
 }
+
 
 const COLOR_MAP = {
     blue:   { bg: "bg-blue-500/[0.07]", border: "border-blue-500/20",   text: "text-blue-400",   glow: "shadow-blue-500/10",   accent: "#3b82f6" },
@@ -50,7 +52,7 @@ function AnimatedNumber({ value, duration = 1400 }: { value: number; duration?: 
     return <>{display.toLocaleString()}</>;
 }
 
-export function StatCard({ label, value, change, changeLabel, icon, color, trend, delay = 0 }: StatCardProps) {
+export function StatCard({ label, value, change, changeLabel, icon, color, trend, delay = 0, children }: StatCardProps) {
     const colors = COLOR_MAP[color];
     const isNumeric = typeof value === "number";
 
@@ -115,6 +117,8 @@ export function StatCard({ label, value, change, changeLabel, icon, color, trend
                     <span className={colors.text}>{icon}</span>
                 </motion.div>
             </div>
+            {children}
         </motion.div>
     );
 }
+

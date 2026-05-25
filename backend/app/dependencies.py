@@ -17,13 +17,10 @@ _supabase_client: Client | None = None
 
 
 def get_supabase() -> Client:
-    """Get a cached Supabase client with service role key (full access)."""
-    global _supabase_client
-    if _supabase_client is None:
-        _supabase_client = create_client(
-            settings.supabase_url, settings.supabase_service_role_key
-        )
-    return _supabase_client
+    """Get a fresh Supabase client with service role key (full access)."""
+    return create_client(
+        settings.supabase_url, settings.supabase_service_role_key
+    )
 
 
 # ─── Token verification cache (5 min TTL) ────────────────────
@@ -50,6 +47,21 @@ def _cache_user(token: str, user) -> None:
     _token_cache[token] = (user, time.time())
 
 
+# In-memory user presence cache: user_id -> last_seen_iso_str
+ACTIVE_PRESENCE: dict[str, str] = {}
+
+
+def _update_db_last_seen(supabase: Client, user_id: str) -> None:
+    """Update last_seen timestamp in public.users table."""
+    try:
+        from datetime import datetime, timezone
+        supabase.table("users").update({
+            "last_seen": datetime.now(timezone.utc).isoformat()
+        }).eq("id", user_id).execute()
+    except Exception:
+        pass
+
+
 # ─── Current User Extraction ─────────────────────────────────
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -65,6 +77,9 @@ async def get_current_user(
         # Check cache first — avoids a network round-trip
         cached = _get_cached_user(token)
         if cached:
+            from datetime import datetime, timezone
+            ACTIVE_PRESENCE[cached.id] = datetime.now(timezone.utc).isoformat()
+            _update_db_last_seen(supabase, cached.id)
             return {"auth_user": cached, "token": token}
 
         user_response = supabase.auth.get_user(token)
@@ -75,6 +90,9 @@ async def get_current_user(
             )
 
         _cache_user(token, user_response.user)
+        from datetime import datetime, timezone
+        ACTIVE_PRESENCE[user_response.user.id] = datetime.now(timezone.utc).isoformat()
+        _update_db_last_seen(supabase, user_response.user.id)
         return {"auth_user": user_response.user, "token": token}
     except HTTPException:
         raise

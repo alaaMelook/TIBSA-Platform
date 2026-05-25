@@ -12,7 +12,6 @@ import {
     AdminSectionCard,
 } from "./components";
 import {
-    mockAdminStats,
     mockThreatTrends,
     mockThreatDistribution,
     mockScanVolume,
@@ -21,6 +20,8 @@ import {
     mockServiceHealth,
 } from "./mock";
 import Link from "next/link";
+import { AdminStats, RecentActivity, ServiceHealth, ThreatTrend, ThreatDistribution, TopScannedUrl, ScanVolumeData } from "./types";
+import { api } from "@/lib/api";
 
 // ─── Threat Level Badge ─────────────────────────────────────
 function ThreatBadge({ level }: { level: string }) {
@@ -88,51 +89,152 @@ const IconClock = () => (
 );
 
 export default function AdminPage() {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const [isLive, setIsLive] = useState(true);
-    const [liveStats, setLiveStats] = useState(mockAdminStats);
-    const [liveActivity, setLiveActivity] = useState(mockRecentActivity);
+    const [isLive, setIsLive] = useState(() => {
+        if (typeof window !== "undefined") {
+            return localStorage.getItem("tibsa_live_dashboard") !== "false";
+        }
+        return true;
+    });
 
-    // TODO: Replace mock data with API calls
     useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 600);
-        return () => clearTimeout(timer);
-    }, []);
+        if (typeof window !== "undefined") {
+            localStorage.setItem("tibsa_live_dashboard", String(isLive));
+        }
+    }, [isLive]);
+    
+    // Real Data States
+    const [stats, setStats] = useState<AdminStats | null>(null);
+    const [presence, setPresence] = useState<{
+        active_users: any[];
+        offline_users: any[];
+        active_count: number;
+    } | null>(null);
+    const [activity, setActivity] = useState<RecentActivity[]>([]);
+    const [health, setHealth] = useState<ServiceHealth[]>([]);
+    const [charts, setCharts] = useState<{
+        trends: ThreatTrend[];
+        distribution: ThreatDistribution[];
+        volume: ScanVolumeData[];
+        topUrls: TopScannedUrl[];
+    } | null>(null);
 
-    // SOC Live Simulation
-    useEffect(() => {
-        if (!isLive) return;
-        const interval = setInterval(() => {
-            setLiveStats(prev => ({
-                ...prev,
-                totalScans: prev.totalScans + Math.floor(Math.random() * 3),
-                scansToday: prev.scansToday + Math.floor(Math.random() * 3),
-                threatsDetected: prev.threatsDetected + (Math.random() > 0.8 ? 1 : 0),
-                threatsToday: prev.threatsToday + (Math.random() > 0.8 ? 1 : 0),
-            }));
+    const [refreshing, setRefreshing] = useState(false);
 
-            if (Math.random() > 0.6) {
-                setLiveActivity(prev => {
-                    const severities = ["info", "warning", "critical", "success"] as const;
-                    const newActivity = {
-                        id: `live-${Date.now()}`,
-                        type: "scan" as const,
-                        message: "Real-time heuristic scan completed on new payload",
-                        timestamp: new Date().toISOString(),
-                        severity: severities[Math.floor(Math.random() * severities.length)],
-                    };
-                    return [newActivity, ...prev.slice(0, 19)];
+    const fetchData = async () => {
+        if (!token) return;
+        try {
+            // 1. Fetch Stats
+            const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (statsRes.ok) {
+                const s = await statsRes.json();
+                setStats({
+                    totalUsers: s.users.total,
+                    activeUsers: s.users.active,
+                    totalScans: s.scans.total,
+                    scansToday: s.scans.today,
+                    threatsDetected: s.threats.total,
+                    threatsToday: s.threats.critical, // Mapping critical to today for now
+                    systemUptime: 99.9,
+                    avgResponseTime: 45
                 });
             }
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [isLive]);
 
-    const healthyServices = mockServiceHealth.filter((s) => s.status === "operational").length;
-    const totalServices = mockServiceHealth.length;
-    const degradedServices = mockServiceHealth.filter((s) => s.status === "degraded");
+            // 2. Fetch Charts
+            const chartsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/charts`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (chartsRes.ok) {
+                const c = await chartsRes.json();
+                // Ensure colors exist for distribution
+                const coloredDist = c.threatDistribution.map((item: any, i: number) => ({
+                    ...item,
+                    color: ["#ef4444", "#f97316", "#eab308", "#dc2626", "#a855f7", "#ec4899", "#6b7280"][i % 7]
+                }));
+                setCharts({
+                    trends: c.threatTrends,
+                    distribution: coloredDist,
+                    volume: c.scanVolume,
+                    topUrls: c.topScannedUrls
+                });
+            }
+
+            // 3. Fetch Activity
+            const actRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/activity`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (actRes.ok) {
+                const a = await actRes.json();
+                setActivity(a.recentActivity);
+            }
+
+            // 4. Fetch Health
+            const healthRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/health/system`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (healthRes.ok) {
+                const h = await healthRes.json();
+                setHealth(h.services);
+            }
+
+            // 5. Fetch Presence
+            try {
+                const presenceRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/presence`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (presenceRes.ok) {
+                    const p = await presenceRes.json();
+                    setPresence(p);
+                }
+            } catch (presErr) {
+                console.error("Failed to fetch presence:", presErr);
+            }
+
+            setError(null);
+        } catch (err) {
+            console.error("Failed to fetch admin data:", err);
+            setError("Failed to load dashboard data");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchData();
+        setRefreshing(false);
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [token]);
+
+    // Live polling logic (Real API polling, no fake math)
+    useEffect(() => {
+        if (!isLive) return;
+        const interval = setInterval(fetchData, 3000); // Poll every 3s
+        return () => clearInterval(interval);
+    }, [isLive, token]);
+
+    const healthyServices = health.filter((s) => s.status === "operational").length;
+    const totalServices = health.length;
+    const degradedServices = health.filter((s) => s.status === "degraded");
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 border border-red-500/20 bg-red-500/5 rounded-xl">
+                <p className="text-red-400 mb-4">{error}</p>
+                <button onClick={fetchData} className="px-4 py-2 bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition">
+                    Retry Connection
+                </button>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -192,6 +294,17 @@ export default function AdminPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] rounded-lg p-2 backdrop-blur-md">
+                    <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+                    >
+                        <svg className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {refreshing ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <div className="w-px h-4 bg-white/[0.1]" />
                     <div className="flex items-center gap-2 text-xs">
                         <span className="text-slate-400 font-mono">AUTO-REFRESH</span>
                         <button 
@@ -213,62 +326,62 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
                 <StatCard
                     label="Total Users"
-                    value={liveStats.totalUsers}
-                    change={12.5}
-                    changeLabel="vs last month"
+                    value={stats?.totalUsers || 0}
+                    change={0}
+                    changeLabel="Real-time"
                     icon={<IconUsers />}
                     color="blue"
-                    trend="up"
+                    trend="neutral"
                     delay={0}
                 />
                 <StatCard
                     label="Active Users"
-                    value={liveStats.activeUsers}
-                    change={8.3}
-                    changeLabel="vs last month"
+                    value={stats?.activeUsers || 0}
+                    change={0}
+                    changeLabel="Real-time"
                     icon={<IconActive />}
                     color="green"
-                    trend="up"
+                    trend="neutral"
                     delay={100}
                 />
                 <StatCard
                     label="Total Scans"
-                    value={liveStats.totalScans.toLocaleString()}
-                    change={23.1}
-                    changeLabel="vs last month"
+                    value={stats?.totalScans.toLocaleString() || "0"}
+                    change={0}
+                    changeLabel="Real-time"
                     icon={<IconScans />}
                     color="purple"
-                    trend="up"
+                    trend="neutral"
                     delay={200}
                 />
                 <StatCard
                     label="Scans Today"
-                    value={liveStats.scansToday.toLocaleString()}
-                    change={-3.2}
-                    changeLabel="vs yesterday"
+                    value={stats?.scansToday.toLocaleString() || "0"}
+                    change={0}
+                    changeLabel="Real-time"
                     icon={<IconClock />}
                     color="cyan"
-                    trend="down"
+                    trend="neutral"
                     delay={300}
                 />
                 <StatCard
                     label="Threats Detected"
-                    value={liveStats.threatsDetected.toLocaleString()}
-                    change={15.4}
-                    changeLabel="vs last month"
+                    value={stats?.threatsDetected.toLocaleString() || "0"}
+                    change={0}
+                    changeLabel="Real-time"
                     icon={<IconShield />}
                     color="red"
-                    trend="up"
+                    trend="neutral"
                     delay={400}
                 />
                 <StatCard
                     label="System Uptime"
-                    value={`${liveStats.systemUptime}%`}
-                    change={0.1}
-                    changeLabel="vs last month"
+                    value={`${stats?.systemUptime || 99.9}%`}
+                    change={0}
+                    changeLabel="Real-time"
                     icon={<IconUptime />}
                     color="green"
-                    trend="up"
+                    trend="neutral"
                     delay={500}
                 />
             </div>
@@ -285,14 +398,14 @@ export default function AdminPage() {
                         </Link>
                     }
                 >
-                    <ThreatTrendChart data={mockThreatTrends} />
+                    <ThreatTrendChart data={charts?.trends || []} />
                 </AdminSectionCard>
 
                 <AdminSectionCard
                     title="Threat Distribution"
                     description="By category"
                 >
-                    <ThreatDistributionChart data={mockThreatDistribution} />
+                    <ThreatDistributionChart data={charts?.distribution || []} />
                 </AdminSectionCard>
             </div>
 
@@ -307,7 +420,7 @@ export default function AdminPage() {
                         </Link>
                     }
                 >
-                    <ScanVolumeChart data={mockScanVolume} />
+                    <ScanVolumeChart data={charts?.volume || []} />
                 </AdminSectionCard>
 
                 <AdminSectionCard
@@ -321,43 +434,53 @@ export default function AdminPage() {
                     }
                 >
                     <div className="px-2 py-2">
-                        <ActivityFeed activities={liveActivity} />
+                        {activity.length > 0 ? (
+                            <ActivityFeed activities={activity} />
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
+                                <p className="text-sm">No recent activity found.</p>
+                            </div>
+                        )}
                     </div>
                 </AdminSectionCard>
             </div>
 
             {/* ── Row: Top Scanned URLs + System Health ─── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Top Scanned URLs */}
                 <AdminSectionCard
                     title="Top Scanned URLs"
                     description="Most frequently analyzed targets"
                 >
                     <div className="space-y-2">
-                        {mockTopScannedUrls.slice(0, 6).map((url, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors group"
-                            >
-                                {/* Rank */}
-                                <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                                    i < 3 ? "bg-blue-500/15 text-blue-400" : "bg-white/[0.04] text-slate-500"
-                                }`}>
-                                    {i + 1}
-                                </span>
-                                {/* URL */}
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-slate-300 truncate group-hover:text-white transition-colors">
-                                        {url.url}
-                                    </p>
-                                    <p className="text-[11px] text-slate-500">
-                                        {url.scan_count} scans
-                                    </p>
+                        {charts?.topUrls && charts.topUrls.length > 0 ? (
+                            charts.topUrls.map((url, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors group"
+                                >
+                                    {/* Rank */}
+                                    <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                                        i < 3 ? "bg-blue-500/15 text-blue-400" : "bg-white/[0.04] text-slate-500"
+                                    }`}>
+                                        {i + 1}
+                                    </span>
+                                    {/* URL */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-slate-300 truncate group-hover:text-white transition-colors">
+                                            {url.url}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500">
+                                            {url.scan_count} scans
+                                        </p>
+                                    </div>
+                                    {/* Threat level */}
+                                    <ThreatBadge level={url.threat_level || "unknown"} />
                                 </div>
-                                {/* Threat level */}
-                                <ThreatBadge level={url.threat_level} />
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <div className="py-8 text-center text-slate-500 text-sm">No scan targets found.</div>
+                        )}
                     </div>
                 </AdminSectionCard>
 
@@ -372,7 +495,7 @@ export default function AdminPage() {
                     }
                 >
                     <div className="space-y-2">
-                        {mockServiceHealth.map((service) => (
+                        {health.map((service) => (
                             <div
                                 key={service.name}
                                 className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors"
@@ -380,6 +503,7 @@ export default function AdminPage() {
                                 <StatusDot status={service.status} />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm text-slate-300">{service.name}</p>
+                                    <p className="text-xs text-slate-500 truncate">{service.description}</p>
                                 </div>
                                 <span className="text-xs text-slate-500 tabular-nums">{service.responseTime}ms</span>
                                 <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
@@ -399,6 +523,85 @@ export default function AdminPage() {
                             </p>
                         </div>
                     )}
+                </AdminSectionCard>
+
+                {/* Active Analysts & Users Presence */}
+                <AdminSectionCard
+                    title="Active Analysts & Users"
+                    description={`${presence?.active_count || 0} active analysts online`}
+                    action={
+                        <Link href="/admin/users" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                            Manage Users →
+                        </Link>
+                    }
+                >
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                        {/* Active Users */}
+                        {presence?.active_users && presence.active_users.length > 0 ? (
+                            presence.active_users.map((user) => (
+                                <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-emerald-500/[0.02] border border-emerald-500/10 hover:bg-emerald-500/[0.04] transition-colors">
+                                    {/* Avatar */}
+                                    <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                                        <span className="text-xs font-bold text-white uppercase">{user.full_name.charAt(0)}</span>
+                                        <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-400 border-2 border-[#0B1528] animate-pulse" />
+                                    </div>
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
+                                            <span className="px-1.5 py-0.5 rounded text-[8px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
+                                                Active
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                    </div>
+                                    {/* Role Badge */}
+                                    <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${
+                                        user.role === "admin" ? "bg-purple-500/15 text-purple-400 border border-purple-500/20" : "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                    }`}>
+                                        {user.role === "admin" ? "⚡ ADMIN" : "👤 USER"}
+                                    </span>
+                                </div>
+                            ))
+                        ) : null}
+
+                        {/* Offline Users */}
+                        {presence?.offline_users && presence.offline_users.length > 0 ? (
+                            presence.offline_users.map((user) => {
+                                const lastSeenStr = user.seconds_ago === 999999 ? "never" : 
+                                    user.seconds_ago < 60 ? `${user.seconds_ago}s ago` :
+                                    user.seconds_ago < 3600 ? `${Math.floor(user.seconds_ago / 60)}m ago` :
+                                    `${Math.floor(user.seconds_ago / 3600)}h ago`;
+                                return (
+                                    <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.01] transition-colors group">
+                                        {/* Avatar */}
+                                        <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-slate-800 border border-white/[0.06] flex items-center justify-center">
+                                            <span className="text-xs font-bold text-slate-400 uppercase">{user.full_name.charAt(0)}</span>
+                                            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-slate-600 border-2 border-[#0B1528]" />
+                                        </div>
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-slate-400 group-hover:text-white transition-colors truncate">{user.full_name}</p>
+                                            <p className="text-xs text-slate-600 truncate font-mono">last seen {lastSeenStr}</p>
+                                        </div>
+                                        {/* Role Badge */}
+                                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${
+                                            user.role === "admin" ? "bg-white/[0.04] text-purple-400/60 border border-purple-500/10" : "bg-white/[0.04] text-slate-500 border border-white/[0.06]"
+                                        }`}>
+                                            {user.role === "admin" ? "ADMIN" : "USER"}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        ) : null}
+
+                        {(!presence?.active_users || presence.active_users.length === 0) && 
+                         (!presence?.offline_users || presence.offline_users.length === 0) && (
+                            <div className="py-8 text-center text-slate-500 text-sm">
+                                No registered analysts found.
+                            </div>
+                        )}
+                    </div>
                 </AdminSectionCard>
             </div>
 

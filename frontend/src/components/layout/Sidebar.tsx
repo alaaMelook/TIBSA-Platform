@@ -124,7 +124,7 @@ export function Sidebar() {
         <aside className="w-64 min-h-screen bg-[#0f172a] border-r border-white/[0.08] p-4">
             <div className="mb-6">
                 <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">
-                    {isAdminSection ? "Admin Panel" : "Navigation"}
+                    {isAdminSection ? "TIBSA SOC Nexus" : "TIBSA Shield"}
                 </h2>
             </div>
 
@@ -138,7 +138,7 @@ export function Sidebar() {
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                                 isActive
                                     ? "bg-[#3b82f6]/15 text-blue-400 font-medium border border-blue-500/20"
-                                    : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                                     : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
                             }`}
                         >
                             <span className={isActive ? "text-blue-400" : "text-slate-500"}>{link.icon}</span>
@@ -158,11 +158,11 @@ export function Sidebar() {
                         {isAdminSection ? (
                             <>
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
-                                User Dashboard
+                                TIBSA Shield
                             </>
                         ) : (
                             <>
-                                Admin Panel
+                                TIBSA SOC Nexus
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                             </>
                         )}

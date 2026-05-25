@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 import {
     StatCard,
@@ -10,14 +12,6 @@ import {
     ThreatTrendChart,
     ThreatDistributionChart,
 } from "../components";
-import {
-    mockAdminStats,
-    mockScanVolume,
-    mockUserGrowth,
-    mockThreatTrends,
-    mockThreatDistribution,
-    mockTopScannedUrls,
-} from "../mock";
 
 // ─── Icons ──────────────────────────────────────────────────
 const IconChart = () => (
@@ -57,23 +51,110 @@ function ThreatBadge({ level }: { level: string }) {
 }
 
 export default function AnalyticsPage() {
-    const stats = mockAdminStats;
+    const { token } = useAuth();
+    const [stats, setStats] = useState({ 
+        totalScans: 0, 
+        scansToday: 0,
+        totalUsers: 1, 
+        activeUsers: 0,
+        threatsDetected: 0,
+        detectionRate: 0,
+        avgResponseTime: 45,
+        systemUptime: 99.9
+    });
+    const [charts, setCharts] = useState<{
+        trends: any[];
+        distribution: any[];
+        scanVolume: any[];
+        topUrls: any[];
+        growth: any[];
+    }>({ trends: [], distribution: [], scanVolume: [], topUrls: [], growth: [] });
+    const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchData = async () => {
+        if (!token) return;
+        try {
+            const [statsRes, chartsRes, growthRes] = await Promise.all([
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/charts`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/users/growth`, { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+
+            if (statsRes.ok) {
+                const s = await statsRes.json();
+                setStats({
+                    totalScans: s.scans.total,
+                    scansToday: s.scans.today,
+                    totalUsers: s.users.total || 1,
+                    activeUsers: s.users.active,
+                    threatsDetected: s.threats.total,
+                    detectionRate: s.threats.detectionRate || 0,
+                    avgResponseTime: 45,
+                    systemUptime: 99.9
+                });
+            }
+
+            let distribution = [], trends = [], scanVolume = [], topUrls = [], growth = [];
+            if (chartsRes.ok) {
+                const c = await chartsRes.json();
+                distribution = (c.threatDistribution || []).map((item: any, i: number) => ({
+                    ...item,
+                    color: ["#ef4444", "#f97316", "#eab308", "#dc2626", "#a855f7", "#ec4899", "#6b7280"][i % 7]
+                }));
+                trends = c.threatTrends || [];
+                scanVolume = c.scanVolume || [];
+                topUrls = c.topScannedUrls || [];
+            }
+            if (growthRes.ok) {
+                const g = await growthRes.json();
+                growth = g.growth;
+            }
+            setCharts({ distribution, trends, scanVolume, topUrls, growth });
+        } catch (err) {
+            console.error("Failed to fetch analytics data:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (!token) return;
+        setIsLoading(true);
+        fetchData().finally(() => setIsLoading(false));
+    }, [token]);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchData();
+        setRefreshing(false);
+    };
 
     // Derived metrics
-    const avgScansPerUser = Math.round(stats.totalScans / stats.totalUsers);
-    const detectionRate = ((stats.threatsDetected / stats.totalScans) * 100).toFixed(1);
+    const avgScansPerUser = Math.round((stats.totalScans ?? 0) / (stats.totalUsers || 1));
+    const detectionRate = (stats.detectionRate ?? 0).toFixed(1);
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-6 max-w-[1400px]">
             {/* ── Header ─────────────────────────────────── */}
-            <div>
-                <div className="flex items-center gap-3 mb-1">
-                    <h1 className="text-2xl font-bold text-white">Platform Analytics</h1>
-                    <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/20 text-purple-400 rounded-full">
-                        Insights
-                    </span>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                    <div className="flex items-center gap-3 mb-1">
+                        <h1 className="text-2xl font-bold text-white">Platform Analytics</h1>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/20 text-purple-400 rounded-full">
+                            Insights
+                        </span>
+                    </div>
+                    <p className="text-sm text-slate-400">Comprehensive platform usage metrics and performance insights</p>
                 </div>
-                <p className="text-sm text-slate-400">Comprehensive platform usage metrics and performance insights</p>
+                <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+                >
+                    <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {refreshing ? "Refreshing..." : "Refresh"}
+                </button>
             </div>
 
             {/* ── Key Metrics ────────────────────────────── */}
@@ -90,14 +171,14 @@ export default function AnalyticsPage() {
                     title="Scan Volume"
                     description="Daily breakdown by scan type — last 7 days"
                 >
-                    <ScanVolumeChart data={mockScanVolume} />
+                    <ScanVolumeChart data={charts.scanVolume} />
                 </AdminSectionCard>
 
                 <AdminSectionCard
                     title="User Growth"
                     description="Total vs active users — last 6 months"
                 >
-                    <UserGrowthChart data={mockUserGrowth} />
+                    <UserGrowthChart data={charts.growth} />
                 </AdminSectionCard>
             </div>
 
@@ -108,14 +189,14 @@ export default function AnalyticsPage() {
                     description="14-day severity distribution"
                     className="lg:col-span-2"
                 >
-                    <ThreatTrendChart data={mockThreatTrends} />
+                    <ThreatTrendChart data={charts.trends} />
                 </AdminSectionCard>
 
                 <AdminSectionCard
                     title="Threat Categories"
                     description="All-time distribution"
                 >
-                    <ThreatDistributionChart data={mockThreatDistribution} />
+                    <ThreatDistributionChart data={charts.distribution} />
                 </AdminSectionCard>
             </div>
 
@@ -128,12 +209,12 @@ export default function AnalyticsPage() {
                 >
                     <div className="space-y-4">
                         {[
-                            { label: "Total Users Registered", value: stats.totalUsers.toLocaleString(), bar: 100, color: "bg-blue-500" },
-                            { label: "Active Users (30d)", value: stats.activeUsers.toLocaleString(), bar: (stats.activeUsers / stats.totalUsers) * 100, color: "bg-emerald-500" },
-                            { label: "Scans Processed", value: stats.totalScans.toLocaleString(), bar: 100, color: "bg-purple-500" },
-                            { label: "Threats Detected", value: stats.threatsDetected.toLocaleString(), bar: (stats.threatsDetected / stats.totalScans) * 100 * 10, color: "bg-red-500" },
-                            { label: "Avg Response Time", value: `${stats.avgResponseTime}ms`, bar: Math.min((stats.avgResponseTime / 500) * 100, 100), color: "bg-cyan-500" },
-                            { label: "System Uptime", value: `${stats.systemUptime}%`, bar: stats.systemUptime, color: "bg-emerald-400" },
+                            { label: "Total Users Registered", value: (stats.totalUsers ?? 0).toLocaleString(), bar: 100, color: "bg-blue-500" },
+                            { label: "Active Users (30d)", value: (stats.activeUsers ?? 0).toLocaleString(), bar: ((stats.activeUsers ?? 0) / (stats.totalUsers || 1)) * 100, color: "bg-emerald-500" },
+                            { label: "Scans Processed", value: (stats.totalScans ?? 0).toLocaleString(), bar: 100, color: "bg-purple-500" },
+                            { label: "Threats Detected", value: (stats.threatsDetected ?? 0).toLocaleString(), bar: ((stats.threatsDetected ?? 0) / (stats.totalScans || 1)) * 100 * 10, color: "bg-red-500" },
+                            { label: "Avg Response Time", value: `${stats.avgResponseTime ?? 0}ms`, bar: Math.min(((stats.avgResponseTime ?? 0) / 500) * 100, 100), color: "bg-cyan-500" },
+                            { label: "System Uptime", value: `${stats.systemUptime ?? 0}%`, bar: stats.systemUptime ?? 0, color: "bg-emerald-400" },
                         ].map((metric) => (
                             <div key={metric.label} className="space-y-1.5">
                                 <div className="flex items-center justify-between">
@@ -157,7 +238,7 @@ export default function AnalyticsPage() {
                     description="Top targets by scan frequency"
                 >
                     <div className="space-y-2">
-                        {mockTopScannedUrls.map((url, i) => (
+                        {(charts.topUrls || []).map((url, i) => (
                             <div
                                 key={i}
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.02] transition-colors"
@@ -173,7 +254,7 @@ export default function AnalyticsPage() {
                                         <span className="text-[11px] text-slate-500">{url.scan_count} scans</span>
                                         <span className="text-[11px] text-slate-600">•</span>
                                         <span className="text-[11px] text-slate-500">
-                                            {new Date(url.last_scanned).toLocaleDateString()}
+                                            {new Date(url.last_scanned || Date.now()).toLocaleDateString()}
                                         </span>
                                     </div>
                                 </div>
