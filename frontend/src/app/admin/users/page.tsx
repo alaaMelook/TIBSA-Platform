@@ -149,7 +149,10 @@ export default function UsersManagementPage() {
     const onlineCount = users.filter((u) => u.is_online ?? (u.last_login ? (Date.now() - new Date(u.last_login).getTime() <= 30000) : false)).length;
 
     const handleRoleToggle = async (userId: string) => {
-        if (!token) return;
+        if (!token) {
+            alert("No authentication token found");
+            return;
+        }
         const currentUserObj = users.find((u) => u.id === userId);
         if (!currentUserObj) return;
         const newRole = currentUserObj.role === "admin" ? "user" : "admin";
@@ -169,14 +172,22 @@ export default function UsersManagementPage() {
                         u.id === userId ? { ...u, role: newRole } : u
                     )
                 );
+                alert(`User role updated to ${newRole}`);
+            } else {
+                const errData = await res.json();
+                alert(`Failed to update role: ${errData.detail || res.statusText}`);
             }
         } catch (err) {
             console.error("Failed to update user role:", err);
+            alert("Error updating user role");
         }
     };
 
     const handleStatusToggle = async (userId: string) => {
-        if (!token) return;
+        if (!token) {
+            alert("No authentication token found");
+            return;
+        }
         const currentUserObj = users.find((u) => u.id === userId);
         if (!currentUserObj) return;
         const newActiveState = !currentUserObj.is_active;
@@ -196,9 +207,14 @@ export default function UsersManagementPage() {
                         u.id === userId ? { ...u, is_active: newActiveState } : u
                     )
                 );
+                alert(`User account ${newActiveState ? "enabled" : "disabled"}`);
+            } else {
+                const errData = await res.json();
+                alert(`Failed to update status: ${errData.detail || res.statusText}`);
             }
         } catch (err) {
             console.error("Failed to update user active status:", err);
+            alert("Error updating user status");
         }
     };
 

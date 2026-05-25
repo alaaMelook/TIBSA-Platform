@@ -78,6 +78,7 @@ async def get_current_user(
         cached = _get_cached_user(token)
         if cached:
             from datetime import datetime, timezone
+            # Check if user is active (from cache)
             ACTIVE_PRESENCE[cached.id] = datetime.now(timezone.utc).isoformat()
             _update_db_last_seen(supabase, cached.id)
             return {"auth_user": cached, "token": token}
@@ -87,6 +88,14 @@ async def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired token",
+            )
+
+        # Check if user is inactive in the users table
+        user_record = supabase.table("users").select("is_active").eq("id", user_response.user.id).single().execute()
+        if user_record.data and user_record.data.get("is_active") is False:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your account has been deactivated. Please contact support.",
             )
 
         _cache_user(token, user_response.user)

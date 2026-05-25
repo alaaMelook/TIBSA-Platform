@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
 import type { User, AuthState, LoginCredentials, RegisterCredentials } from "@/types";
@@ -15,6 +16,7 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
     const [state, setState] = useState<AuthState>({
         user: null,
         token: null,
@@ -26,13 +28,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const fetchUser = useCallback(async (token: string) => {
         try {
             const user = await api.get<User>("/api/v1/users/me", token);
+            
+            // Check if user is inactive — redirect immediately
+            if (user.is_active === false) {
+                setState({
+                    user,
+                    token,
+                    isLoading: false,
+                    isAuthenticated: false,
+                });
+                // Redirect after a short delay to ensure state updates
+                setTimeout(() => {
+                    router.push("/suspended-account");
+                }, 100);
+                return;
+            }
+            
             setState({
                 user,
                 token,
                 isLoading: false,
                 isAuthenticated: true,
             });
-        } catch {
+        } catch (error: any) {
+            // Check if error is account deactivated
+            if (error?.message?.includes("deactivated") || error?.message?.includes("inactive")) {
+                setState({
+                    user: null,
+                    token: null,
+                    isLoading: false,
+                    isAuthenticated: false,
+                });
+                setTimeout(() => {
+                    router.push("/suspended-account");
+                }, 100);
+                return;
+            }
+
             // Backend might be down or profile not ready yet.
             // Still mark as authenticated with basic info from Supabase session.
             try {
@@ -59,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
         }
-    }, []);
+    }, [router]);
 
     // ─── Listen to Supabase auth state changes ───────────────
     useEffect(() => {
@@ -131,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         await supabase.auth.signOut();
         setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+        router.push("/");
     };
 
     const refreshUser = async () => {

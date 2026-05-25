@@ -544,14 +544,14 @@ export default function ThreatIntelligencePage() {
                     title="Threat Feed Configuration"
                     description="Manage your threat intelligence sources"
                     action={
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/20 border border-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors">
+                        <button onClick={() => setIsFeedModalOpen(true)} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/20 border border-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors">
                             + Add Feed
                         </button>
                     }
                 >
                     <DataTable
                         columns={feedColumns}
-                        data={[]}
+                        data={feeds}
                         searchable
                         searchPlaceholder="Search feeds..."
                         searchKeys={["name", "provider", "category"]}
@@ -559,6 +559,41 @@ export default function ThreatIntelligencePage() {
                         emptyMessage="No active threat feeds configured."
                     />
                 </AdminSectionCard>
+            )}
+
+            {isFeedModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/60" onClick={() => setIsFeedModalOpen(false)} />
+                    <div className="relative z-10 w-full max-w-xl bg-slate-900 border border-white/[0.06] rounded-xl p-5">
+                        <h3 className="text-lg font-bold text-white mb-2">Add Threat Feed</h3>
+                        <form onSubmit={handleAddFeed} className="space-y-3">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                <input value={newFeed.name} onChange={(e) => setNewFeed({...newFeed, name: e.target.value})} placeholder="Feed name" className="w-full px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
+                                <input value={newFeed.provider} onChange={(e) => setNewFeed({...newFeed, provider: e.target.value})} placeholder="Provider" className="w-full px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
+                            </div>
+                            <input value={newFeed.source_url} onChange={(e) => setNewFeed({...newFeed, source_url: e.target.value})} placeholder="Source URL" className="w-full px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
+                            <div className="flex gap-2">
+                                <select value={newFeed.category} onChange={(e) => setNewFeed({...newFeed, category: e.target.value})} className="px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white">
+                                    <option value="malware">malware</option>
+                                    <option value="phishing">phishing</option>
+                                    <option value="c2">c2</option>
+                                    <option value="botnet">botnet</option>
+                                    <option value="apt">apt</option>
+                                </select>
+                                <input type="number" value={newFeed.reliability_score} onChange={(e) => setNewFeed({...newFeed, reliability_score: Number(e.target.value)})} placeholder="Reliability" className="w-28 px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
+                                <select value={newFeed.update_frequency} onChange={(e) => setNewFeed({...newFeed, update_frequency: e.target.value})} className="px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white">
+                                    <option>Hourly</option>
+                                    <option>Daily</option>
+                                    <option>Weekly</option>
+                                </select>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button type="button" onClick={() => setIsFeedModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white">Cancel</button>
+                                <button type="submit" disabled={addingFeed} className="px-4 py-2 text-sm font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50">{addingFeed ? 'Adding...' : 'Add Feed'}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
 
             <InvestigationDrawer

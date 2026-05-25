@@ -31,7 +31,14 @@ export default function DashboardPage() {
         try {
             const data = await api.get<DashboardStats>("/api/v1/users/dashboard/stats", token);
             setStats(data);
-        } catch (error) {
+        } catch (error: any) {
+            const errorMsg = error?.message || "";
+            // Check if account is deactivated
+            if (errorMsg.includes("deactivated") || errorMsg.includes("inactive")) {
+                // Clear auth and redirect to suspended-account page
+                window.location.href = "/suspended-account";
+                return;
+            }
             console.error("Failed to fetch stats:", error);
         } finally {
             setIsLoading(false);
