@@ -28,11 +28,25 @@ class ThreatIndicatorResponse(BaseModel):
     last_seen: Optional[datetime] = None
 
 
+class ThreatFeedCreate(BaseModel):
+    name: str
+    provider: str
+    category: str  # "malware", "phishing", "c2", "botnet", "apt", "general"
+    source_url: str
+    reliability_score: Optional[int] = 85
+    update_frequency: Optional[str] = "Hourly"
+
+
 class ThreatFeedResponse(BaseModel):
     id: str
     name: str
+    provider: str
+    category: str
     source_url: str
     is_active: bool
+    indicators_count: int = 0
+    reliability_score: int = 85
+    update_frequency: str = "Hourly"
     last_updated: Optional[datetime] = None
 
 

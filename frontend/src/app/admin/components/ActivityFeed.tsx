@@ -1,3 +1,4 @@
+//frontend\src\app\admin\components\ActivityFeed.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -5,10 +6,10 @@ import type { RecentActivity } from "../types";
 
 // ─── Severity Style Map ──────────────────────────────────────
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; text: string; pulse: string }> = {
-    critical: { border: "border-l-red-500",     bg: "bg-red-500/[0.04]",     text: "text-red-400",     pulse: "bg-red-400" },
-    warning:  { border: "border-l-amber-500",   bg: "bg-amber-500/[0.03]",   text: "text-amber-400",   pulse: "bg-amber-400" },
-    success:  { border: "border-l-emerald-500",  bg: "bg-emerald-500/[0.03]", text: "text-emerald-400",  pulse: "bg-emerald-400" },
-    info:     { border: "border-l-blue-500",     bg: "bg-blue-500/[0.03]",    text: "text-blue-400",     pulse: "bg-blue-400" },
+    critical: { border: "border-l-red-500", bg: "bg-red-500/[0.04]", text: "text-red-400", pulse: "bg-red-400" },
+    warning: { border: "border-l-amber-500", bg: "bg-amber-500/[0.03]", text: "text-amber-400", pulse: "bg-amber-400" },
+    success: { border: "border-l-emerald-500", bg: "bg-emerald-500/[0.03]", text: "text-emerald-400", pulse: "bg-emerald-400" },
+    info: { border: "border-l-blue-500", bg: "bg-blue-500/[0.03]", text: "text-blue-400", pulse: "bg-blue-400" },
 };
 
 // ─── Type Icon Map ───────────────────────────────────────────

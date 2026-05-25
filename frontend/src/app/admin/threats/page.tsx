@@ -101,8 +101,20 @@ export default function ThreatIntelligencePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [pageOffset, setPageOffset] = useState(0);
 
-    const activeFeeds = 0;
-    const totalIndicators = 0;
+    const [feeds, setFeeds] = useState<ThreatFeedConfig[]>([]);
+    const [isFeedModalOpen, setIsFeedModalOpen] = useState(false);
+    const [newFeed, setNewFeed] = useState({
+        name: "",
+        provider: "",
+        category: "malware",
+        source_url: "",
+        reliability_score: 85,
+        update_frequency: "Hourly"
+    });
+    const [addingFeed, setAddingFeed] = useState(false);
+
+    const activeFeeds = feeds.filter(f => f.is_active).length;
+    const totalIndicators = feeds.reduce((sum, f) => sum + f.indicators_count, 0);
 
     const fetchThreats = async (offset = 0, append = false) => {
         if (!token) return;
@@ -116,6 +128,53 @@ export default function ThreatIntelligencePage() {
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const fetchFeeds = async () => {
+        if (!token) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/threats/feeds?active_only=false`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setFeeds(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch feeds:", err);
+        }
+    };
+
+    const handleAddFeed = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!token || !newFeed.name || !newFeed.provider || !newFeed.source_url) return;
+        setAddingFeed(true);
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/threats/feeds`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(newFeed)
+            });
+            if (res.ok) {
+                setIsFeedModalOpen(false);
+                setNewFeed({
+                    name: "",
+                    provider: "",
+                    category: "malware",
+                    source_url: "",
+                    reliability_score: 85,
+                    update_frequency: "Hourly"
+                });
+                fetchFeeds();
+            }
+        } catch (err) {
+            console.error("Failed to add feed:", err);
+        } finally {
+            setAddingFeed(false);
         }
     };
 
@@ -147,7 +206,7 @@ export default function ThreatIntelligencePage() {
     useEffect(() => {
         if (token) {
             setIsLoading(true);
-            Promise.all([fetchThreats(0), fetchStatsAndCharts()]).finally(() => setIsLoading(false));
+            Promise.all([fetchThreats(0), fetchStatsAndCharts(), fetchFeeds()]).finally(() => setIsLoading(false));
         }
     }, [token]);
 
@@ -157,7 +216,7 @@ export default function ThreatIntelligencePage() {
         fetchThreats(nextOffset, true);
     };
 
-    const scoredTopThreats = useMemo(() => {
+    const scoredAllThreats = useMemo(() => {
         return threats.map(threat => {
             // 1. Standardize name based on type
             let name = "Unknown Indicator";
@@ -180,8 +239,12 @@ export default function ThreatIntelligencePage() {
             const trend = score > 2000 ? "up" : score > 1000 ? "neutral" : "down";
             
             return { ...threat, name, score, trend } as TopThreat;
-        }).sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5); // Limit Top 5
-    }, []);
+        }).sort((a, b) => (b.score || 0) - (a.score || 0));
+    }, [threats]);
+
+    const scoredTopThreats = useMemo(() => {
+        return scoredAllThreats.slice(0, 5);
+    }, [scoredAllThreats]);
 
     const threatColumns: Column<TopThreat>[] = [
         {
@@ -246,6 +309,37 @@ export default function ThreatIntelligencePage() {
         },
     ];
 
+    const handleToggleFeed = async (feedId: string, currentStatus: boolean) => {
+        if (!token) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/threats/feeds/${feedId}/toggle?is_active=${!currentStatus}`, {
+                method: "PATCH",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchFeeds();
+            }
+        } catch (err) {
+            console.error("Failed to toggle feed status:", err);
+        }
+    };
+
+    const handleDeleteFeed = async (feedId: string) => {
+        if (!token) return;
+        if (!confirm("Are you sure you want to delete this threat feed?")) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/threats/feeds/${feedId}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchFeeds();
+            }
+        } catch (err) {
+            console.error("Failed to delete threat feed:", err);
+        }
+    };
+
     const feedColumns: Column<ThreatFeedConfig>[] = [
         {
             key: "name",
@@ -302,6 +396,30 @@ export default function ThreatIntelligencePage() {
             key: "update_frequency",
             label: "Frequency",
             render: (f) => <span className="text-xs text-slate-400">{f.update_frequency}</span>,
+        },
+        {
+            key: "actions",
+            label: "Actions",
+            render: (f) => (
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleFeed(f.id, f.is_active); }}
+                        className={`px-2 py-1 text-[10px] font-semibold rounded-md border transition-colors ${
+                            f.is_active
+                                ? "bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20"
+                                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20"
+                        }`}
+                    >
+                        {f.is_active ? "Pause" : "Resume"}
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteFeed(f.id); }}
+                        className="px-2 py-1 text-[10px] font-semibold rounded-md bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            ),
         },
     ];
 

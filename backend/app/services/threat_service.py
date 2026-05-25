@@ -10,14 +10,35 @@ class ThreatService:
     def __init__(self, supabase: Client):
         self.supabase = supabase
 
-    async def list_feeds(self) -> List[dict]:
-        """List all active threat intelligence feeds."""
-        response = self.supabase.table("threat_feeds") \
-            .select("*") \
-            .eq("is_active", True) \
-            .execute()
-
+    async def list_feeds(self, active_only: bool = False) -> List[dict]:
+        """List all threat intelligence feeds."""
+        query = self.supabase.table("threat_feeds").select("*")
+        if active_only:
+            query = query.eq("is_active", True)
+        
+        response = query.execute()
         return response.data or []
+
+    async def create_feed(self, feed_data: dict) -> dict:
+        """Create a new threat intelligence feed (admin action)."""
+        response = self.supabase.table("threat_feeds").insert(feed_data).execute()
+        return response.data[0] if response.data else {}
+
+    async def toggle_feed(self, feed_id: str, is_active: bool) -> dict:
+        """Toggle active status of a threat feed (admin action)."""
+        response = self.supabase.table("threat_feeds") \
+            .update({"is_active": is_active}) \
+            .eq("id", feed_id) \
+            .execute()
+        return response.data[0] if response.data else {}
+
+    async def delete_feed(self, feed_id: str) -> dict:
+        """Delete a threat feed (admin action)."""
+        response = self.supabase.table("threat_feeds") \
+            .delete() \
+            .eq("id", feed_id) \
+            .execute()
+        return {"success": True, "deleted_id": feed_id}
 
     async def lookup_ioc(self, indicator_type: str, value: str) -> List[dict]:
         """
