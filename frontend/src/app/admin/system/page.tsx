@@ -9,6 +9,7 @@ import {
     SystemMetricsChart,
 } from "../components";
 // Removed mock imports
+import type { ServiceHealth } from "../types";
 
 // ─── Icons ──────────────────────────────────────────────────
 const IconHeart = () => (

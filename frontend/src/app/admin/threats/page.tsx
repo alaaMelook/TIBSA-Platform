@@ -254,7 +254,7 @@ export default function ThreatIntelligencePage() {
             render: (t) => (
                 <div 
                     className="flex items-center gap-3 cursor-pointer group hover:bg-white/[0.04] p-1.5 -m-1.5 rounded transition-colors"
-                    onClick={() => setDrawerContext({ type: t.type === "ip" ? "ip" : "threat", value: t.indicator, data: t })}
+                    onClick={() => setDrawerContext({ type: t.type === "ip" ? "ip" : "threat", value: t.indicator })}
                 >
                     <TypeBadge type={t.type} />
                     <div>
@@ -300,6 +300,21 @@ export default function ThreatIntelligencePage() {
             key: "source",
             label: "Source",
             render: (t) => <span className="text-xs text-slate-400">{t.source}</span>,
+        },
+        {
+            key: "analyst_name",
+            label: "Analyst",
+            sortable: true,
+            render: (t) => (
+                <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[8px] font-bold text-white uppercase flex-shrink-0">
+                        {(t.analyst_name || "System").charAt(0)}
+                    </div>
+                    <span className="text-xs font-medium text-slate-300">
+                        {t.analyst_name || "System"}
+                    </span>
+                </div>
+            ),
         },
         {
             key: "last_seen",
@@ -525,71 +540,264 @@ export default function ThreatIntelligencePage() {
             {activeTab === "threats" && (
                 <AdminSectionCard
                     title="All Threat Indicators"
-                    description="Complete list of detected indicators of compromise"
+                    description={`${scoredAllThreats.length} indicators of compromise detected`}
                 >
                     <DataTable
                         columns={threatColumns}
-                        data={scoredTopThreats}
+                        data={scoredAllThreats}
                         pageSize={10}
                         searchable
                         searchKeys={["indicator", "source", "name"]}
-                        searchPlaceholder="Search top threats..."
+                        searchPlaceholder="Search by indicator, source, or name..."
                         emptyMessage="No threats found matching your search"
                     />
+                    {threats.length >= 100 && (
+                        <div className="flex justify-center mt-4 pt-3 border-t border-white/[0.04]">
+                            <button 
+                                onClick={handleLoadMore}
+                                className="px-5 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/15"
+                            >
+                                Load More Indicators
+                            </button>
+                        </div>
+                    )}
                 </AdminSectionCard>
             )}
 
             {activeTab === "feeds" && (
-                <AdminSectionCard
-                    title="Threat Feed Configuration"
-                    description="Manage your threat intelligence sources"
-                    action={
-                        <button onClick={() => setIsFeedModalOpen(true)} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/20 border border-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors">
-                            + Add Feed
-                        </button>
-                    }
-                >
-                    <DataTable
-                        columns={feedColumns}
-                        data={feeds}
-                        searchable
-                        searchPlaceholder="Search feeds..."
-                        searchKeys={["name", "provider", "category"]}
-                        pageSize={10}
-                        emptyMessage="No active threat feeds configured."
-                    />
-                </AdminSectionCard>
+                <div className="space-y-6">
+                    {/* Feed Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-gradient-to-br from-emerald-500/[0.06] to-emerald-500/[0.02] border border-emerald-500/15 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">Active Feeds</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{activeFeeds}</p>
+                            <p className="text-[11px] text-slate-500 mt-1">Currently collecting intelligence</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-500/[0.06] to-purple-500/[0.02] border border-purple-500/15 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                                </svg>
+                                <span className="text-[11px] text-purple-400 font-semibold uppercase tracking-wider">Total Indicators</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{totalIndicators.toLocaleString()}</p>
+                            <p className="text-[11px] text-slate-500 mt-1">IOCs across all feeds</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-amber-500/[0.06] to-amber-500/[0.02] border border-amber-500/15 rounded-xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">Paused Feeds</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{feeds.length - activeFeeds}</p>
+                            <p className="text-[11px] text-slate-500 mt-1">Feeds currently paused</p>
+                        </div>
+                    </div>
+
+                    {/* Feed Table */}
+                    <AdminSectionCard
+                        title="Threat Feed Configuration"
+                        description={`${feeds.length} threat intelligence sources configured`}
+                        action={
+                            <button 
+                                onClick={() => setIsFeedModalOpen(true)} 
+                                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-blue-500/20 border border-blue-500/25 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300 transition-all duration-200 group"
+                            >
+                                <svg className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add New Feed
+                            </button>
+                        }
+                    >
+                        <DataTable
+                            columns={feedColumns}
+                            data={feeds}
+                            searchable
+                            searchPlaceholder="Search by feed name, provider, or category..."
+                            searchKeys={["name", "provider", "category"]}
+                            pageSize={10}
+                            emptyMessage="No threat feeds configured yet. Click 'Add New Feed' to get started."
+                        />
+                    </AdminSectionCard>
+                </div>
             )}
 
+            {/* ── Add Feed Modal ─────────────────────────── */}
             {isFeedModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="fixed inset-0 bg-black/60" onClick={() => setIsFeedModalOpen(false)} />
-                    <div className="relative z-10 w-full max-w-xl bg-slate-900 border border-white/[0.06] rounded-xl p-5">
-                        <h3 className="text-lg font-bold text-white mb-2">Add Threat Feed</h3>
-                        <form onSubmit={handleAddFeed} className="space-y-3">
-                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <input value={newFeed.name} onChange={(e) => setNewFeed({...newFeed, name: e.target.value})} placeholder="Feed name" className="w-full px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
-                                <input value={newFeed.provider} onChange={(e) => setNewFeed({...newFeed, provider: e.target.value})} placeholder="Provider" className="w-full px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsFeedModalOpen(false)} />
+                    <div className="relative z-10 w-full max-w-lg bg-[#13203c] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+                        {/* Modal Header */}
+                        <div className="relative px-6 py-5 border-b border-white/[0.06]">
+                            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 to-cyan-400" />
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                                        </svg>
+                                        Add New Threat Feed
+                                    </h3>
+                                    <p className="text-xs text-slate-400 mt-1">Configure a new threat intelligence source for IOC collection</p>
+                                </div>
+                                <button 
+                                    onClick={() => setIsFeedModalOpen(false)} 
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                            <input value={newFeed.source_url} onChange={(e) => setNewFeed({...newFeed, source_url: e.target.value})} placeholder="Source URL" className="w-full px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
-                            <div className="flex gap-2">
-                                <select value={newFeed.category} onChange={(e) => setNewFeed({...newFeed, category: e.target.value})} className="px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white">
-                                    <option value="malware">malware</option>
-                                    <option value="phishing">phishing</option>
-                                    <option value="c2">c2</option>
-                                    <option value="botnet">botnet</option>
-                                    <option value="apt">apt</option>
-                                </select>
-                                <input type="number" value={newFeed.reliability_score} onChange={(e) => setNewFeed({...newFeed, reliability_score: Number(e.target.value)})} placeholder="Reliability" className="w-28 px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white" />
-                                <select value={newFeed.update_frequency} onChange={(e) => setNewFeed({...newFeed, update_frequency: e.target.value})} className="px-3 py-2 bg-black/20 border border-white/[0.06] rounded-md text-sm text-white">
-                                    <option>Hourly</option>
-                                    <option>Daily</option>
-                                    <option>Weekly</option>
-                                </select>
+                        </div>
+
+                        {/* Modal Body */}
+                        <form onSubmit={handleAddFeed} className="px-6 py-5 space-y-5">
+                            {/* Feed Identity */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <span className="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center text-blue-400 text-[10px] font-bold">1</span>
+                                    Feed Identity
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Feed Name <span className="text-red-400">*</span></label>
+                                        <input 
+                                            value={newFeed.name} 
+                                            onChange={(e) => setNewFeed({...newFeed, name: e.target.value})} 
+                                            placeholder="e.g., AlienVault OTX" 
+                                            className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Provider <span className="text-red-400">*</span></label>
+                                        <input 
+                                            value={newFeed.provider} 
+                                            onChange={(e) => setNewFeed({...newFeed, provider: e.target.value})} 
+                                            placeholder="e.g., AT&T Cybersecurity" 
+                                            className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all" 
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setIsFeedModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white">Cancel</button>
-                                <button type="submit" disabled={addingFeed} className="px-4 py-2 text-sm font-medium rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50">{addingFeed ? 'Adding...' : 'Add Feed'}</button>
+
+                            {/* Source Configuration */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <span className="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center text-blue-400 text-[10px] font-bold">2</span>
+                                    Source Configuration
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Source URL <span className="text-red-400">*</span></label>
+                                    <input 
+                                        value={newFeed.source_url} 
+                                        onChange={(e) => setNewFeed({...newFeed, source_url: e.target.value})} 
+                                        placeholder="https://feeds.example.com/api/v1/indicators" 
+                                        className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white placeholder-slate-600 font-mono focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all" 
+                                    />
+                                    <p className="text-[10px] text-slate-600 mt-1.5">The API endpoint or RSS feed URL for this threat intelligence source</p>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Threat Category</label>
+                                    <select 
+                                        value={newFeed.category} 
+                                        onChange={(e) => setNewFeed({...newFeed, category: e.target.value})} 
+                                        className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                                    >
+                                        <option value="malware">🦠 Malware</option>
+                                        <option value="phishing">🎣 Phishing</option>
+                                        <option value="c2">🔗 Command & Control (C2)</option>
+                                        <option value="botnet">🤖 Botnet</option>
+                                        <option value="apt">🎯 Advanced Persistent Threat (APT)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Feed Settings */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <span className="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center text-blue-400 text-[10px] font-bold">3</span>
+                                    Feed Settings
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Reliability Score</label>
+                                        <div className="flex items-center gap-3">
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="100" 
+                                                value={newFeed.reliability_score} 
+                                                onChange={(e) => setNewFeed({...newFeed, reliability_score: Number(e.target.value)})} 
+                                                className="flex-1 h-1.5 bg-white/[0.06] rounded-full appearance-none cursor-pointer accent-blue-500"
+                                            />
+                                            <span className={`text-sm font-bold tabular-nums min-w-[40px] text-right ${
+                                                newFeed.reliability_score >= 90 ? "text-emerald-400" : 
+                                                newFeed.reliability_score >= 70 ? "text-amber-400" : "text-red-400"
+                                            }`}>{newFeed.reliability_score}%</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-600 mt-1">How trustworthy is this source (0-100%)</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Update Frequency</label>
+                                        <select 
+                                            value={newFeed.update_frequency} 
+                                            onChange={(e) => setNewFeed({...newFeed, update_frequency: e.target.value})} 
+                                            className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                                        >
+                                            <option value="Hourly">⚡ Hourly</option>
+                                            <option value="Daily">📅 Daily</option>
+                                            <option value="Weekly">📆 Weekly</option>
+                                        </select>
+                                        <p className="text-[10px] text-slate-600 mt-1">How often to pull new indicators</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
+                                <p className="text-[10px] text-slate-600 flex items-center gap-1">
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Fields marked with <span className="text-red-400">*</span> are required
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setIsFeedModalOpen(false)} 
+                                        className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.04] transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        disabled={addingFeed || !newFeed.name || !newFeed.provider || !newFeed.source_url} 
+                                        className="px-5 py-2 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                                    >
+                                        {addingFeed ? (
+                                            <>
+                                                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                </svg>
+                                                Adding Feed...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                Add Feed
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>

@@ -441,14 +441,61 @@ async def get_admin_top_threats(
     """
     Get top paginated threats/findings.
     """
-    # Source: findings table JOIN assets
-    # Query: SELECT * ORDER BY created_at DESC LIMIT {limit} OFFSET {offset}
     findings_resp = supabase.table("findings").select("*").order("created_at", desc=True).range(offset, offset + limit - 1).execute()
     findings_data = findings_resp.data or []
     
+    # Map findings to the analyst who initiated the scan
+    user_mapping = {}  # investigation_id -> user_full_name
+    inv_ids = {f.get("investigation_id") for f in findings_data if f.get("investigation_id")}
+    
+    if inv_ids:
+        try:
+            inv_resp = supabase.table("investigations").select("id, scan_id").in_("id", list(inv_ids)).execute()
+            inv_data = inv_resp.data or []
+            
+            scan_to_inv = {}
+            scan_ids = set()
+            for inv in inv_data:
+                sid = inv.get("scan_id")
+                iid = inv.get("id")
+                if sid and iid:
+                    scan_ids.add(sid)
+                    if sid not in scan_to_inv:
+                        scan_to_inv[sid] = []
+                    scan_to_inv[sid].append(iid)
+            
+            if scan_ids:
+                scans_resp = supabase.table("scans").select("id, user_id").in_("id", list(scan_ids)).execute()
+                scans_data = scans_resp.data or []
+                
+                scan_to_user = {}
+                user_ids = set()
+                for s in scans_data:
+                    sid = s.get("id")
+                    uid = s.get("user_id")
+                    if sid and uid:
+                        user_ids.add(uid)
+                        scan_to_user[sid] = uid
+                
+                if user_ids:
+                    users_resp = supabase.table("users").select("id, full_name").in_("id", list(user_ids)).execute()
+                    users_data = users_resp.data or []
+                    user_names = {u.get("id"): u.get("full_name") for u in users_data if u.get("id")}
+                    
+                    for sid, uid in scan_to_user.items():
+                        name = user_names.get(uid, "Unknown Analyst")
+                        iids = scan_to_inv.get(sid, [])
+                        for iid in iids:
+                            user_mapping[iid] = name
+        except Exception as e:
+            print(f"Failed to map threat users: {e}")
+
     mapped_threats = []
     for f in findings_data:
         asset_url = f.get("affected_url") or "Unknown Payload"
+        iid = f.get("investigation_id")
+        analyst_name = user_mapping.get(iid, "System")
+        
         mapped_threats.append({
             "id": f.get("id"),
             "indicator": f.get("title") or "Unnamed Threat",
@@ -459,7 +506,8 @@ async def get_admin_top_threats(
             "last_seen": f.get("created_at"),
             "source": asset_url,
             "name": f.get("category", "General"),
-            "score": 90 if str(f.get("severity")).lower() == "critical" else 50
+            "score": 90 if str(f.get("severity")).lower() == "critical" else 50,
+            "analyst_name": analyst_name
         })
         
     return {"threats": mapped_threats}

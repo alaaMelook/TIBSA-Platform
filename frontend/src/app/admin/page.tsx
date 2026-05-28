@@ -11,14 +11,6 @@ import {
     ActivityFeed,
     AdminSectionCard,
 } from "./components";
-import {
-    mockThreatTrends,
-    mockThreatDistribution,
-    mockScanVolume,
-    mockRecentActivity,
-    mockTopScannedUrls,
-    mockServiceHealth,
-} from "./mock";
 import Link from "next/link";
 import { AdminStats, RecentActivity, ServiceHealth, ThreatTrend, ThreatDistribution, TopScannedUrl, ScanVolumeData } from "./types";
 import { api } from "@/lib/api";

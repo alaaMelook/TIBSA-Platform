@@ -62,17 +62,26 @@ export function InvestigationDrawer({ isOpen, onClose, context }: InvestigationD
                 {/* GEO OR ROLE INFO */}
                 {data.geo && (
                     <div>
-                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            {context.type === "ip" ? (
+                                <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            ) : (
+                                <svg className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            )}
                             {context.type === "ip" ? "Geo Intelligence" : "Account Details"}
                         </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="bg-white/[0.02] border border-white/[0.06] p-3 rounded-lg">
-                                <p className="text-[10px] text-slate-500 mb-1">{context.type === "ip" ? "ISP / Organization" : "Email"}</p>
-                                <p className="text-sm font-medium text-slate-200 truncate" title={data.geo.isp}>{data.geo.isp}</p>
+                        <div className="grid grid-cols-1 gap-3">
+                            <div className="bg-white/[0.02] border border-white/[0.06] p-3.5 rounded-lg">
+                                <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wider font-semibold">{context.type === "ip" ? "ISP / Organization" : "Email"}</p>
+                                <p className="text-sm font-medium text-slate-200 break-all leading-relaxed">{data.geo.isp}</p>
                             </div>
-                            <div className="bg-white/[0.02] border border-white/[0.06] p-3 rounded-lg">
-                                <p className="text-[10px] text-slate-500 mb-1">{context.type === "ip" ? "Location" : "Status & Role"}</p>
-                                <p className="text-sm font-medium text-slate-200 truncate" title={data.geo.location}>{data.geo.location}</p>
+                            <div className="bg-white/[0.02] border border-white/[0.06] p-3.5 rounded-lg">
+                                <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wider font-semibold">{context.type === "ip" ? "Location" : "Status & Role"}</p>
+                                <p className="text-sm font-medium text-slate-200 break-words leading-relaxed">{data.geo.location}</p>
                             </div>
                         </div>
                     </div>
@@ -141,11 +150,16 @@ export function InvestigationDrawer({ isOpen, onClose, context }: InvestigationD
                 {/* RECENT ACTIVITY */}
                 {data.recent_activity && data.recent_activity.length > 0 && (
                     <div>
-                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Recent Activity</h4>
-                        <div className="text-xs text-slate-300 space-y-4 border-l-2 border-white/[0.1] pl-3 ml-1">
+                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Recent Activity
+                        </h4>
+                        <div className="text-xs text-slate-300 space-y-3 border-l-2 border-white/[0.1] pl-4 ml-1">
                             {data.recent_activity.map((act: any, i: number) => (
-                                <div key={i} className="relative space-y-0.5">
-                                    <span className={`absolute -left-[17px] top-1.5 w-2 h-2 rounded-full ${
+                                <div key={i} className="relative space-y-1 pb-1">
+                                    <span className={`absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 ${
                                         act.status === "critical" || act.status === "failure" ? "bg-red-500 animate-pulse" :
                                         act.status === "warning" ? "bg-amber-500" :
                                         act.status === "success" ? "bg-emerald-500" : "bg-blue-500"
@@ -153,11 +167,11 @@ export function InvestigationDrawer({ isOpen, onClose, context }: InvestigationD
                                     <p className="font-mono text-[10px] text-slate-500">
                                         {new Date(act.timestamp).toLocaleString()}
                                     </p>
-                                    <p className="font-semibold text-slate-200">{act.action}</p>
+                                    <p className="font-semibold text-slate-200 break-words leading-relaxed">{act.action}</p>
                                     {act.user_agent && act.user_agent !== "Unknown Device" && (
-                                        <p className="text-[10px] text-slate-500 flex items-center gap-1 font-mono leading-none">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-                                            {act.user_agent}
+                                        <p className="text-[10px] text-slate-500 flex items-start gap-1.5 font-mono leading-relaxed break-all">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700 flex-shrink-0 mt-1" />
+                                            <span>{act.user_agent}</span>
                                         </p>
                                     )}
                                 </div>
@@ -196,7 +210,7 @@ export function InvestigationDrawer({ isOpen, onClose, context }: InvestigationD
                                 <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-blue-500/20 text-blue-400 mb-2 inline-block">
                                     {context.type} Context
                                 </span>
-                                <h2 className="text-xl font-bold text-white font-mono truncate pr-4">{context.value}</h2>
+                                <h2 className="text-lg font-bold text-white font-mono break-all pr-4 leading-snug">{context.value}</h2>
                             </div>
                             <button
                                 onClick={onClose}

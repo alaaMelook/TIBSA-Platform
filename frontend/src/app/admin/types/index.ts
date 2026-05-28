@@ -64,6 +64,7 @@ export interface TopThreat {
     name?: string;
     score?: number;
     trend?: "up" | "down" | "neutral";
+    analyst_name?: string;
 }
 
 // ─── Platform Analytics ─────────────────────────────────────
