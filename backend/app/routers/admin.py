@@ -45,11 +45,12 @@ async def get_admin_stats(
     # Source: findings table
     # Query: COUNT(*)
     # Endpoint: GET /api/v1/admin/stats
-    findings_resp = supabase.table("findings").select("id, severity, investigation_id").execute()
+    findings_resp = supabase.table("findings").select("id, severity, investigation_id, created_at").execute()
     findings_data = findings_resp.data or []
     
     total_threats = len(findings_data)
     critical_threats = sum(1 for f in findings_data if f.get("severity", "").lower() == "critical")
+    threats_today = sum(1 for f in findings_data if f.get("created_at") and f.get("created_at") >= today_str)
     scans_with_threats = len(set(f.get("investigation_id") for f in findings_data if f.get("investigation_id")))
     detection_rate = round((scans_with_threats / total_scans * 100), 1) if total_scans > 0 else 0.0
 
@@ -67,6 +68,7 @@ async def get_admin_stats(
         "threats": {
             "total": total_threats,
             "critical": critical_threats,
+            "today": threats_today,
             "detectionRate": detection_rate
         }
     }
@@ -450,54 +452,27 @@ async def get_admin_top_threats(
     
     if inv_ids:
         try:
-            inv_resp = supabase.table("investigations").select("id, scan_id").in_("id", list(inv_ids)).execute()
+            # Query investigations table directly to get user_id
+            inv_resp = supabase.table("investigations").select("id, user_id").in_("id", list(inv_ids)).execute()
             inv_data = inv_resp.data or []
             
-            import uuid
-            
-            def is_valid_uuid(val: str) -> bool:
-                try:
-                    uuid.UUID(str(val))
-                    return True
-                except ValueError:
-                    return False
-
-            scan_to_inv = {}
-            scan_ids = set()
+            inv_to_user = {}
+            user_ids = set()
             for inv in inv_data:
-                sid = inv.get("scan_id")
                 iid = inv.get("id")
-                if sid and iid:
-                    if is_valid_uuid(sid):
-                        scan_ids.add(sid)
-                        if sid not in scan_to_inv:
-                            scan_to_inv[sid] = []
-                        scan_to_inv[sid].append(iid)
+                uid = inv.get("user_id")
+                if iid and uid:
+                    user_ids.add(uid)
+                    inv_to_user[iid] = uid
             
-            
-            if scan_ids:
-                scans_resp = supabase.table("scans").select("id, user_id").in_("id", list(scan_ids)).execute()
-                scans_data = scans_resp.data or []
+            if user_ids:
+                users_resp = supabase.table("users").select("id, full_name").in_("id", list(user_ids)).execute()
+                users_data = users_resp.data or []
+                user_names = {u.get("id"): u.get("full_name") for u in users_data if u.get("id")}
                 
-                scan_to_user = {}
-                user_ids = set()
-                for s in scans_data:
-                    sid = s.get("id")
-                    uid = s.get("user_id")
-                    if sid and uid:
-                        user_ids.add(uid)
-                        scan_to_user[sid] = uid
-                
-                if user_ids:
-                    users_resp = supabase.table("users").select("id, full_name").in_("id", list(user_ids)).execute()
-                    users_data = users_resp.data or []
-                    user_names = {u.get("id"): u.get("full_name") for u in users_data if u.get("id")}
-                    
-                    for sid, uid in scan_to_user.items():
-                        name = user_names.get(uid, "Unknown Analyst")
-                        iids = scan_to_inv.get(sid, [])
-                        for iid in iids:
-                            user_mapping[iid] = name
+                for iid, uid in inv_to_user.items():
+                    name = user_names.get(uid, "Unknown Analyst")
+                    user_mapping[iid] = name
         except Exception as e:
             print(f"Failed to map threat users: {e}")
 

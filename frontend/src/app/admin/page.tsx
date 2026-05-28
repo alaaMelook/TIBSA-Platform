@@ -131,7 +131,7 @@ export default function AdminPage() {
                     totalScans: s.scans.total,
                     scansToday: s.scans.today,
                     threatsDetected: s.threats.total,
-                    threatsToday: s.threats.critical, // Mapping critical to today for now
+                    threatsToday: s.threats.today, // Map to actual threats found today from API
                     systemUptime: 99.9,
                     avgResponseTime: 45
                 });
