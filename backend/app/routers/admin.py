@@ -453,16 +453,27 @@ async def get_admin_top_threats(
             inv_resp = supabase.table("investigations").select("id, scan_id").in_("id", list(inv_ids)).execute()
             inv_data = inv_resp.data or []
             
+            import uuid
+            
+            def is_valid_uuid(val: str) -> bool:
+                try:
+                    uuid.UUID(str(val))
+                    return True
+                except ValueError:
+                    return False
+
             scan_to_inv = {}
             scan_ids = set()
             for inv in inv_data:
                 sid = inv.get("scan_id")
                 iid = inv.get("id")
                 if sid and iid:
-                    scan_ids.add(sid)
-                    if sid not in scan_to_inv:
-                        scan_to_inv[sid] = []
-                    scan_to_inv[sid].append(iid)
+                    if is_valid_uuid(sid):
+                        scan_ids.add(sid)
+                        if sid not in scan_to_inv:
+                            scan_to_inv[sid] = []
+                        scan_to_inv[sid].append(iid)
+            
             
             if scan_ids:
                 scans_resp = supabase.table("scans").select("id, user_id").in_("id", list(scan_ids)).execute()
