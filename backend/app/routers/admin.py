@@ -704,3 +704,200 @@ async def get_active_presence(
             "active_count": 0,
             "error": str(e)
         }
+
+# ─── System Settings CRUD endpoints ───────────────────────────
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+
+class SettingsUpdateRequest(BaseModel):
+    toggles: List[Dict[str, Any]]
+    inputs: List[Dict[str, Any]]
+
+class WebhookTestRequest(BaseModel):
+    webhook_url: str
+
+@router.get("/settings")
+async def get_system_settings(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    Get all system settings from Supabase. Fallbacks to defaults if the table does not exist.
+    """
+    defaults_dict = {
+        "2fa": "true",
+        "audit": "true",
+        "auto_block": "true",
+        "email_alerts": "false",
+        "api_access": "true",
+        "dark_mode": "true",
+        "rate_limit": "150",
+        "session_timeout": "30",
+        "max_file_size": "50",
+        "webhook_url": ""
+    }
+    
+    settings_dict = defaults_dict.copy()
+    
+    try:
+        res = supabase.table("system_settings").select("*").execute()
+        if res.data:
+            for item in res.data:
+                settings_dict[item["key"]] = item["value"]
+    except Exception:
+        # Fallback gracefully if system_settings table does not exist yet
+        pass
+
+    return {
+        "toggles": [
+            { "key": "2fa", "label": "Enforce 2FA", "description": "Require all users to enable two-factor authentication", "enabled": settings_dict.get("2fa", "true") == "true" },
+            { "key": "audit", "label": "Audit Logging", "description": "Log all admin and security-relevant actions", "enabled": settings_dict.get("audit", "true") == "true" },
+            { "key": "auto_block", "label": "Auto-Block Threats", "description": "Automatically block IPs that exceed threat threshold", "enabled": settings_dict.get("auto_block", "true") == "true" },
+            { "key": "email_alerts", "label": "Email Alerts", "description": "Send email notifications for critical security events", "enabled": settings_dict.get("email_alerts", "false") == "true" },
+            { "key": "api_access", "label": "Public API Access", "description": "Allow external API access with API keys", "enabled": settings_dict.get("api_access", "true") == "true" },
+            { "key": "dark_mode", "label": "Force Dark Mode", "description": "Enforce dark mode for all users", "enabled": settings_dict.get("dark_mode", "true") == "true" }
+        ],
+        "inputs": [
+            { "key": "rate_limit", "label": "Rate Limit", "description": "Maximum API requests per minute per user (1-10000)", "value": settings_dict.get("rate_limit", "150"), "type": "number", "placeholder": "100", "min": 1, "max": 10000 },
+            { "key": "session_timeout", "label": "Session Timeout", "description": "Minutes of inactivity before session expires (5-1440)", "value": settings_dict.get("session_timeout", "30"), "type": "number", "placeholder": "30", "min": 5, "max": 1440 },
+            { "key": "max_file_size", "label": "Max Upload Size", "description": "Maximum file upload size in MB (1-500)", "value": settings_dict.get("max_file_size", "50"), "type": "number", "placeholder": "50", "min": 1, "max": 500 },
+            { "key": "webhook_url", "label": "Webhook URL", "description": "URL for security event webhooks (must be valid HTTPS URL)", "value": settings_dict.get("webhook_url", ""), "type": "text", "placeholder": "https://hooks.example.com/alerts" }
+        ]
+    }
+
+@router.post("/settings")
+async def update_system_settings(
+    payload: SettingsUpdateRequest,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    Update system settings in Supabase.
+    """
+    updates = []
+    
+    # Process toggles
+    for toggle in payload.toggles:
+        key = toggle.get("key")
+        val = "true" if toggle.get("enabled") else "false"
+        if key:
+            updates.append({"key": key, "value": val})
+            
+    # Process inputs
+    for inp in payload.inputs:
+        key = inp.get("key")
+        val = str(inp.get("value", ""))
+        if key:
+            updates.append({"key": key, "value": val})
+            
+    try:
+        supabase.table("system_settings").upsert(updates).execute()
+        return {"success": True, "message": "Settings updated successfully"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "message": f"Failed to save settings. Please run the SQL script in 'database/07_settings.sql' inside your Supabase SQL Editor. Error details: {str(e)}"
+            }
+        )
+
+@router.post("/settings/test-webhook")
+async def test_webhook_connection(
+    payload: WebhookTestRequest,
+    _admin: dict = Depends(require_admin),
+):
+    """
+    Test delivery of a JSON payload to a specified webhook URL.
+    """
+    url = payload.webhook_url
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "URL must start with http:// or https://"}
+        )
+        
+    try:
+        async with httpx.AsyncClient() as client:
+            test_payload = {
+                "event": "test",
+                "message": "TIBSA Webhook Test Connection Successful",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            resp = await client.post(url, json=test_payload, timeout=5.0)
+            if 200 <= resp.status_code < 300:
+                return {"success": True, "message": f"Webhook delivered successfully (Status: {resp.status_code})"}
+            else:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "message": f"Webhook returned failure status: {resp.status_code}"}
+                )
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"Connection failed: {str(e)}"}
+        )
+
+@router.post("/settings/reset-feeds")
+async def reset_threat_feeds(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    Reset threat intelligence feeds in Supabase to defaults.
+    """
+    try:
+        # Delete existing feeds (this cascade deletes indicators)
+        supabase.table("threat_feeds").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+        
+        # Insert default feeds
+        defaults = [
+            {"name": "Abuse.ch URLhaus", "provider": "Abuse.ch", "category": "malware", "source_url": "https://urlhaus.abuse.ch/downloads/text/", "is_active": True, "indicators_count": 1420, "reliability_score": 95, "update_frequency": "Hourly"},
+            {"name": "PhishTank Active Phishing", "provider": "CleanTalk", "category": "phishing", "source_url": "https://www.phishtank.com/", "is_active": True, "indicators_count": 850, "reliability_score": 92, "update_frequency": "Hourly"},
+            {"name": "Emerging Threats Open IPs", "provider": "Proofpoint", "category": "c2", "source_url": "https://rules.emergingthreats.net/blockrules/compromised-ips.txt", "is_active": True, "indicators_count": 2400, "reliability_score": 88, "update_frequency": "Daily"},
+            {"name": "Tor Exit Nodes List", "provider": "Tor Project", "category": "general", "source_url": "https://check.torproject.org/exit-addresses", "is_active": True, "indicators_count": 1150, "reliability_score": 99, "update_frequency": "Daily"},
+            {"name": "AlienVault OTX", "provider": "AT&T Cybersecurity", "category": "apt", "source_url": "https://otx.alienvault.com/", "is_active": False, "indicators_count": 0, "reliability_score": 90, "update_frequency": "Daily"}
+        ]
+        
+        supabase.table("threat_feeds").insert(defaults).execute()
+        return {"success": True, "message": "Threat feeds reset to defaults successfully"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Failed to reset feeds: {str(e)}"}
+        )
+
+@router.post("/settings/purge-data")
+async def purge_historical_scan_data(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    Purge scan history older than 90 days from both SQLite and Supabase databases.
+    """
+    try:
+        cutoff_str = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+        
+        # 1. Purge from Supabase scans
+        supabase.table("scans").delete().lt("created_at", cutoff_str).execute()
+        
+        # 2. Purge from Supabase investigations
+        supabase.table("investigations").delete().lt("started_at", cutoff_str).execute()
+        
+        # 3. Purge from SQLite (using SQLAlchemy)
+        from sqlalchemy import delete
+        from app.models.investigation import Investigation
+        from app.models.finding import Finding
+        from app.database.session import async_session
+        cutoff_dt = datetime.utcnow() - timedelta(days=90)
+        async with async_session() as session:
+            async with session.begin():
+                await session.execute(delete(Investigation).where(Investigation.started_at < cutoff_dt))
+                await session.execute(delete(Finding).where(Finding.created_at < cutoff_dt))
+                
+        return {"success": True, "message": "Historical scan data purged successfully"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Failed to purge scan data: {str(e)}"}
+        )

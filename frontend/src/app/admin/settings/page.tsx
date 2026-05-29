@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminSectionCard, ConfirmationModal } from "../components";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
 
 interface SettingToggle {
     key: string;
@@ -39,6 +41,7 @@ const DEFAULT_INPUTS: SettingInput[] = [
 ];
 
 export default function SettingsPage() {
+    const { token } = useAuth();
     const [toggles, setToggles] = useState<SettingToggle[]>(DEFAULT_TOGGLES);
     const [inputs, setInputs] = useState<SettingInput[]>(DEFAULT_INPUTS);
     
@@ -47,6 +50,7 @@ export default function SettingsPage() {
     const [originalInputs, setOriginalInputs] = useState<SettingInput[]>(DEFAULT_INPUTS);
 
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
     const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
     const [webhookStatus, setWebhookStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
 
@@ -59,30 +63,33 @@ export default function SettingsPage() {
 
     const showToast = (message: string, type: "success" | "error" | "info") => {
         setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
+        setTimeout(() => setToast(null), 5000);
     };
 
-    // Hydrate from localStorage
+    // Hydrate from Backend Settings API
     useEffect(() => {
-        try {
-            const savedToggles = localStorage.getItem("tibsa_admin_toggles");
-            const savedInputs = localStorage.getItem("tibsa_admin_inputs");
-            
-            if (savedToggles) {
-                const parsed = JSON.parse(savedToggles);
-                setToggles(parsed);
-                setOriginalToggles(parsed);
+        if (!token) return;
+
+        const loadSettings = async () => {
+            try {
+                const res = await api.get<{ toggles: SettingToggle[], inputs: SettingInput[] }>("/api/v1/admin/settings", token);
+                if (res && res.toggles && res.inputs) {
+                    setToggles(res.toggles);
+                    setOriginalToggles(res.toggles);
+                    setInputs(res.inputs);
+                    setOriginalInputs(res.inputs);
+                }
+            } catch (err: any) {
+                console.error("Failed to load settings:", err);
+                showToast(err.message || "Failed to load settings from Supabase", "error");
+            } finally {
+                setIsLoadingSettings(false);
+                setIsLoaded(true);
             }
-            if (savedInputs) {
-                const parsed = JSON.parse(savedInputs);
-                setInputs(parsed);
-                setOriginalInputs(parsed);
-            }
-        } catch (e) {
-            console.error("Failed to load settings from localStorage", e);
-        }
-        setIsLoaded(true);
-    }, []);
+        };
+
+        loadSettings();
+    }, [token]);
 
     // ── Validation Logic ──
     const getValidationErrors = useMemo(() => {
@@ -131,54 +138,84 @@ export default function SettingsPage() {
         setInputs((prev) => prev.map((i) => (i.key === key ? { ...i, value } : i)));
     };
 
-    const handleSave = () => {
-        if (hasErrors || !isDirty) return;
+    const handleSave = async () => {
+        if (hasErrors || !isDirty || !token) return;
         
         setSaveStatus("saving");
-        
-        // Simulate API and localStorage save
-        setTimeout(() => {
-            localStorage.setItem("tibsa_admin_toggles", JSON.stringify(toggles));
-            localStorage.setItem("tibsa_admin_inputs", JSON.stringify(inputs));
+        try {
+            const payload = { toggles, inputs };
+            await api.post("/api/v1/admin/settings", payload, token);
             setOriginalToggles(toggles);
             setOriginalInputs(inputs);
-            
             setSaveStatus("saved");
             showToast("Settings saved successfully", "success");
-            
+        } catch (err: any) {
+            console.error("Failed to save settings:", err);
+            showToast(err.message || "Failed to save settings to Supabase", "error");
+            setSaveStatus("idle");
+        } finally {
             setTimeout(() => setSaveStatus("idle"), 2000);
-        }, 800);
+        }
     };
 
-    const handleWebhookTest = () => {
+    const handleWebhookTest = async () => {
         const webhookUrl = inputs.find(i => i.key === "webhook_url")?.value;
-        if (!webhookUrl || getValidationErrors["webhook_url"]) return;
+        if (!webhookUrl || getValidationErrors["webhook_url"] || !token) return;
 
         setWebhookStatus("testing");
-        setTimeout(() => {
-            // Mock success based on random chance or just success
-            const success = Math.random() > 0.2;
-            if (success) {
+        try {
+            const res = await api.post<{ success: boolean, message: string }>("/api/v1/admin/settings/test-webhook", { webhook_url: webhookUrl }, token);
+            if (res && res.success) {
                 setWebhookStatus("success");
-                showToast("Webhook test payload delivered successfully", "success");
+                showToast(res.message || "Webhook test payload delivered successfully", "success");
             } else {
                 setWebhookStatus("error");
-                showToast("Webhook test failed (simulated timeout)", "error");
+                showToast(res.message || "Webhook test failed", "error");
             }
-            setTimeout(() => setWebhookStatus("idle"), 3000);
-        }, 1500);
+        } catch (err: any) {
+            console.error("Webhook connection test failed:", err);
+            setWebhookStatus("error");
+            showToast(err.message || "Webhook test connection failed", "error");
+        } finally {
+            setTimeout(() => setWebhookStatus("idle"), 4000);
+        }
     };
 
-    const executeDangerAction = (action: "reset_feeds" | "purge_data") => {
+    const executeDangerAction = async (action: "reset_feeds" | "purge_data") => {
+        if (!token) return;
         setIsConfirmingDanger(true);
-        setTimeout(() => {
+        try {
+            if (action === "reset_feeds") {
+                const res = await api.post<{ success: boolean, message: string }>("/api/v1/admin/settings/reset-feeds", {}, token);
+                showToast(res.message || "Threat feeds reset to defaults", "success");
+            } else {
+                const res = await api.post<{ success: boolean, message: string }>("/api/v1/admin/settings/purge-data", {}, token);
+                showToast(res.message || "Scan history purged successfully", "success");
+            }
+        } catch (err: any) {
+            console.error(`Danger action ${action} failed:`, err);
+            showToast(err.message || "Action failed to execute on server", "error");
+        } finally {
             setIsConfirmingDanger(false);
             setActiveModal(null);
-            showToast(action === "reset_feeds" ? "Threat feeds reset to defaults" : "Scan history purged successfully", "success");
-        }, 1500);
+        }
     };
 
-    if (!isLoaded) return null; // Avoid hydration mismatch
+    if (!isLoaded || isLoadingSettings) {
+        return (
+            <div className="space-y-6 max-w-[900px] animate-pulse">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <div className="h-7 w-48 bg-white/[0.04] rounded-lg" />
+                        <div className="h-4 w-72 bg-white/[0.03] rounded mt-2" />
+                    </div>
+                    <div className="h-10 w-32 bg-white/[0.03] rounded-lg" />
+                </div>
+                <div className="h-64 bg-white/[0.02] border border-white/[0.04] rounded-xl" />
+                <div className="h-80 bg-white/[0.02] border border-white/[0.04] rounded-xl" />
+            </div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-6 max-w-[900px]">
