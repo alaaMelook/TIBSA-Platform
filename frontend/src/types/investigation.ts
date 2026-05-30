@@ -10,7 +10,8 @@ export type InvestigationStatus =
   | "modeling"
   | "explaining"
   | "completed"
-  | "failed";
+  | "failed"
+  | "stopped";
 
 export type StageStatus = "pending" | "running" | "completed" | "failed" | "skipped";
 
