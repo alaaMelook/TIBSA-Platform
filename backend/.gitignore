@@ -30,3 +30,13 @@ htmlcov/
 
 # ML model files (too large for GitHub)
 models/*.joblib
+
+# Databases
+*.db
+
+# Logs
+*.log
+import_log.txt
+
+# Exports
+exports/

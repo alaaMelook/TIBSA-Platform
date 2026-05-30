@@ -90,14 +90,23 @@ const IconAIAnalysis = () => (
     </svg>
 );
 
+const IconInvestigations = () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <circle cx="11" cy="11" r="8" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 8v6m-3-3h6" />
+    </svg>
+);
+
 const sidebarLinks: SidebarLink[] = [
     { href: "/dashboard",                   label: "Dashboard",       icon: <IconDashboard /> },
+    { href: "/dashboard/investigations",    label: "Investigations",  icon: <IconInvestigations /> },
     { href: "/dashboard/scans",             label: "Scans",           icon: <IconScans /> },
-    { href: "/dashboard/website-scanner",  label: "Pen Test",         icon: <IconWebsiteScanner /> },
+    { href: "/dashboard/website-scanner",  label: "Penetration Testing", icon: <IconWebsiteScanner /> },
     { href: "/dashboard/threats",           label: "Threats",         icon: <IconThreats /> },
     { href: "/dashboard/threat-modeling",   label: "Threat Modeling", icon: <IconThreatModeling /> },
     { href: "/dashboard/ai-malware-analysis", label: "AI Analysis",  icon: <IconAIAnalysis /> },
-    { href: "/dashboard/reports",           label: "Reports",         icon: <IconReports /> },
+    { href: "/dashboard/reports",           label: "Reports History", icon: <IconReports /> },
     { href: "/dashboard/profile",           label: "Profile",         icon: <IconProfile /> },
 ];
 

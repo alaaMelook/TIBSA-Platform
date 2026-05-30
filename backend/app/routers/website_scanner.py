@@ -162,10 +162,10 @@ async def get_scan_detail(
         )
         if not resp.data:
             raise HTTPException(status_code=404, detail="Scan not found.")
-            
+
         data = resp.data
         summary = data.get("summary") or {}
-        
+
         # Robustly handle nullable/empty/incorrectly typed fields for historical scans
         findings = data.get("findings")
         data["findings"] = findings if isinstance(findings, list) else []
@@ -179,16 +179,15 @@ async def get_scan_detail(
         false_positives = data.get("false_positives_filtered")
         data["false_positives_filtered"] = false_positives if isinstance(false_positives, list) else []
 
-        detected_technologies = summary.get("detected_technologies")
+        # Hydrate technology fields from summary first, fallback to data directly
+        detected_technologies = summary.get("detected_technologies") or data.get("detected_technologies") or []
+        detected_assets = summary.get("detected_assets") or data.get("detected_assets") or []
+        technology_metadata = summary.get("technology_metadata") or data.get("technology_metadata") or []
+        scanner_json = summary.get("scanner_json") or data.get("scanner_json") or {}
+
         data["detected_technologies"] = detected_technologies if isinstance(detected_technologies, list) else []
-
-        detected_assets = summary.get("detected_assets")
         data["detected_assets"] = detected_assets if isinstance(detected_assets, list) else []
-
-        technology_metadata = summary.get("technology_metadata")
         data["technology_metadata"] = technology_metadata if isinstance(technology_metadata, list) else []
-
-        scanner_json = summary.get("scanner_json")
         data["scanner_json"] = scanner_json if isinstance(scanner_json, dict) else {}
 
         print(f"[HISTORY RESPONSE] detected_technologies count = {len(data['detected_technologies'])}")
@@ -197,6 +196,7 @@ async def get_scan_detail(
         print(f"[HISTORY RESPONSE] scanner_json exists = {'true' if data['scanner_json'] else 'false'}")
 
         return data
+
     except HTTPException:
         raise
     except Exception as exc:

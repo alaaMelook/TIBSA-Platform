@@ -13,6 +13,8 @@ class FindingBase(BaseModel):
     affected_url: str
     evidence: Optional[str] = None
     tags: List[str] = []
+    confidence: str = "heuristic"
+    exploitability_score: float = 0.0
 
 class FindingCreate(FindingBase):
     pass

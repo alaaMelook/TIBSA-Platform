@@ -23,6 +23,21 @@ class TIFinding(BaseModel):
     source_modules: List[str] = []
     evidence: Optional[str] = None
     tags: List[str] = []
+    exploitability_score: float = 0.0
+
+    # Enriched OTX/VT Threat Intelligence fields
+    ioc: Optional[str] = None
+    type: Optional[str] = None
+    vt_score: Optional[int] = None
+    vt_status: Optional[str] = None
+    otx_pulses: Optional[List[str]] = []
+    threat_tags: Optional[List[str]] = []
+    campaign_context: Optional[List[str]] = []
+    related_malware_families: Optional[List[str]] = []
+    confidence_level: Optional[str] = None
+    risk_reason: Optional[str] = None
+    recommended_action: Optional[str] = None
+    confidence_score: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -33,6 +48,26 @@ class TIInvestigationResponse(BaseModel):
     summary: Dict[str, Any]
     ti_findings: List[TIFinding]
     reputation_context: Dict[str, Any]
+
+    # Optional fields for frontend integration
+    scan_id: Optional[str] = None
+    target: Optional[str] = None
+    mode: Optional[str] = None
+    started_at: Optional[str] = None
+    duration: Optional[float] = None
+    critical: Optional[int] = None
+    high: Optional[int] = None
+    medium: Optional[int] = None
+    low: Optional[int] = None
+    info: Optional[int] = None
+    total: Optional[int] = None
+    findings: Optional[List[Dict[str, Any]]] = None
+    detected_technologies: Optional[List[Dict[str, Any]]] = None
+    detected_assets: Optional[List[Dict[str, Any]]] = None
+    technology_metadata: Optional[List[Dict[str, Any]]] = None
+    scanner_json: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    executions_confirmed: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,10 +89,18 @@ class InvestigationCreate(InvestigationBase):
     mode: Optional[str] = "safe"
     include_ti: Optional[bool] = True
     tm_mode: Optional[str] = "enhanced"
+    enable_sqlmap: Optional[bool] = False
+    auth_browser_analysis: Optional[bool] = False
+    authorized_auth_mode: Optional[bool] = False
+    auth_lifecycle_checks: Optional[bool] = False
+    authz_transition_checks: Optional[bool] = False
+    session_cookie: Optional[str] = None
+    enable_strict_correlation_hardening: Optional[bool] = True
 
 class InvestigationStatusResponse(BaseModel):
     id: str
     scan_id: str
+    target: str
     status: str
     risk_score: float
     started_at: datetime
@@ -67,5 +110,12 @@ class InvestigationStatusResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class InvestigationResponse(TIInvestigationResponse):
-    pass
+    scan_id: str
+    target: str
+    current_stage: str
+    progress_percent: float
+    pipeline_state: Optional[Dict[str, Any]] = None
+    final_result: Optional[Dict[str, Any]] = None
+

@@ -41,4 +41,12 @@ venv/
 
 backend/env
 
-.kilo
+# Databases
+*.db
+
+# Logs
+*.log
+import_log.txt
+
+# Exports
+backend/exports/

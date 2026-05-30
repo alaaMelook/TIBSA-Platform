@@ -36,3 +36,42 @@ def test_finding_normalizer():
     assert normalized.evidence == "Payload injected successfully"
     assert "xss" in normalized.tags
     assert "client-side-security" in normalized.tags
+
+def test_finding_normalizer_confidence_promotions():
+    # Test verified flag
+    raw_verified = {
+        "title": "Some Vulnerability",
+        "severity": "high",
+        "url": "https://example.com",
+        "verified": True
+    }
+    norm = FindingNormalizer.normalize(raw_verified)
+    assert norm.confidence == "confirmed"
+
+    # Test high confidence level
+    raw_high = {
+        "title": "Some Vulnerability",
+        "severity": "high",
+        "url": "https://example.com",
+        "confidence": "high"
+    }
+    norm = FindingNormalizer.normalize(raw_high)
+    assert norm.confidence == "confirmed"
+
+    # Test active vulnerability title keyword (SQL Injection)
+    raw_sqli = {
+        "title": "SQL Injection found",
+        "severity": "high",
+        "url": "https://example.com"
+    }
+    norm = FindingNormalizer.normalize(raw_sqli)
+    assert norm.confidence == "confirmed"
+
+    # Test active vulnerability title keyword (SSRF)
+    raw_ssrf = {
+        "title": "SSRF vulnerability detected",
+        "severity": "medium",
+        "url": "https://example.com"
+    }
+    norm = FindingNormalizer.normalize(raw_ssrf)
+    assert norm.confidence == "confirmed"

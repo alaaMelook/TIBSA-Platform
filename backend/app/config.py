@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     # ─── VirusTotal ────────────────────────────────────────────
     virustotal_api_key: str = ""
+    otx_api_key: str = ""
 
     # ─── CORS ─────────────────────────────────────────────────
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
@@ -32,6 +33,7 @@ class Settings(BaseSettings):
     app_name: str = "TIBSA API"
     debug: bool = False
     demo_mode: bool = False
+    enable_strict_correlation_hardening: bool = True
 
     @property
     def cors_origins_list(self) -> List[str]:
@@ -44,3 +46,16 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+
+TRUSTED_PROVIDERS = {
+    "google.com",
+    "youtube.com",
+    "facebook.com",
+    "instagram.com",
+    "microsoft.com",
+    "amazon.com",
+    "apple.com",
+    "github.com",
+    "linkedin.com",
+    "cloudflare.com"
+}

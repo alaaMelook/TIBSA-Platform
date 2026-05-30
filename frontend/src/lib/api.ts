@@ -88,4 +88,22 @@ export const api = {
             return res.json() as Promise<T>;
         });
     },
+
+    investigations: {
+        create: (data: any, token?: string) =>
+            api.post<any>("/api/v1/investigations/start", data, token),
+        list: (token?: string) =>
+            api.get<any>("/api/v1/investigations/", token),
+        get: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/investigations/${id}`, token),
+        getStatus: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/investigations/${id}/status`, token),
+        getFindings: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/investigations/${id}/findings`, token),
+        getResults: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/investigations/${id}/results`, token),
+        stop: (id: string, token?: string) =>
+            api.post<any>(`/api/v1/investigations/${id}/stop`, {}, token),
+    },
 };
+

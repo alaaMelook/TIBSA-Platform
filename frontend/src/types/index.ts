@@ -87,3 +87,6 @@ export interface ApiError {
     detail: string;
     status_code: number;
 }
+
+export * from "./investigation";
+
