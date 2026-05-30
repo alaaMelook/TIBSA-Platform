@@ -338,7 +338,7 @@ export default function LiveInvestigationWorkspace() {
         ) : (investigation.status === "running" || investigation.status === "pending") && (
           <div className="flex items-center gap-2">
             <Button
-              variant="destructive"
+              variant="danger"
               size="sm"
               onClick={handleStop}
               disabled={stopLoading}
