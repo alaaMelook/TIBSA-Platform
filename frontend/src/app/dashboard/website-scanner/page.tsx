@@ -506,7 +506,7 @@ export default function WebsiteScannerPage() {
             <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
               <Radar className="w-8 h-8 text-purple-400" />
             </div>
-            Enterprise Pentest Module
+            Enterprise Penetration Testing Module
           </h1>
           <p className="text-slate-400 mt-2">Browser-verified vulnerability assessment and intelligence gathering.</p>
         </div>

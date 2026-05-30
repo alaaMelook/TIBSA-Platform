@@ -119,8 +119,19 @@ async def scan_website(
     investigation_id = result.get("scan_id", str(uuid.uuid4()))
     ti_response = {
         "investigation_id": investigation_id,
+        "scan_id": investigation_id,
         "status": "completed" if not result.get("error") else "failed",
         "risk_score": result.get("risk_score", 0.0),
+        "target": target,
+        "mode": result.get("mode", "safe"),
+        "started_at": result.get("started_at"),
+        "duration": result.get("duration", 0.0),
+        "critical": result.get("critical", 0),
+        "high": result.get("high", 0),
+        "medium": result.get("medium", 0),
+        "low": result.get("low", 0),
+        "info": result.get("info", 0),
+        "total": result.get("total", 0),
         "summary": {
             "duration": result.get("duration", 0.0),
             "critical": result.get("critical", 0),
@@ -131,7 +142,14 @@ async def scan_website(
             "total": result.get("total", 0),
         },
         "ti_findings": result.get("ti_findings", []),
-        "reputation_context": result.get("shared_state", {}).get("reputation_context", {})
+        "findings": result.get("findings", []),
+        "reputation_context": result.get("shared_state", {}).get("reputation_context", {}),
+        "detected_technologies": result.get("detected_technologies", []),
+        "detected_assets": result.get("detected_assets", []),
+        "technology_metadata": result.get("technology_metadata", []),
+        "scanner_json": result.get("scanner_json", {}),
+        "error": result.get("error"),
+        "executions_confirmed": result.get("executions_confirmed", 0),
     }
 
     return ti_response
@@ -198,13 +216,38 @@ async def get_scan_detail(
 
         # Build TI response for history detail
         investigation_id = data.get("id", str(uuid.uuid4()))
+        
+        # Hydrate technology fields if nested in summary
+        detected_technologies = summary.get("detected_technologies") or data.get("detected_technologies") or []
+        detected_assets = summary.get("detected_assets") or data.get("detected_assets") or []
+        technology_metadata = summary.get("technology_metadata") or data.get("technology_metadata") or []
+        scanner_json = summary.get("scanner_json") or data.get("scanner_json") or {}
+        
         ti_response = {
             "investigation_id": investigation_id,
+            "scan_id": investigation_id,
             "status": "completed" if not data.get("error") else "failed",
             "risk_score": min(overall_risk, 100.0),
+            "target": data.get("target"),
+            "mode": summary.get("mode", "safe"),
+            "started_at": summary.get("started_at") or data.get("created_at"),
+            "duration": summary.get("duration", 0.0),
+            "critical": summary.get("critical", 0),
+            "high": summary.get("high", 0),
+            "medium": summary.get("medium", 0),
+            "low": summary.get("low", 0),
+            "info": summary.get("info", 0),
+            "total": summary.get("total", 0),
             "summary": summary,
             "ti_findings": ti_findings_dicts,
-            "reputation_context": {}
+            "findings": raw_findings,
+            "reputation_context": {},
+            "detected_technologies": detected_technologies if isinstance(detected_technologies, list) else [],
+            "detected_assets": detected_assets if isinstance(detected_assets, list) else [],
+            "technology_metadata": technology_metadata if isinstance(technology_metadata, list) else [],
+            "scanner_json": scanner_json if isinstance(scanner_json, dict) else {},
+            "error": data.get("error"),
+            "executions_confirmed": summary.get("executions_confirmed", 0),
         }
         
         return ti_response

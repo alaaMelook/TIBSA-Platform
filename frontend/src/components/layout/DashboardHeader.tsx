@@ -12,7 +12,7 @@ const PAGE_TITLES: Record<string, string> = {
     "/dashboard/scans":          "Security Scans",
     "/dashboard/threats":        "Threat Intelligence",
     "/dashboard/threat-modeling": "Threat Modeling",
-    "/dashboard/reports":        "Reports",
+    "/dashboard/reports":        "Reports History",
     "/dashboard/profile":        "Profile Settings",
     "/admin":                    "Admin Overview",
     "/admin/users":              "User Management",
@@ -48,6 +48,24 @@ const NOTIF_ICON_COLOR: Record<string, string> = {
     system: "text-amber-400 bg-amber-500/15",
 };
 
+function getBreadcrumbs(pathname: string): string[] {
+    if (pathname === "/dashboard") return ["TIBSA", "Dashboard"];
+    if (pathname === "/dashboard/scans") return ["TIBSA", "Security Scans"];
+    if (pathname === "/dashboard/threats") return ["TIBSA", "Threat Intelligence"];
+    if (pathname === "/dashboard/threat-modeling") return ["TIBSA", "Threat Modeling"];
+    if (pathname === "/dashboard/reports") return ["TIBSA", "Reports History"];
+    if (pathname === "/dashboard/profile") return ["TIBSA", "Profile Settings"];
+    if (pathname === "/dashboard/investigations") return ["TIBSA", "Investigations"];
+    if (pathname.startsWith("/dashboard/investigations/")) return ["TIBSA", "Investigations", "Workspace"];
+    if (pathname === "/admin") return ["TIBSA", "Admin Overview"];
+    if (pathname === "/admin/users") return ["TIBSA", "Admin", "Users"];
+    if (pathname === "/admin/threats") return ["TIBSA", "Admin", "Threats"];
+    if (pathname === "/admin/system") return ["TIBSA", "Admin", "System"];
+    
+    const parts = pathname.split("/").filter(Boolean);
+    return ["TIBSA", ...parts.map(p => p.charAt(0).toUpperCase() + p.slice(1))];
+}
+
 export function DashboardHeader() {
     const pathname = usePathname();
     const { user, token, logout } = useAuth();
@@ -60,9 +78,6 @@ export function DashboardHeader() {
     const notifRef = useRef<HTMLDivElement>(null);
 
     const unread = notifications.filter((n) => !n.read).length;
-
-    // Derive page title from pathname
-    const pageTitle = PAGE_TITLES[pathname] ?? "Dashboard";
 
     // First letter for avatar
     const initial = user?.full_name?.charAt(0)?.toUpperCase() || "U";
@@ -139,15 +154,25 @@ export function DashboardHeader() {
                     </div>
                 </Link>
 
-                {/* ── CENTER: Page title ─────────────────────── */}
+                {/* ── CENTER: Breadcrumbs ─────────────────────── */}
                 <div className="flex-1 flex justify-center">
-                    <div className="flex items-center gap-2.5">
-                        <div className="hidden md:flex h-6 w-6 rounded-md bg-white/[0.04] border border-white/[0.06] items-center justify-center">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                        </div>
-                        <h1 className="text-[15px] font-semibold text-[#f1f5f9] tracking-wide">
-                            {pageTitle}
-                        </h1>
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.04] backdrop-blur-md shadow-inner shadow-white/[0.01]">
+                        {getBreadcrumbs(pathname).map((crumb, idx, arr) => (
+                            <div key={idx} className="flex items-center gap-1.5">
+                                {idx > 0 && (
+                                    <svg className="w-3 h-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                )}
+                                <span className={`text-[12px] font-semibold tracking-wide transition-colors ${
+                                    idx === arr.length - 1 
+                                        ? "text-blue-400 font-extrabold" 
+                                        : "text-slate-400/80 hover:text-slate-300"
+                                }`}>
+                                    {crumb}
+                                </span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

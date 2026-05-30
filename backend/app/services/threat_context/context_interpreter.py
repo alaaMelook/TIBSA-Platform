@@ -17,26 +17,28 @@ def interpret_context(title: str, raw_category: str) -> str:
     title_lower = title.lower()
     raw_cat_lower = raw_category.lower() if raw_category else ""
     
-    # Matching rules
-    if any(x in title_lower for x in ["csp", "content security policy", "xss", "cross-site scripting", "clickjacking"]):
+    # Matching rules ordered from specific to generic keywords
+    if any(x in title_lower for x in ["csrf", "cross-site request forgery"]):
+        return "Hardening"
+    elif any(x in title_lower for x in ["csp", "content security policy", "xss", "cross-site scripting", "clickjacking"]):
         return "Client-Side Security"
+    elif any(x in title_lower for x in ["sql injection", "sqli", "injection"]):
+        return "Injection Vulnerability"
+    elif any(x in title_lower for x in ["authz", "authorization", "access control", "permission", "privilege escalation", "idor", "bac", "broken access"]):
+        return "Authorization Security"
+    elif any(x in title_lower for x in ["auth", "authentication", "login", "password", "credentials", "rate limit", "brute force"]):
+        return "Authentication Security"
     elif any(x in title_lower for x in ["cookie", "session", "secure flag", "httponly", "samesite"]):
         return "Session Security"
-    elif any(x in title_lower for x in ["rate limit", "brute force", "auth", "password", "login"]):
-        return "Authentication Security"
-    elif any(x in title_lower for x in ["idor", "bac", "broken access", "privilege escalation"]):
-        return "Authorization Security"
-    elif any(x in title_lower for x in ["cors", "cross-origin", "api", "graphql", "rest"]):
+    elif any(x in title_lower for x in ["cors", "cross-origin", "api", "graphql", "rest", "ssrf", "server-side request forgery"]):
         return "API Security"
-    elif any(x in title_lower for x in ["sql injection", "sqli"]):
-        return "Injection Vulnerability"
-    elif any(x in title_lower for x in ["directory", "path traversal", "exposed", "sensitive data", "backup"]):
+    elif any(x in title_lower for x in ["directory", "path traversal", "exposed", "sensitive data", "backup", "robots.txt", "sitemap"]):
         return "Information Disclosure"
-    elif any(x in title_lower for x in ["header", "hsts", "x-frame-options", "ssl", "tls", "csrf"]):
+    elif any(x in title_lower for x in ["header", "hsts", "x-frame-options", "ssl", "tls", "https", "http", "transport"]):
         return "Hardening"
         
     # Check raw category string
-    if "vulnerability" in raw_cat_lower:
+    if "injection" in raw_cat_lower:
         return "Injection Vulnerability"
     elif "misconfiguration" in raw_cat_lower:
         return "Hardening"

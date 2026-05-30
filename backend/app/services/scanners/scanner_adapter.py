@@ -2,13 +2,24 @@
 Scanner Adapter.
 Adapts the existing PentestOrchestrator scanner output formats.
 """
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.services.pentest import PentestOrchestrator
 from app.services.pentest.models import ScanConfig
 
 class ScannerAdapter:
     @staticmethod
-    async def run_scan(target: str, tests: List[str], mode: str = "safe") -> Dict[str, Any]:
+    async def run_scan(
+        target: str,
+        tests: List[str],
+        mode: str = "safe",
+        enable_sqlmap: bool = False,
+        auth_browser_analysis: bool = False,
+        authorized_auth_mode: bool = False,
+        auth_lifecycle_checks: bool = False,
+        authz_transition_checks: bool = False,
+        session_cookie: Optional[str] = None,
+        investigation_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Invokes the existing PentestOrchestrator scan pipeline.
         Returns the raw results dictionary containing findings, assets, technologies, and logs.
@@ -19,11 +30,17 @@ class ScannerAdapter:
         config = ScanConfig(
             target=target,
             tests=tests,
-            mode=mode
+            mode=mode,
+            enable_sqlmap=enable_sqlmap,
+            auth_browser_analysis=auth_browser_analysis,
+            authorized_auth_mode=authorized_auth_mode,
+            auth_lifecycle_checks=auth_lifecycle_checks,
+            authz_transition_checks=authz_transition_checks,
+            session_cookie=session_cookie,
         )
         orchestrator = PentestOrchestrator(config=config)
         # Execute the scan on the target URL
-        raw_result = await orchestrator.scan(target, tests, mode=mode)
+        raw_result = await orchestrator.scan(target, tests, mode=mode, investigation_id=investigation_id)
         
         # Build normalized output contract robustly
         normalized_output = {}

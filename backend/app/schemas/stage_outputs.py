@@ -46,6 +46,8 @@ class AttackChainStep(BaseModel):
         description="IDs of findings involved in this step"
     )
     severity: ThreatSeverity = Field(..., description="Severity of this step")
+    evidence_source: Optional[str] = Field("pentest", description="Evidence source type for UI badge")
+    affected_endpoint: Optional[str] = Field("", description="Affected URL or endpoint for the step")
 
 
 class CorrelatedThreat(BaseModel):
@@ -72,8 +74,8 @@ class CorrelatedThreat(BaseModel):
     )
     
     # Attack chain
-    attack_chain: Optional[List[AttackChainStep]] = Field(
-        default=None, description="Step-by-step attack scenario"
+    attack_chain: List[AttackChainStep] = Field(
+        default_factory=list, description="Step-by-step attack scenario"
     )
     
     # Additional context
@@ -81,6 +83,23 @@ class CorrelatedThreat(BaseModel):
         default_factory=list, description="URLs/endpoints affected"
     )
     tags: List[str] = Field(default_factory=list, description="Correlation tags")
+
+    # Upgraded Investigation Fields
+    impact: Optional[str] = Field(None, description="Impact analysis")
+    exploitation_scenario: Optional[str] = Field(None, description="Exploitation scenario")
+    recommended_mitigation: Optional[str] = Field(None, description="Recommended mitigation")
+    global_chain_risk: Optional[float] = Field(None, description="Escalated chain risk score (0-100)")
+    chain_confidence: Optional[float] = Field(None, description="Escalated chain confidence score (0-100)")
+    attack_complexity: Optional[str] = Field(None, description="Attack complexity (low/medium/high)")
+    sources: List[str] = Field(default_factory=list, description="Attributing source engines")
+
+    # Frontend Compatibility Fallbacks
+    id: Optional[str] = Field(None, description="Alias for threat_id")
+    combined_risk: Optional[str] = Field("info", description="Alias for severity")
+    confidence: Optional[float] = Field(0.5, description="Alias for confidence_score")
+    contributing_finding_ids: List[str] = Field(default_factory=list, description="Alias for source_findings")
+    contributing_ioc_values: List[str] = Field(default_factory=list, description="Associated IOC indicators")
+    risk_label: Optional[str] = Field("Low", description="Risk level label")
 
 
 class CorrelationStageOutput(BaseModel):
@@ -113,6 +132,11 @@ class CorrelationStageOutput(BaseModel):
     completed_at: Optional[datetime] = Field(None, description="Stage completion time")
     duration_seconds: Optional[float] = Field(None, description="Execution duration")
 
+    # Frontend Compatibility Counts
+    total_correlations: int = Field(0, description="Total number of correlations")
+    escalated_risks: int = Field(0, description="Count of escalated risk items")
+    escalated_risks_count: int = Field(0, description="Count of escalated risk items")
+
 
 # ─── Stage 5: STRIDE Threat Modeling Output Schemas ───────────────
 
@@ -139,6 +163,13 @@ class STRIDEThreat(BaseModel):
     related_findings: List[str] = Field(
         default_factory=list, description="Related correlated threat IDs"
     )
+
+    # Extended STRIDE threat model fields
+    attack_prerequisites: Optional[str] = Field(None, description="Attack prerequisites")
+    business_impact: Optional[str] = Field(None, description="Business impact")
+    mitigation_priority: Optional[str] = Field(None, description="Mitigation priority (Low/Medium/High/Critical)")
+    detection_recommendations: Optional[List[str]] = Field(default_factory=list, description="Detection recommendations")
+    sources: List[str] = Field(default_factory=list, description="Originating engine sources")
 
 
 class STRIDEMatrix(BaseModel):
@@ -209,6 +240,21 @@ class AISummary(BaseModel):
     risk_explanation: str = Field(
         ..., description="Plain-language explanation of overall risk"
     )
+
+    # Advanced SOC investigation report fields
+    risk_overview: Optional[str] = None
+    investigation_timeline: Optional[List[Dict[str, Any]]] = None
+    attack_surface_summary: Optional[str] = None
+    threat_intelligence_summary: Optional[str] = None
+    correlated_attack_chains: Optional[List[Dict[str, Any]]] = None
+    stride_threat_matrix: Optional[Dict[str, Any]] = None
+    high_risk_findings: Optional[List[Dict[str, Any]]] = None
+    exploitation_scenarios: Optional[List[Dict[str, Any]]] = None
+    business_impact_analysis: Optional[str] = None
+    mitigation_roadmap: Optional[List[Dict[str, Any]]] = None
+    immediate_actions: Optional[List[str]] = []
+    long_term_improvements: Optional[List[str]] = []
+    technical_appendix: Optional[str] = None
 
 
 class ExportMetadata(BaseModel):

@@ -40,3 +40,13 @@ __pycache__/
 venv/
 
 backend/env
+
+# Databases
+*.db
+
+# Logs
+*.log
+import_log.txt
+
+# Exports
+backend/exports/
