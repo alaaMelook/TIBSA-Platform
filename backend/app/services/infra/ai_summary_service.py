@@ -73,18 +73,15 @@ CONTRIBUTING RISK FACTORS: {'; '.join(factors) or 'None detected'}
 """.strip()
 
     return (
-        "You are a senior threat intelligence analyst at a cybersecurity operations centre.\n"
-        "Analyse the following infrastructure intelligence data and produce a JSON object "
-        "with EXACTLY these keys:\n"
-        "  \"executive_summary\"    : 2-3 sentence summary for a non-technical manager\n"
-        "  \"threat_classification\": single label such as 'Phishing Infrastructure', "
-        "'C2 Server', 'Benign', 'Malware Distribution', 'Spam Infrastructure', "
-        "'Unknown / Insufficient Data'\n"
-        "  \"why_suspicious\"       : concise technical rationale (≤ 100 words)\n"
-        "  \"recommended_actions\"  : JSON array of 3-5 actionable strings\n"
-        "  \"confidence\"           : float 0.0-1.0 representing your certainty\n\n"
-        "Return ONLY valid JSON. Do not include markdown fences or extra text.\n\n"
-        "--- INTELLIGENCE DATA ---\n"
+        "You are a threat intelligence analyst. "
+        "Analyse the data below and reply with ONLY a JSON object — no markdown, no extra text.\n"
+        "JSON keys (all required):\n"
+        '  "executive_summary": one sentence (max 30 words)\n'
+        '  "threat_classification": one of: Benign | Phishing Infrastructure | C2 Server | Malware Distribution | Spam Infrastructure | Unknown\n'
+        '  "why_suspicious": max 40 words\n'
+        '  "recommended_actions": array of 3 short strings\n'
+        '  "confidence": float 0.0-1.0\n\n'
+        "DATA:\n"
         + context_block
     )
 
@@ -122,7 +119,7 @@ class AISummaryService:
                     json={
                         "model": model,
                         "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": getattr(settings, "openrouter_max_tokens", 800),
+                        "max_tokens": 1500,
                         "temperature": 0.2,
                     },
                 )
@@ -152,6 +149,19 @@ class AISummaryService:
                 if content.startswith("json"):
                     content = content[4:]
             content = content.strip()
+
+            # Best-effort repair for truncated JSON (max_tokens cut off mid-stream)
+            if content and not content.endswith("}"):
+                # Count open braces/brackets and close them
+                open_braces   = content.count("{") - content.count("}")
+                open_brackets = content.count("[") - content.count("]")
+                # If we're inside a string, close it first
+                in_string = content.count('"') % 2 == 1
+                if in_string:
+                    content += '"'
+                content += "]" * max(open_brackets, 0)
+                content += "}" * max(open_braces, 0)
+                logger.warning("[AI] Truncated JSON repaired — added closing chars")
 
             parsed = json.loads(content)
             actions = parsed.get("recommended_actions", [])
