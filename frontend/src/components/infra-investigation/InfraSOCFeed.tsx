@@ -33,7 +33,7 @@ export function InfraSOCFeed({ events }: Props) {
         <span className="ml-auto text-[10px] text-slate-600 font-mono">{events.length} events</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto max-h-[260px] font-mono text-[11px] divide-y divide-white/[0.03]">
+      <div className="flex-1 overflow-y-auto font-mono text-[11px] divide-y divide-white/[0.03]">
         {reversed.length === 0 ? (
           <div className="py-10 text-center text-slate-600 text-xs">Awaiting pipeline events...</div>
         ) : (

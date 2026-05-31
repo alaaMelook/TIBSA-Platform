@@ -326,15 +326,17 @@ export default function InfraInvestigationWorkspace() {
       </div>
 
       {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
 
         {/* Risk gauge + SOC feed */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="bg-[#1e293b]/50 border border-white/[0.06] rounded-xl p-4 flex flex-col items-center justify-center">
+        <div className="lg:col-span-1 flex flex-col gap-4" style={{ minHeight: 520 }}>
+          <div className="bg-[#1e293b]/50 border border-white/[0.06] rounded-xl p-4 flex flex-col items-center justify-center flex-shrink-0">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Threat Risk Score</p>
             <RiskGauge score={progressiveRisk} size={160} />
           </div>
-          <InfraSOCFeed events={liveEvents} />
+          <div className="flex-1 min-h-0">
+            <InfraSOCFeed events={liveEvents} />
+          </div>
         </div>
 
         {/* Tabbed results */}
