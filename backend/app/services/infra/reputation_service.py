@@ -199,11 +199,14 @@ class ReputationService:
         target_type : classified IOC type
         hostname    : extracted hostname (e.g. "evil.example.com" from URL)
         """
+        async def _none() -> None:
+            return None
+
         # AbuseIPDB only applies to IPs
         abuseipdb_task = (
             self._check_abuseipdb(hostname)
             if target_type == "ip"
-            else asyncio.sleep(0)
+            else _none()
         )
 
         urlhaus_task = self._check_urlhaus(hostname)
@@ -211,7 +214,7 @@ class ReputationService:
         otx_task = (
             self._check_otx(hostname, target_type)
             if target_type in ("ip", "domain", "url")
-            else asyncio.sleep(0)
+            else _none()
         )
 
         results = await asyncio.gather(
@@ -225,6 +228,7 @@ class ReputationService:
         abuseipdb_res, urlhaus_res, threatfox_res, otx_res = results
 
         def _safe(val: Any, default: Any) -> Any:
+            """Return val if it's not an exception, else default."""
             return val if not isinstance(val, BaseException) else default
 
         return ReputationResults(
