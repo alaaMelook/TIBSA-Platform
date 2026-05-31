@@ -146,8 +146,52 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
+                        {/* Card 02: Threat Intelligence Layer */}
+                        <div className="relative group bg-[#0e1626]/90 border border-white/[0.06] rounded-2xl p-6 transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col justify-between min-h-[380px]">
+                            {/* Card badge */}
+                            <div className="absolute top-4 left-4 border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-2.5 py-0.5 text-xs font-bold text-emerald-400 tracking-wider">
+                                02
+                            </div>
+
+                            {/* Glowing Background Glow effect on Hover */}
+                            <div className="absolute inset-0 bg-emerald-500/[0.01] group-hover:bg-emerald-500/[0.02] rounded-2xl transition-colors pointer-events-none" />
+
+                            <div className="mt-8 text-center space-y-6 flex-1 flex flex-col justify-center">
+                                {/* SVG Icon */}
+                                <div className="h-20 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform duration-300">
+                                    <svg className="w-16 h-16 drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]" viewBox="0 0 100 100" fill="none">
+                                        <circle cx="50" cy="50" r="35" stroke="currentColor" strokeWidth="1.5" />
+                                        <ellipse cx="50" cy="50" rx="35" ry="12" stroke="currentColor" strokeWidth="1.0" opacity="0.8" />
+                                        <ellipse cx="50" cy="50" rx="12" ry="35" stroke="currentColor" strokeWidth="1.0" opacity="0.8" />
+                                        <line x1="15" y1="50" x2="85" y2="50" stroke="currentColor" strokeWidth="1.0" opacity="0.8" />
+                                        <line x1="50" y1="15" x2="50" y2="85" stroke="currentColor" strokeWidth="1.0" opacity="0.8" />
+                                        <circle cx="28" cy="32" r="2.5" fill="#34d399" />
+                                        <circle cx="72" cy="32" r="2.5" fill="#34d399" />
+                                        <circle cx="50" cy="50" r="3" fill="#34d399" className="animate-ping" />
+                                        <circle cx="50" cy="50" r="2" fill="#34d399" />
+                                        <circle cx="35" cy="68" r="2.5" fill="#34d399" />
+                                        <circle cx="65" cy="68" r="2.5" fill="#34d399" />
+                                        <path d="M28 32 L50 50 L72 32 M35 68 L50 50 L65 68" stroke="#34d399" strokeWidth="0.5" opacity="0.4" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white tracking-wide">Threat Intelligence Layer</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed px-4">
+                                    Explore global threat intelligence, indicators of compromise, campaigns, and adversary activity in real time.
+                                </p>
+                            </div>
+
+                            <div className="mt-6">
+                                <Link href="/dashboard/infra-investigations" className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-900/40 hover:shadow-emerald-500/35">
+                                    <span>Start Investigation</span>
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                    </svg>
+                                </Link>
+                            </div>
+                        </div>
 
                         {/* Card 03: Malware & Threat Analysis Layer */}
+
                         <div className="relative group bg-[#0e1626]/90 border border-white/[0.06] rounded-2xl p-6 transition-all duration-300 hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] flex flex-col justify-between min-h-[380px]">
                             {/* Card badge */}
                             <div className="absolute top-4 left-4 border border-purple-500/30 bg-purple-500/10 rounded-lg px-2.5 py-0.5 text-xs font-bold text-purple-400 tracking-wider">
