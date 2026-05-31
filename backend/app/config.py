@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     virustotal_api_key: str = ""
     otx_api_key: str = ""
 
+    # ─── Infra Intelligence APIs ───────────────────────────────
+    abuseipdb_api_key: str = ""  # https://www.abuseipdb.com/api
+
     # ─── CORS ─────────────────────────────────────────────────
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
