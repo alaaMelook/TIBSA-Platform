@@ -129,7 +129,22 @@ class AISummaryService:
                 resp.raise_for_status()
                 raw = resp.json()
 
-            content = raw["choices"][0]["message"]["content"].strip()
+            # v2 — Nemotron/reasoning models return content=None; text is in 'reasoning' field
+            choice = (raw.get("choices") or [{}])[0]
+            message = choice.get("message") or {}
+            content = (
+                message.get("content")
+                or message.get("reasoning")
+                or message.get("refusal")
+                or ""
+            )
+            content = content.strip() if content else ""
+
+            if not content:
+                logger.warning("[AI] Model returned empty content. Full response: %s", raw)
+                return InfraAISummary(
+                    error="AI model returned an empty response. Try re-running the investigation."
+                )
 
             # Strip markdown fences if present
             if content.startswith("```"):
@@ -152,7 +167,7 @@ class AISummaryService:
             )
 
         except json.JSONDecodeError as exc:
-            logger.warning("[AI] JSON parse error: %s", exc)
+            logger.warning("[AI] JSON parse error: %s\nContent was: %s", exc, content[:300] if 'content' in dir() else "N/A")
             return InfraAISummary(error=f"AI response was not valid JSON: {exc}")
         except Exception as exc:
             logger.warning("[AI] OpenRouter error: %s", exc)
