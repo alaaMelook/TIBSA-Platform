@@ -69,7 +69,9 @@ class PassiveDNSService:
                         first=entry.get("first", ""),
                         last=entry.get("last", ""),
                         asn=entry.get("asn") or None,
-                        country_code=entry.get("flag_url", "")[:2] or None,
+                        # OTX returns country_code directly (e.g. "US")
+                        # flag_url is something like "/img/flags/us.png" — do NOT slice it
+                        country_code=entry.get("country_code") or None,
                     )
                 )
 

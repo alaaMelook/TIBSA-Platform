@@ -1,7 +1,7 @@
 "use client";
 
 import { InfraInvestigationResults } from "@/types/infra_investigation";
-import { GitBranch, Clock, Minus } from "lucide-react";
+import { GitBranch } from "lucide-react";
 
 interface Props {
   results: InfraInvestigationResults;
@@ -9,12 +9,30 @@ interface Props {
 
 export function PassiveDNSTab({ results }: Props) {
   const pDNS = results.passive_dns;
-  if (!pDNS || pDNS.error) return (
-    <div className="py-20 text-center text-slate-600">
-      <Minus className="w-6 h-6 mx-auto mb-2 opacity-40" />
-      <p className="text-sm">Passive DNS data not yet available</p>
-    </div>
-  );
+
+  // ── Differentiated empty states ────────────────────────────────────────────
+  if (!pDNS) {
+    return <InfoState icon="🌐" title="Not Applicable" detail="Passive DNS is only available for domain and URL targets." />;
+  }
+
+  if (pDNS.error) {
+    const isKeyMissing   = pDNS.error.toLowerCase().includes("key not configured");
+    const isNotApplicable = pDNS.error.toLowerCase().includes("not applicable");
+    if (isNotApplicable) {
+      return <InfoState icon="🌐" title="Not Applicable" detail={pDNS.error} />;
+    }
+    if (isKeyMissing) {
+      return (
+        <InfoState
+          icon="🔑"
+          title="OTX API Key Not Configured"
+          detail="Add your AlienVault OTX API key to the backend .env file as OTX_API_KEY= to enable passive DNS history lookups."
+          isWarning
+        />
+      );
+    }
+    return <InfoState icon="⚠️" title="Passive DNS Error" detail={pDNS.error} isWarning />;
+  }
 
   const entries = pDNS.passive_dns || [];
 
@@ -32,10 +50,7 @@ export function PassiveDNSTab({ results }: Props) {
       </div>
 
       {entries.length === 0 ? (
-        <div className="py-16 text-center">
-          <Clock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-          <p className="text-sm text-slate-500">No passive DNS history found for this target</p>
-        </div>
+        <InfoState icon="🕒" title="No Data Found" detail="No passive DNS history found for this target." />
       ) : (
         <div className="bg-[#1e293b]/40 border border-white/[0.05] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
@@ -82,6 +97,28 @@ export function PassiveDNSTab({ results }: Props) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function InfoState({
+  icon,
+  title,
+  detail,
+  isWarning = false,
+}: {
+  icon: string;
+  title: string;
+  detail: string;
+  isWarning?: boolean;
+}) {
+  return (
+    <div className="py-20 text-center flex flex-col items-center gap-3">
+      <span className="text-3xl select-none">{icon}</span>
+      <p className={`text-sm font-semibold ${isWarning ? "text-amber-400" : "text-slate-400"}`}>
+        {title}
+      </p>
+      <p className="text-xs text-slate-500 max-w-xs leading-relaxed">{detail}</p>
     </div>
   );
 }
