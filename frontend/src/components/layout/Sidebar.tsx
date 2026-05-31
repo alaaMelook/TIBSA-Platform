@@ -98,16 +98,23 @@ const IconInvestigations = () => (
     </svg>
 );
 
+const IconInfra = () => (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+    </svg>
+);
+
 const sidebarLinks: SidebarLink[] = [
-    { href: "/dashboard",                   label: "Dashboard",       icon: <IconDashboard /> },
-    { href: "/dashboard/investigations",    label: "Investigations",  icon: <IconInvestigations /> },
-    { href: "/dashboard/scans",             label: "Scans",           icon: <IconScans /> },
-    { href: "/dashboard/website-scanner",  label: "Penetration Testing", icon: <IconWebsiteScanner /> },
-    { href: "/dashboard/threats",           label: "Threats",         icon: <IconThreats /> },
-    { href: "/dashboard/threat-modeling",   label: "Threat Modeling", icon: <IconThreatModeling /> },
-    { href: "/dashboard/ai-malware-analysis", label: "AI Analysis",  icon: <IconAIAnalysis /> },
-    { href: "/dashboard/reports",           label: "Reports History", icon: <IconReports /> },
-    { href: "/dashboard/profile",           label: "Profile",         icon: <IconProfile /> },
+    { href: "/dashboard",                       label: "Dashboard",          icon: <IconDashboard /> },
+    { href: "/dashboard/investigations",        label: "Investigations",     icon: <IconInvestigations /> },
+    { href: "/dashboard/infra-investigations",  label: "Infra Intelligence", icon: <IconInfra /> },
+    { href: "/dashboard/scans",                 label: "Scans",              icon: <IconScans /> },
+    { href: "/dashboard/website-scanner",       label: "Penetration Testing",icon: <IconWebsiteScanner /> },
+    { href: "/dashboard/threats",               label: "Threats",            icon: <IconThreats /> },
+    { href: "/dashboard/threat-modeling",       label: "Threat Modeling",    icon: <IconThreatModeling /> },
+    { href: "/dashboard/ai-malware-analysis",   label: "AI Analysis",        icon: <IconAIAnalysis /> },
+    { href: "/dashboard/reports",               label: "Reports History",    icon: <IconReports /> },
+    { href: "/dashboard/profile",               label: "Profile",            icon: <IconProfile /> },
 ];
 
 const adminLinks: SidebarLink[] = [

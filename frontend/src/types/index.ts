@@ -89,4 +89,5 @@ export interface ApiError {
 }
 
 export * from "./investigation";
+export * from "./infra_investigation";
 

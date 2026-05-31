@@ -181,7 +181,7 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="mt-6">
-                                <Link href="/dashboard/threats" className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-900/40 hover:shadow-emerald-500/35">
+                                <Link href="/dashboard/infra-investigations" className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-900/40 hover:shadow-emerald-500/35">
                                     <span>Start Investigation</span>
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />

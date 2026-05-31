@@ -105,5 +105,18 @@ export const api = {
         stop: (id: string, token?: string) =>
             api.post<any>(`/api/v1/investigations/${id}/stop`, {}, token),
     },
+
+    infraInvestigations: {
+        create: (data: any, token?: string) =>
+            api.post<any>("/api/v1/infra-investigations/start", data, token),
+        list: (token?: string) =>
+            api.get<any>("/api/v1/infra-investigations/", token),
+        get: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/infra-investigations/${id}`, token),
+        getStatus: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/infra-investigations/${id}/status`, token),
+        stop: (id: string, token?: string) =>
+            api.post<any>(`/api/v1/infra-investigations/${id}/stop`, {}, token),
+    },
 };
 
