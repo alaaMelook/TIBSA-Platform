@@ -13,10 +13,60 @@ interface SidebarLink {
     adminOnly?: boolean;
 }
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
 const IconDashboard = () => (
     <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
         <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+);
+
+const IconInvestigations = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+    </svg>
+);
+
+const IconScans = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+    </svg>
+);
+
+const IconWebsiteScanner = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+);
+
+const IconThreats = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+);
+
+const IconThreatModeling = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+    </svg>
+);
+
+const IconAIAnalysis = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2"/>
+    </svg>
+);
+
+const IconReports = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+);
+
+const IconProfile = () => (
+    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
     </svg>
 );
 
@@ -25,6 +75,8 @@ const IconInfra = () => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
     </svg>
 );
+
+// ─── Admin Icons ──────────────────────────────────────────────────────────────
 
 const IconOverview = () => (
     <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -68,71 +120,93 @@ const IconSettings = () => (
     </svg>
 );
 
+// ─── Link Definitions ─────────────────────────────────────────────────────────
+
 const sidebarLinks: SidebarLink[] = [
-    { href: "/dashboard",                       label: "Dashboard",          icon: <IconDashboard /> },
-    { href: "/dashboard/infra-investigations",  label: "Infra Intelligence", icon: <IconInfra /> },
+    { href: "/dashboard",                       label: "Dashboard",           icon: <IconDashboard /> },
+    { href: "/dashboard/investigations",        label: "Investigations",       icon: <IconInvestigations /> },
+    { href: "/dashboard/scans",                 label: "Scans",               icon: <IconScans /> },
+    { href: "/dashboard/website-scanner",       label: "Penetration Testing", icon: <IconWebsiteScanner /> },
+    { href: "/dashboard/threats",               label: "Threats",             icon: <IconThreats /> },
+    { href: "/dashboard/threat-modeling",       label: "Threat Modeling",     icon: <IconThreatModeling /> },
+    { href: "/dashboard/ai-malware-analysis",   label: "AI Analysis",         icon: <IconAIAnalysis /> },
+    { href: "/dashboard/reports",               label: "Reports History",      icon: <IconReports /> },
+    { href: "/dashboard/profile",               label: "Profile",             icon: <IconProfile /> },
+];
+
+// Shown only when inside /dashboard/infra-investigations (and sub-routes)
+const infraLinks: SidebarLink[] = [
+    { href: "/dashboard/infra-investigations",  label: "Threat Infrastructure Intelligence", icon: <IconInfra /> },
 ];
 
 const adminLinks: SidebarLink[] = [
-    { href: "/admin",            label: "Overview",           icon: <IconOverview />,   adminOnly: true },
-    { href: "/admin/users",      label: "User Management",    icon: <IconUsers />,      adminOnly: true },
-    { href: "/admin/threats",    label: "Threat Feeds",       icon: <IconShield />,     adminOnly: true },
-    { href: "/admin/analytics",  label: "Analytics",          icon: <IconAnalytics />,  adminOnly: true },
-    { href: "/admin/system",     label: "System Health",      icon: <IconHeart />,      adminOnly: true },
-    { href: "/admin/audit",      label: "Audit Log",          icon: <IconAudit />,      adminOnly: true },
-    { href: "/admin/settings",   label: "Settings",           icon: <IconSettings />,   adminOnly: true },
+    { href: "/admin",            label: "Overview",        icon: <IconOverview />,   adminOnly: true },
+    { href: "/admin/users",      label: "User Management", icon: <IconUsers />,      adminOnly: true },
+    { href: "/admin/threats",    label: "Threat Feeds",    icon: <IconShield />,     adminOnly: true },
+    { href: "/admin/analytics",  label: "Analytics",       icon: <IconAnalytics />,  adminOnly: true },
+    { href: "/admin/system",     label: "System Health",   icon: <IconHeart />,      adminOnly: true },
+    { href: "/admin/audit",      label: "Audit Log",       icon: <IconAudit />,      adminOnly: true },
+    { href: "/admin/settings",   label: "Settings",        icon: <IconSettings />,   adminOnly: true },
 ];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function Sidebar() {
     const pathname = usePathname();
     const { user } = useAuth();
 
-    // ── Collapsible State (Defaults to true: Collapsed) ──
+    // Collapsed state — default true, persisted in localStorage
     const [isCollapsed, setIsCollapsed] = useState(true);
 
-    // Load from localStorage on mount
     useEffect(() => {
         try {
             const saved = localStorage.getItem("tibsa_sidebar_collapsed");
-            if (saved !== null) {
-                setIsCollapsed(JSON.parse(saved));
-            }
+            if (saved !== null) setIsCollapsed(JSON.parse(saved));
         } catch {
             // fallback quietly
         }
     }, []);
 
-    // Toggle and persist collapsing state
     const handleToggle = () => {
         setIsCollapsed((prev) => {
             const next = !prev;
-            try {
-                localStorage.setItem("tibsa_sidebar_collapsed", JSON.stringify(next));
-            } catch {
-                // ignore
-            }
+            try { localStorage.setItem("tibsa_sidebar_collapsed", JSON.stringify(next)); } catch {}
             return next;
         });
     };
 
-    const isAdmin = user?.role === "admin";
+    const isAdmin        = user?.role === "admin";
     const isAdminSection = pathname.startsWith("/admin");
+    const isInfraSection = pathname === "/dashboard/infra-investigations" ||
+                           pathname.startsWith("/dashboard/infra-investigations/");
 
-    const links = isAdminSection && isAdmin ? adminLinks : sidebarLinks;
+    // Pick which link set to render
+    const links = isAdminSection && isAdmin
+        ? adminLinks
+        : isInfraSection
+            ? infraLinks
+            : sidebarLinks;
+
+    // Section title shown when expanded
+    const sectionTitle = isAdminSection
+        ? "TIBSA SOC Nexus"
+        : isInfraSection
+            ? "Infra Intelligence"
+            : "TIBSA Shield";
 
     return (
-        <aside 
+        <aside
             className={`min-h-screen bg-[#0f172a] border-r border-white/[0.08] p-3 flex flex-col justify-between transition-all duration-300 ease-in-out ${
                 isCollapsed ? "w-16" : "w-64"
             }`}
         >
             <div className="space-y-6">
-                
-                {/* ── Sidebar Header & Collapsible Trigger ── */}
+
+                {/* ── Header & Toggle ── */}
                 <div className={`flex items-center justify-between min-h-[32px] ${isCollapsed ? "justify-center" : "px-2"}`}>
                     {!isCollapsed && (
                         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest animate-fadeIn truncate">
-                            {isAdminSection ? "TIBSA SOC Nexus" : "TIBSA Shield"}
+                            {sectionTitle}
                         </h2>
                     )}
                     <button
@@ -155,8 +229,6 @@ export function Sidebar() {
                 {/* ── Navigation Links ── */}
                 <nav className="space-y-1.5">
                     {links.map((link) => {
-                        // Dashboard: exact match only
-                        // Everything else: highlight when pathname starts with link.href
                         const isActive =
                             link.href === "/dashboard"
                                 ? pathname === "/dashboard"
@@ -166,9 +238,7 @@ export function Sidebar() {
                                 key={link.href}
                                 href={link.href}
                                 className={`flex items-center rounded-lg text-xs font-bold transition-all duration-200 relative group cursor-pointer ${
-                                    isCollapsed 
-                                        ? "justify-center p-2.5" 
-                                        : "gap-3 px-3 py-2.5"
+                                    isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
                                 } ${
                                     isActive
                                         ? "bg-[#3b82f6]/15 text-blue-400 border border-blue-500/20"
@@ -191,7 +261,7 @@ export function Sidebar() {
 
             </div>
 
-            {/* ── Switcher between User and Admin ── */}
+            {/* ── Admin / User Switcher ── */}
             {isAdmin && (
                 <div className="pt-4 border-t border-white/[0.08]">
                     <Link
