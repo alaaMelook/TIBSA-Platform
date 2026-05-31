@@ -124,6 +124,12 @@ export default function InfraSettingsPage() {
       {/* SubHeader Layout component */}
       <InfraSubHeader />
 
+      {/* Backend Integration Pending Banner */}
+      <div className="p-3 bg-amber-500/5 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-semibold flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+        <span><strong>Configuration Scope:</strong> Settings parameters are persisted locally in browser session memory (localStorage) pending integration of backend configuration persistence APIs.</span>
+      </div>
+
       {/* Dynamic Success Notice Banner */}
       {successMsg && (
         <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-semibold flex items-center gap-2 animate-bounce">
