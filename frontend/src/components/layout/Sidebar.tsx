@@ -155,7 +155,12 @@ export function Sidebar() {
                 {/* ── Navigation Links ── */}
                 <nav className="space-y-1.5">
                     {links.map((link) => {
-                        const isActive = pathname === link.href;
+                        // Dashboard: exact match only
+                        // Everything else: highlight when pathname starts with link.href
+                        const isActive =
+                            link.href === "/dashboard"
+                                ? pathname === "/dashboard"
+                                : pathname === link.href || pathname.startsWith(link.href + "/");
                         return (
                             <Link
                                 key={link.href}
@@ -183,6 +188,7 @@ export function Sidebar() {
                         );
                     })}
                 </nav>
+
             </div>
 
             {/* ── Switcher between User and Admin ── */}
