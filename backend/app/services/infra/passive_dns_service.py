@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 
 import httpx
+from httpx import ReadTimeout, ConnectTimeout
 
 from app.config import settings
 from app.schemas.infra_investigation import PassiveDNSEntry, PassiveDNSResult
@@ -77,6 +78,11 @@ class PassiveDNSService:
 
             return PassiveDNSResult(passive_dns=entries, count=len(entries))
 
+        except (ReadTimeout, ConnectTimeout):
+            logger.warning("[PassiveDNS] Timeout for %s — OTX passive_dns endpoint unreachable from this network.", hostname)
+            return PassiveDNSResult(
+                error="OTX Passive DNS timed out. This endpoint may be temporarily slow or restricted from your network."
+            )
         except Exception as exc:
             logger.warning("[PassiveDNS] Error for %s: %s", hostname, exc)
             return PassiveDNSResult(error=str(exc))

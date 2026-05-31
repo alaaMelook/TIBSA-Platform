@@ -16,8 +16,11 @@ export function PassiveDNSTab({ results }: Props) {
   }
 
   if (pDNS.error) {
-    const isKeyMissing   = pDNS.error.toLowerCase().includes("key not configured");
+    const isKeyMissing    = pDNS.error.toLowerCase().includes("key not configured");
     const isNotApplicable = pDNS.error.toLowerCase().includes("not applicable");
+    const isTimeout       = pDNS.error.toLowerCase().includes("timed out") ||
+                            pDNS.error.toLowerCase().includes("timeout");
+
     if (isNotApplicable) {
       return <InfoState icon="🌐" title="Not Applicable" detail={pDNS.error} />;
     }
@@ -27,6 +30,16 @@ export function PassiveDNSTab({ results }: Props) {
           icon="🔑"
           title="OTX API Key Not Configured"
           detail="Add your AlienVault OTX API key to the backend .env file as OTX_API_KEY= to enable passive DNS history lookups."
+          isWarning
+        />
+      );
+    }
+    if (isTimeout) {
+      return (
+        <InfoState
+          icon="⏱️"
+          title="OTX Passive DNS Timed Out"
+          detail="The AlienVault OTX passive_dns endpoint did not respond in time. This endpoint is sometimes slow or restricted from certain networks. Try using a VPN or re-running the investigation."
           isWarning
         />
       );
