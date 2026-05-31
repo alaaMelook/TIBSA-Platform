@@ -38,6 +38,7 @@ export default function InfraHistoryPage() {
 
   const [history, setHistory] = useState<InfraInvestigationListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,15 +50,32 @@ export default function InfraHistoryPage() {
 
   // Fetch all history data
   const fetchHistory = useCallback(async () => {
-    if (!token) return;
+    // Guard: auth hasn't loaded yet — reset loading so page doesn't
+    // show the spinner indefinitely if the session never resolves.
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
+      setFetchError(null);
       const res = await api.infraInvestigations.list(token);
       if (res?.success && res?.data) {
         setHistory(res.data);
+      } else {
+        setHistory([]);
       }
-    } catch (err) {
-      console.error("Failed to load investigation history:", err);
+    } catch (err: any) {
+      const raw: string = err?.message ?? "Unknown error";
+      // Translate the generic FastAPI 404 message into something actionable.
+      const friendly =
+        raw === "Not Found" || raw.includes("404")
+          ? "API endpoint not found (404). Confirm the backend is running on port 8000 and the infra-investigations route is registered."
+          : raw === "Failed to fetch" || raw.includes("ERR_CONNECTION_REFUSED")
+          ? "Cannot reach the backend server. Make sure uvicorn is running on http://localhost:8000."
+          : raw;
+      setFetchError(friendly);
+      console.error("[InfraHistory] fetchHistory failed:", err);
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +164,24 @@ export default function InfraHistoryPage() {
     <div className="space-y-6">
       {/* SubHeader Layout component */}
       <InfraSubHeader />
+
+      {/* ── Error Banner ─────────────────────────────────────────── */}
+      {fetchError && (
+        <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/30 bg-red-500/[0.06] text-red-400">
+          <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold leading-tight">Failed to load investigation history</p>
+            <p className="text-xs text-red-400/70 mt-0.5 break-words">{fetchError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={fetchHistory}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* ── Statistics Summary Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
