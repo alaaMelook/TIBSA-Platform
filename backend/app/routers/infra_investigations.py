@@ -285,3 +285,267 @@ async def stop_infra_investigation(
         message="Stop signal sent. Pipeline will exit after current stage.",
         data={"status": "stopped"},
     )
+
+
+# ── GET /{id}/indicators ──────────────────────────────────────────────────────
+
+@router.get(
+    "/{id}/indicators",
+    response_model=APIResponse[dict],
+    summary="Get threat indicators for an investigation (paginated, filterable)",
+)
+async def get_investigation_indicators(
+    id: str,
+    severity: Optional[str] = Query(None, description="Filter by severity: info|low|medium|high|critical"),
+    malicious_only: bool = Query(False, description="Return only malicious indicators"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns indicators from infra_indicators (relational table).
+    Supports filtering by severity and is_malicious flag.
+    """
+    auth_user = current_user["auth_user"]
+
+    # Verify ownership
+    own = supabase.table("infra_investigations") \
+        .select("id") \
+        .eq("id", id) \
+        .eq("user_id", auth_user.id) \
+        .execute()
+    if not own.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    query = (
+        supabase.table("infra_indicators")
+        .select("*")
+        .eq("investigation_id", id)
+        .order("confidence_score", desc=True)
+        .range(offset, offset + limit - 1)
+    )
+    if severity:
+        query = query.eq("severity", severity)
+    if malicious_only:
+        query = query.eq("is_malicious", True)
+
+    resp = query.execute()
+    rows = resp.data or []
+
+    # Count total for pagination
+    count_resp = (
+        supabase.table("infra_indicators")
+        .select("id", count="exact")
+        .eq("investigation_id", id)
+        .execute()
+    )
+    total = count_resp.count or len(rows)
+
+    return APIResponse(
+        success=True,
+        data={"items": rows, "total": total, "limit": limit, "offset": offset},
+    )
+
+
+# ── GET /{id}/graph ───────────────────────────────────────────────────────────
+
+@router.get(
+    "/{id}/graph",
+    response_model=APIResponse[dict],
+    summary="Get graph nodes and edges for visualization",
+)
+async def get_investigation_graph(
+    id: str,
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns nodes and edges from infra_graph_nodes / infra_graph_edges.
+    Designed for the frontend graph visualization tab — avoids sending
+    the full JSONB blob when only graph data is needed.
+    """
+    auth_user = current_user["auth_user"]
+
+    own = supabase.table("infra_investigations") \
+        .select("id") \
+        .eq("id", id) \
+        .eq("user_id", auth_user.id) \
+        .execute()
+    if not own.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    nodes_resp = (
+        supabase.table("infra_graph_nodes")
+        .select("node_key, node_type, label, value, risk_score, is_malicious, threat_tags, group_name, metadata")
+        .eq("investigation_id", id)
+        .execute()
+    )
+    edges_resp = (
+        supabase.table("infra_graph_edges")
+        .select("source_key, target_key, relationship, weight, bidirectional, metadata")
+        .eq("investigation_id", id)
+        .execute()
+    )
+
+    return APIResponse(
+        success=True,
+        data={
+            "nodes": nodes_resp.data or [],
+            "edges": edges_resp.data or [],
+        },
+    )
+
+
+# ── GET /{id}/enrichment ──────────────────────────────────────────────────────
+
+@router.get(
+    "/{id}/enrichment",
+    response_model=APIResponse[dict],
+    summary="Get per-stage enrichment snapshots",
+)
+async def get_investigation_enrichment(
+    id: str,
+    stage: Optional[str] = Query(None, description="Filter by stage: dns|whois|ssl|geoip|passive_dns|reputation"),
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns enrichment data per stage/source from infra_enrichment.
+    Allows the frontend to load individual tabs independently.
+    """
+    auth_user = current_user["auth_user"]
+
+    own = supabase.table("infra_investigations") \
+        .select("id") \
+        .eq("id", id) \
+        .eq("user_id", auth_user.id) \
+        .execute()
+    if not own.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    query = (
+        supabase.table("infra_enrichment")
+        .select("stage, source, status, data, fetched_at, duration_ms")
+        .eq("investigation_id", id)
+        .order("stage")
+    )
+    if stage:
+        query = query.eq("stage", stage)
+
+    resp = query.execute()
+    rows = resp.data or []
+
+    # Group by stage for convenience
+    grouped: dict = {}
+    for row in rows:
+        s = row["stage"]
+        if s not in grouped:
+            grouped[s] = []
+        grouped[s].append(row)
+
+    return APIResponse(success=True, data={"stages": grouped, "raw": rows})
+
+
+# ── GET /{id}/report ──────────────────────────────────────────────────────────
+
+@router.get(
+    "/{id}/report",
+    response_model=APIResponse[dict],
+    summary="Get the AI-generated threat report",
+)
+async def get_investigation_report(
+    id: str,
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns the structured AI threat report from infra_ai_reports.
+    Smaller payload than the full JSONB blob.
+    """
+    auth_user = current_user["auth_user"]
+
+    own = supabase.table("infra_investigations") \
+        .select("id") \
+        .eq("id", id) \
+        .eq("user_id", auth_user.id) \
+        .execute()
+    if not own.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    resp = (
+        supabase.table("infra_ai_reports")
+        .select(
+            "threat_level, threat_category, actor_attribution, campaign_id, "
+            "summary, recommendations, mitre_techniques, cve_references, "
+            "model_name, model_version, generated_at"
+        )
+        .eq("investigation_id", id)
+        .execute()
+    )
+
+    if not resp.data:
+        raise HTTPException(
+            status_code=404,
+            detail="AI report not found. Investigation may still be running or AI summary was disabled.",
+        )
+
+    return APIResponse(success=True, data=resp.data[0])
+
+
+# ── POST /{id}/backfill ───────────────────────────────────────────────────────
+
+@router.post(
+    "/{id}/backfill",
+    response_model=APIResponse[dict],
+    summary="Re-project JSONB results into relational tables (backfill)",
+)
+async def backfill_investigation(
+    id: str,
+    supabase: Client = Depends(get_supabase),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Triggers projection of an already-completed investigation's JSONB results
+    into the normalized relational tables. Safe to call multiple times (upsert).
+    Useful for populating relational tables for historical investigations.
+    """
+    from app.services.infra.projection_service import ProjectionService
+
+    auth_user = current_user["auth_user"]
+
+    resp = (
+        supabase.table("infra_investigations")
+        .select("id, user_id, status, results")
+        .eq("id", id)
+        .eq("user_id", auth_user.id)
+        .execute()
+    )
+    if not resp.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    row = resp.data[0]
+    if row["status"] != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Investigation is not completed (status: {row['status']}). Cannot backfill.",
+        )
+    if not row.get("results"):
+        raise HTTPException(
+            status_code=400,
+            detail="Investigation has no results JSONB to project from.",
+        )
+
+    try:
+        proj = ProjectionService(supabase)
+        await proj.project(row["id"], row["user_id"], row["results"])
+    except Exception as exc:
+        logger.exception("Backfill failed for investigation %s: %s", id, exc)
+        raise HTTPException(status_code=500, detail=f"Backfill failed: {exc}")
+
+    return APIResponse(
+        success=True,
+        message="Relational tables updated successfully from JSONB results.",
+        data={"investigation_id": id},
+    )
+

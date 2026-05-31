@@ -33,6 +33,7 @@ from app.services.infra.correlation_engine import CorrelationEngine
 from app.services.infra.risk_engine import RiskEngine
 from app.services.infra.ai_summary_service import AISummaryService
 from app.services.infra.graph_builder import GraphBuilder
+from app.services.infra.projection_service import ProjectionService
 
 logger = logging.getLogger(__name__)
 
@@ -280,20 +281,41 @@ class InfraOrchestrator:
                 ai_summary=ai_obj if enable_ai_summary else None,
             )
 
-            # ── Persist final state ───────────────────────────────────────────
+            # ── Persist final state (JSONB – canonical) ───────────────────────
+            results_dict = results.model_dump(mode="json")
             await self._aupdate(inv_id, {
                 "status": "completed",
                 "current_stage": "Complete",
                 "progress_percent": 100.0,
                 "risk_score": round(final_risk_score, 1),
                 "completed_at": datetime.now(timezone.utc).isoformat(),
-                "results": results.model_dump(mode="json"),
+                "results": results_dict,
                 "error": None,
             })
             logger.info(
                 "[Infra:%s] Pipeline complete. Risk=%.1f (%s)",
                 inv_id[:8], final_risk_score, risk_obj.risk_label
             )
+
+            # ── Project into relational tables (async, non-blocking) ──────────
+            # Failure here must NEVER mark the investigation as failed.
+            try:
+                user_resp = await asyncio.get_running_loop().run_in_executor(
+                    None,
+                    lambda: self.db.table("infra_investigations")
+                        .select("user_id")
+                        .eq("id", inv_id)
+                        .single()
+                        .execute()
+                )
+                user_id = (user_resp.data or {}).get("user_id", "")
+                proj = ProjectionService(self.db)
+                await proj.project(inv_id, user_id, results_dict)
+            except Exception as proj_exc:
+                logger.warning(
+                    "[Infra:%s] Relational projection failed (non-fatal): %s",
+                    inv_id[:8], proj_exc
+                )
 
         except asyncio.CancelledError:
             # Task was cancelled externally
