@@ -167,81 +167,102 @@ class AISummaryService:
         prompt = _build_prompt(
             target, target_type, risk, indicators, correlation, reputation, enrichment
         )
-        model = getattr(settings, "openrouter_model", "openrouter/auto")
+        primary_model = getattr(settings, "openrouter_model", "openrouter/auto")
 
-        try:
-            async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-                resp = await client.post(
-                    _OPENROUTER_URL,
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": model,
-                        "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": 2000,
-                        "temperature": 0.2,
-                    },
+        # Fallback list of working free models in case of rate limits (429) or provider downtime
+        models_to_try = [
+            primary_model,
+            "openrouter/free",
+            "google/gemma-4-31b-it:free",
+            "liquid/lfm-2.5-1.2b-instruct:free"
+        ]
+
+        # Deduplicate while preserving order
+        unique_models = []
+        for m in models_to_try:
+            if m not in unique_models:
+                unique_models.append(m)
+
+        last_error = None
+        for current_model in unique_models:
+            logger.info("[AI] Attempting threat summary with model: %s", current_model)
+            try:
+                async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+                    resp = await client.post(
+                        _OPENROUTER_URL,
+                        headers={
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "model": current_model,
+                            "messages": [{"role": "user", "content": prompt}],
+                            "max_tokens": 2000,
+                            "temperature": 0.2,
+                        },
+                    )
+                    resp.raise_for_status()
+                    raw = resp.json()
+
+                choice = (raw.get("choices") or [{}])[0]
+                message = choice.get("message") or {}
+                content = (
+                    message.get("content")
+                    or message.get("reasoning")
+                    or message.get("refusal")
+                    or ""
                 )
-                resp.raise_for_status()
-                raw = resp.json()
+                content = content.strip() if content else ""
 
-            # v2 — Nemotron/reasoning models return content=None; text is in 'reasoning' field
-            choice = (raw.get("choices") or [{}])[0]
-            message = choice.get("message") or {}
-            content = (
-                message.get("content")
-                or message.get("reasoning")
-                or message.get("refusal")
-                or ""
-            )
-            content = content.strip() if content else ""
+                if not content:
+                    logger.warning("[AI] Model %s returned empty content.", current_model)
+                    last_error = "Model returned empty content"
+                    continue
 
-            if not content:
-                logger.warning("[AI] Model returned empty content. Full response: %s", raw)
+                # Strip markdown fences if present (robust check)
+                if "```" in content:
+                    parts = content.split("```")
+                    if len(parts) > 1:
+                        inner = parts[1]
+                        if inner.startswith("json"):
+                            inner = inner[4:]
+                        content = inner.strip()
+
+                # Best-effort repair for truncated JSON (max_tokens cut off mid-stream)
+                if content and not content.endswith("}"):
+                    open_braces   = content.count("{") - content.count("}")
+                    open_brackets = content.count("[") - content.count("]")
+                    in_string = content.count('"') % 2 == 1
+                    if in_string:
+                        content += '"'
+                    content += "]" * max(open_brackets, 0)
+                    content += "}" * max(open_braces, 0)
+                    logger.warning("[AI] Truncated JSON repaired — added closing chars")
+
+                parsed = json.loads(content)
+                actions = parsed.get("recommended_actions", [])
+                if isinstance(actions, str):
+                    actions = [actions]
+
+                logger.info("[AI] Successfully generated threat report using model: %s", current_model)
                 return InfraAISummary(
-                    error="AI model returned an empty response. Try re-running the investigation."
+                    executive_summary=parsed.get("executive_summary", ""),
+                    threat_classification=parsed.get("threat_classification", "Unknown"),
+                    why_suspicious=parsed.get("why_suspicious", ""),
+                    recommended_actions=actions[:8],
+                    confidence=float(parsed.get("confidence", 0.5)),
                 )
 
-            # Strip markdown fences if present (robust check)
-            if "```" in content:
-                parts = content.split("```")
-                if len(parts) > 1:
-                    inner = parts[1]
-                    if inner.startswith("json"):
-                        inner = inner[4:]
-                    content = inner.strip()
+            except json.JSONDecodeError as exc:
+                logger.warning(
+                    "[AI] JSON parse error with model %s: %s\nContent was: %s",
+                    current_model, exc, content[:300] if 'content' in locals() else "N/A"
+                )
+                last_error = f"JSON decode error: {exc}"
+            except Exception as exc:
+                logger.warning("[AI] Model %s failed: %s", current_model, exc)
+                last_error = str(exc)
 
-            # Best-effort repair for truncated JSON (max_tokens cut off mid-stream)
-            if content and not content.endswith("}"):
-                # Count open braces/brackets and close them
-                open_braces   = content.count("{") - content.count("}")
-                open_brackets = content.count("[") - content.count("]")
-                # If we're inside a string, close it first
-                in_string = content.count('"') % 2 == 1
-                if in_string:
-                    content += '"'
-                content += "]" * max(open_brackets, 0)
-                content += "}" * max(open_braces, 0)
-                logger.warning("[AI] Truncated JSON repaired — added closing chars")
-
-            parsed = json.loads(content)
-            actions = parsed.get("recommended_actions", [])
-            if isinstance(actions, str):
-                actions = [actions]
-
-            return InfraAISummary(
-                executive_summary=parsed.get("executive_summary", ""),
-                threat_classification=parsed.get("threat_classification", "Unknown"),
-                why_suspicious=parsed.get("why_suspicious", ""),
-                recommended_actions=actions[:8],
-                confidence=float(parsed.get("confidence", 0.5)),
-            )
-
-        except json.JSONDecodeError as exc:
-            logger.warning("[AI] JSON parse error: %s\nContent was: %s", exc, content[:300] if 'content' in locals() else "N/A")
-            return InfraAISummary(error=f"AI response was not valid JSON: {exc}")
-        except Exception as exc:
-            logger.warning("[AI] OpenRouter error: %s", exc)
-            return InfraAISummary(error=str(exc))
+        # If all models failed
+        logger.error("[AI] All threat summary models failed. Last error: %s", last_error)
+        return InfraAISummary(error=f"AI summary failed across all models. Last error: {last_error}")
