@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     # ─── OpenRouter AI ────────────────────────────────────────
     ai_provider: str = "openrouter"
     openrouter_api_key: str = ""
-    openrouter_model: str = "openrouter/auto"
-    openrouter_max_tokens: int = 500
+    openrouter_model: str = "meta-llama/llama-3.1-8b-instruct:free"
+    openrouter_max_tokens: int = 800
 
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"

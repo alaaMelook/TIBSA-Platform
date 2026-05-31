@@ -122,7 +122,7 @@ class AISummaryService:
                     json={
                         "model": model,
                         "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": 800,
+                        "max_tokens": getattr(settings, "openrouter_max_tokens", 800),
                         "temperature": 0.2,
                     },
                 )
