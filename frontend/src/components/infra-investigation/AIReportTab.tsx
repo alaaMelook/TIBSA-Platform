@@ -7,11 +7,20 @@ import ReactMarkdown from "react-markdown";
 interface Props {
   results: InfraInvestigationResults;
   riskScore: number;
+  relReport?: {            // from infra_ai_reports (optional, relational)
+    threat_level: string;
+    threat_category: string | null;
+    summary: string;
+    recommendations: string[];
+    mitre_techniques: string[];
+    generated_at: string;
+    model_name: string | null;
+  };
 }
 
-export function AIReportTab({ results, riskScore }: Props) {
+export function AIReportTab({ results, riskScore, relReport }: Props) {
+  // Prefer relational report for structured fields; fall back to JSONB ai_summary
   const ai = results.ai_summary;
-
   const risk = results.risk;
 
   const riskColor =
@@ -86,19 +95,45 @@ export function AIReportTab({ results, riskScore }: Props) {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-blue-400" />
             <span className="text-sm font-bold text-white">AI Threat Analysis</span>
+            {relReport && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 ml-1">
+                ⬡ DB
+              </span>
+            )}
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 ml-auto">
               {Math.round(ai.confidence * 100)}% confidence
             </span>
           </div>
 
-          {/* Threat classification */}
+          {/* Threat classification — prefer relational */}
           <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-500/20 bg-purple-500/5">
             <ShieldAlert className="w-5 h-5 text-purple-400 flex-shrink-0" />
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Threat Classification</p>
-              <p className="text-sm font-bold text-purple-300 mt-0.5">{ai.threat_classification}</p>
+              <p className="text-sm font-bold text-purple-300 mt-0.5">
+                {relReport?.threat_category ?? ai.threat_classification}
+              </p>
+              {relReport?.threat_level && (
+                <span className={`inline-block mt-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border ${
+                  relReport.threat_level === "critical" ? "text-red-400 bg-red-500/10 border-red-500/20" :
+                  relReport.threat_level === "high"     ? "text-orange-400 bg-orange-500/10 border-orange-500/20" :
+                  relReport.threat_level === "medium"   ? "text-amber-400 bg-amber-500/10 border-amber-500/20" :
+                  relReport.threat_level === "clean"    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" :
+                  "text-slate-400 bg-slate-700/40 border-slate-700"
+                }`}>{relReport.threat_level}</span>
+              )}
             </div>
           </div>
+
+          {/* MITRE techniques badge row — only from relational */}
+          {relReport?.mitre_techniques && relReport.mitre_techniques.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider self-center">MITRE ATT&CK:</span>
+              {relReport.mitre_techniques.map((t, i) => (
+                <span key={i} className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-orange-500/10 border border-orange-500/20 text-orange-400">{t}</span>
+              ))}
+            </div>
+          )}
 
           {/* Executive summary */}
           <div className="bg-[#1e293b]/60 border border-white/[0.06] rounded-xl p-4">

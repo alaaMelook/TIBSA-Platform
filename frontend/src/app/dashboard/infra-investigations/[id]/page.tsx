@@ -105,6 +105,13 @@ export default function InfraInvestigationWorkspace() {
   const [stopLoading, setStopLoading] = useState(false);
   const [activeDuration, setActiveDuration] = useState("00:00");
 
+  // Relational tab state
+  const [relIndicators, setRelIndicators] = useState<any[] | null>(null);
+  const [relIndicatorsTotal, setRelIndicatorsTotal] = useState(0);
+  const [relIndicatorsLoading, setRelIndicatorsLoading] = useState(false);
+  const [relReport, setRelReport] = useState<any | null>(null);
+  const [relReportLoading, setRelReportLoading] = useState(false);
+
   // Duration counter
   useEffect(() => {
     if (!investigation?.started_at) return;
@@ -143,6 +150,35 @@ export default function InfraInvestigationWorkspace() {
   const isTerminal = investigation?.status === "completed" ||
                      investigation?.status === "failed"    ||
                      investigation?.status === "stopped";
+
+  // Fetch relational indicators when tab is active and pipeline is done
+  useEffect(() => {
+    if (activeTab !== "indicators" || !isTerminal || !id || !token) return;
+    if (relIndicators !== null) return; // already loaded
+    setRelIndicatorsLoading(true);
+    api.infraInvestigations.getIndicators(id, token, { maliciousOnly: false, limit: 200 })
+      .then((res) => {
+        if (res?.success && res?.data) {
+          setRelIndicators(res.data.items ?? []);
+          setRelIndicatorsTotal(res.data.total ?? 0);
+        }
+      })
+      .catch(() => { /* fall back to JSONB */ })
+      .finally(() => setRelIndicatorsLoading(false));
+  }, [activeTab, isTerminal, id, token, relIndicators]);
+
+  // Fetch relational AI report when tab is active and pipeline is done
+  useEffect(() => {
+    if (activeTab !== "ai_report" || !isTerminal || !id || !token) return;
+    if (relReport !== null) return; // already loaded
+    setRelReportLoading(true);
+    api.infraInvestigations.getReport(id, token)
+      .then((res) => {
+        if (res?.success && res?.data) setRelReport(res.data);
+      })
+      .catch(() => { /* fall back to JSONB */ })
+      .finally(() => setRelReportLoading(false));
+  }, [activeTab, isTerminal, id, token, relReport]);
 
   const results = investigation?.results;
 
@@ -326,12 +362,47 @@ export default function InfraInvestigationWorkspace() {
           <div className="min-h-[400px]">
             {results ? (
               <>
+                {/* Reputation — from JSONB */}
                 {activeTab === "reputation"  && <ReputationFeedTab results={results} />}
+
+                {/* DNS & Infra — from JSONB */}
                 {activeTab === "dns"         && <DNSWhoisTab results={results} />}
+
+                {/* Passive DNS — from JSONB */}
                 {activeTab === "passive_dns" && <PassiveDNSTab results={results} />}
-                {activeTab === "indicators"  && <ThreatIndicatorsTab results={results} />}
+
+                {/* Threat Signals — relational primary, JSONB fallback */}
+                {activeTab === "indicators"  && (
+                  relIndicatorsLoading ? (
+                    <div className="flex items-center justify-center py-20 gap-3 text-slate-500 text-sm">
+                      <Loader2 className="w-5 h-5 animate-spin text-cyan-500" />
+                      Loading threat signals from database…
+                    </div>
+                  ) : relIndicators !== null && relIndicators.length > 0 ? (
+                    <ThreatIndicatorsTab results={results} relIndicators={relIndicators} relTotal={relIndicatorsTotal} />
+                  ) : (
+                    <ThreatIndicatorsTab results={results} />
+                  )
+                )}
+
+                {/* Correlation — from JSONB */}
                 {activeTab === "correlation" && <CorrelationTab results={results} />}
-                {activeTab === "ai_report"   && <AIReportTab results={results} riskScore={investigation.risk_score} />}
+
+                {/* AI Report — relational primary, JSONB fallback */}
+                {activeTab === "ai_report"   && (
+                  relReportLoading ? (
+                    <div className="flex items-center justify-center py-20 gap-3 text-slate-500 text-sm">
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
+                      Loading AI report from database…
+                    </div>
+                  ) : (
+                    <AIReportTab
+                      results={results}
+                      riskScore={investigation.risk_score}
+                      relReport={relReport ?? undefined}
+                    />
+                  )
+                )}
               </>
             ) : investigation.status === "failed" ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-3 text-center">
@@ -346,6 +417,7 @@ export default function InfraInvestigationWorkspace() {
               </div>
             )}
           </div>
+
         </div>
 
       </div>

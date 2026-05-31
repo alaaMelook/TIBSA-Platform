@@ -5,6 +5,8 @@ import { AlertTriangle, CheckCircle, ShieldAlert, Minus } from "lucide-react";
 
 interface Props {
   results: InfraInvestigationResults;
+  relIndicators?: any[];   // from infra_indicators table (optional, relational)
+  relTotal?: number;       // total count from relational table
 }
 
 const severityConfig = {
@@ -15,9 +17,13 @@ const severityConfig = {
   info:     { color: "text-slate-400",  bg: "bg-slate-700/40",  border: "border-slate-700",      dot: "bg-slate-500" },
 };
 
-export function ThreatIndicatorsTab({ results }: Props) {
+export function ThreatIndicatorsTab({ results, relIndicators, relTotal }: Props) {
   const ti = results.threat_indicators;
   if (!ti) return <Empty />;
+
+  // Prefer relational count if available
+  const triggeredCount = relIndicators ? relIndicators.filter((i) => i.is_malicious).length : ti.total_triggered;
+  const totalCount     = relTotal ?? ti.checks.length;
 
   const triggered = ti.checks.filter((c) => c.triggered);
   const clean     = ti.checks.filter((c) => !c.triggered);

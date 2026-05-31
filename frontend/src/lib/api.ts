@@ -117,6 +117,35 @@ export const api = {
             api.get<any>(`/api/v1/infra-investigations/${id}/status`, token),
         stop: (id: string, token?: string) =>
             api.post<any>(`/api/v1/infra-investigations/${id}/stop`, {}, token),
+
+        // ── Relational table endpoints (populated after pipeline completes) ──
+        getIndicators: (
+            id: string,
+            token?: string,
+            opts: { severity?: string; maliciousOnly?: boolean; limit?: number; offset?: number } = {}
+        ) => {
+            const params = new URLSearchParams();
+            if (opts.severity)                         params.set("severity", opts.severity);
+            if (opts.maliciousOnly)                    params.set("malicious_only", "true");
+            if (opts.limit    !== undefined)           params.set("limit",  String(opts.limit));
+            if (opts.offset   !== undefined)           params.set("offset", String(opts.offset));
+            const qs = params.toString();
+            return api.get<any>(`/api/v1/infra-investigations/${id}/indicators${qs ? `?${qs}` : ""}`, token);
+        },
+
+        getGraph: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/infra-investigations/${id}/graph`, token),
+
+        getEnrichment: (id: string, token?: string, stage?: string) => {
+            const qs = stage ? `?stage=${encodeURIComponent(stage)}` : "";
+            return api.get<any>(`/api/v1/infra-investigations/${id}/enrichment${qs}`, token);
+        },
+
+        getReport: (id: string, token?: string) =>
+            api.get<any>(`/api/v1/infra-investigations/${id}/report`, token),
+
+        backfill: (id: string, token?: string) =>
+            api.post<any>(`/api/v1/infra-investigations/${id}/backfill`, {}, token),
     },
 };
 
