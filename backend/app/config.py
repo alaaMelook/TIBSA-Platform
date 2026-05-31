@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # ─── OpenRouter AI ────────────────────────────────────────
     ai_provider: str = "openrouter"
     openrouter_api_key: str = ""
-    openrouter_model: str = "meta-llama/llama-3.1-8b-instruct:free"
+    openrouter_model: str = "nvidia/nemotron-3-nano-30b-a3b:free"
     openrouter_max_tokens: int = 800
 
     # ─── App ──────────────────────────────────────────────────
