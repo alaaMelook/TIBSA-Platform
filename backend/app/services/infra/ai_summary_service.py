@@ -49,10 +49,59 @@ def _build_prompt(
     triggered_rules = [
         r["rule_name"] for r in (correlation or {}).get("relationships", []) if r.get("triggered")
     ]
+
+    # ── AbuseIPDB Details ──
+    abuseipdb_hit = (reputation or {}).get("abuseipdb", {})
+    abuse_details = "N/A"
+    if isinstance(abuseipdb_hit, dict) and abuseipdb_hit.get("abuse_confidence_score", 0) > 0:
+        score = abuseipdb_hit.get("abuse_confidence_score", 0)
+        reports = abuseipdb_hit.get("total_reports", 0)
+        country = abuseipdb_hit.get("country_code", "Unknown")
+        isp = abuseipdb_hit.get("isp", "Unknown")
+        abuse_details = f"Abuse Confidence Score: {score}%, Total Reports: {reports}, Country: {country}, ISP: {isp}"
+
+    # ── URLhaus Details ──
     urlhaus_hit = (reputation or {}).get("urlhaus", {})
     urlhaus_listed = isinstance(urlhaus_hit, dict) and urlhaus_hit.get("query_status") == "is_listed"
+    urlhaus_details = "N/A"
+    if urlhaus_listed:
+        urls_on_host = urlhaus_hit.get("urls_on_this_host") or []
+        url_items = []
+        for u in urls_on_host[:5]:
+            url_items.append(f"URL: {u.get('url')} (Threat: {u.get('threat')}, Status: {u.get('url_status')})")
+        urlhaus_details = f"Listed (Active threats matching on this host:\n" + "\n".join(url_items) + ")"
+
+    # ── ThreatFox Details ──
+    threatfox_hit = (reputation or {}).get("threatfox", {})
+    threatfox_iocs = []
+    if isinstance(threatfox_hit, dict) and threatfox_hit.get("query_status") == "ok":
+        threatfox_iocs = threatfox_hit.get("iocs") or []
+    threatfox_details = "None matched"
+    if threatfox_iocs:
+        tf_items = []
+        for ioc in threatfox_iocs[:10]:
+            malware = ioc.get("malware_printable") or ioc.get("malware") or "Unknown malware"
+            threat_type = ioc.get("threat_type") or "Unknown threat type"
+            confidence = ioc.get("confidence_level") or 0
+            tf_items.append(f"- Malware: {malware} (Type: {threat_type}, Confidence: {confidence}%)")
+        threatfox_details = "\n".join(tf_items)
+
+    # ── AlienVault OTX Details ──
     otx_pulses = (reputation or {}).get("otx", {})
     pulse_count = (otx_pulses or {}).get("pulse_count", 0) if isinstance(otx_pulses, dict) else 0
+    otx_details = "None matched"
+    if isinstance(otx_pulses, dict) and pulse_count > 0:
+        pulses = otx_pulses.get("pulses") or []
+        otx_items = []
+        for p in pulses[:5]:
+            p_name = p.get("name", "Unnamed pulse")
+            p_malware = ", ".join(p.get("malware_families") or [])
+            if p_malware:
+                otx_items.append(f"- Pulse Name: {p_name} (Malware Family: {p_malware})")
+            else:
+                otx_items.append(f"- Pulse Name: {p_name}")
+        otx_details = "\n".join(otx_items)
+
     whois = (enrichment or {}).get("whois") or {}
     domain_age = whois.get("domain_age_days")
     newly_reg = whois.get("is_newly_registered", False)
@@ -64,23 +113,35 @@ RISK SCORE: {risk_score}/100 — {risk_label}
 PHISHING SCORE: {phishing_score}/100
 TRIGGERED INDICATOR CHECKS: {', '.join(triggered_checks) or 'None'}
 TRIGGERED CORRELATION RULES: {', '.join(triggered_rules) or 'None'}
+
+[REPUTATION INTELLIGENCE]
+ABUSEIPDB: {abuse_details}
 URLHAUS BLACKLISTED: {urlhaus_listed}
+URLHAUS THREAT DETAILS: {urlhaus_details}
+THREATFOX IOC MATCHES:
+{threatfox_details}
 OTX PULSE COUNT: {pulse_count}
+OTX PULSES DETAILS:
+{otx_details}
+
+[WHOIS & DOMAIN ENRICHMENT]
 DOMAIN AGE (DAYS): {domain_age if domain_age is not None else 'N/A'}
 NEWLY REGISTERED: {newly_reg}
 REGISTRAR: {registrar}
+
+[RISK ENGINE FACTORS]
 CONTRIBUTING RISK FACTORS: {'; '.join(factors) or 'None detected'}
 """.strip()
 
     return (
-        "You are a threat intelligence analyst. "
-        "Analyse the data below and reply with ONLY a JSON object — no markdown, no extra text.\n"
-        "JSON keys (all required):\n"
-        '  "executive_summary": one sentence (max 30 words)\n'
-        '  "threat_classification": one of: Benign | Phishing Infrastructure | C2 Server | Malware Distribution | Spam Infrastructure | Unknown\n'
-        '  "why_suspicious": max 40 words\n'
-        '  "recommended_actions": array of 3 short strings\n'
-        '  "confidence": float 0.0-1.0\n\n'
+        "You are an expert security analyst and threat intelligence researcher. "
+        "Review the target and the provided reputation database context to generate a comprehensive, highly detailed analyst report. "
+        "Your report must be returned as a valid JSON object containing exactly the following keys, with no markdown styling around the JSON, and no explanation text before or after the JSON:\n"
+        '  "executive_summary": A detailed, high-level summary of the threat findings and potential organizational impact (2 to 4 sentences, 60-100 words). Do not use placeholders or generic sentences. State the classification and risk level clearly.\n'
+        '  "threat_classification": Categorise the threat. Must be one of: Benign | Phishing Infrastructure | C2 Server | Malware Distribution | Spam Infrastructure | Unknown\n'
+        '  "why_suspicious": A detailed, technical analysis of why this target was flagged (3 to 6 sentences, 100-150 words). Explicitly reference contributing threat intelligence sources (like ThreatFox malware names, OTX pulse details, registrar anomalies, or phishing indicator triggers).\n'
+        '  "recommended_actions": A list of 3 to 6 actionable mitigation and remediation steps. Make them specific and technical (e.g. including the target identifier, security systems, specific hunting rules or blocklist protocols).\n'
+        '  "confidence": A float between 0.0 and 1.0 representing your confidence in this assessment based on the quality of intelligence matches.\n\n'
         "DATA:\n"
         + context_block
     )
@@ -119,7 +180,7 @@ class AISummaryService:
                     json={
                         "model": model,
                         "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": 1500,
+                        "max_tokens": 2000,
                         "temperature": 0.2,
                     },
                 )
@@ -143,12 +204,14 @@ class AISummaryService:
                     error="AI model returned an empty response. Try re-running the investigation."
                 )
 
-            # Strip markdown fences if present
-            if content.startswith("```"):
-                content = content.split("```")[1]
-                if content.startswith("json"):
-                    content = content[4:]
-            content = content.strip()
+            # Strip markdown fences if present (robust check)
+            if "```" in content:
+                parts = content.split("```")
+                if len(parts) > 1:
+                    inner = parts[1]
+                    if inner.startswith("json"):
+                        inner = inner[4:]
+                    content = inner.strip()
 
             # Best-effort repair for truncated JSON (max_tokens cut off mid-stream)
             if content and not content.endswith("}"):
@@ -177,7 +240,7 @@ class AISummaryService:
             )
 
         except json.JSONDecodeError as exc:
-            logger.warning("[AI] JSON parse error: %s\nContent was: %s", exc, content[:300] if 'content' in dir() else "N/A")
+            logger.warning("[AI] JSON parse error: %s\nContent was: %s", exc, content[:300] if 'content' in locals() else "N/A")
             return InfraAISummary(error=f"AI response was not valid JSON: {exc}")
         except Exception as exc:
             logger.warning("[AI] OpenRouter error: %s", exc)
