@@ -13,10 +13,11 @@ class Settings(BaseSettings):
 
     # ─── VirusTotal ────────────────────────────────────────────
     virustotal_api_key: str = ""
-    otx_api_key: str = ""
+    otx_api_key: str = ""  # AlienVault OTX API key
 
     # ─── Infra Intelligence APIs ───────────────────────────────
     abuseipdb_api_key: str = ""  # https://www.abuseipdb.com/api
+    abuse_ch_api_key: str = ""  # https://auth.abuse.ch/ (URLhaus & ThreatFox)
 
     # ─── CORS ─────────────────────────────────────────────────
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"

@@ -74,11 +74,15 @@ class ReputationService:
 
     @staticmethod
     async def _check_urlhaus(host: str) -> URLhausResult:
+        api_key = getattr(settings, "abuse_ch_api_key", "")
+        if not api_key:
+            return URLhausResult(error="URLhaus API key not configured.")
         try:
             async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
                 resp = await client.post(
                     "https://urlhaus-api.abuse.ch/v1/host/",
                     data={"host": host},
+                    headers={"Auth-Key": api_key},
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -107,11 +111,15 @@ class ReputationService:
 
     @staticmethod
     async def _check_threatfox(query: str) -> ThreatFoxResult:
+        api_key = getattr(settings, "abuse_ch_api_key", "")
+        if not api_key:
+            return ThreatFoxResult(error="ThreatFox API key not configured.")
         try:
             async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
                 resp = await client.post(
                     "https://threatfox-api.abuse.ch/api/v1/",
                     json={"query": "search_ioc", "search_term": query},
+                    headers={"Auth-Key": api_key},
                 )
                 resp.raise_for_status()
                 data = resp.json()
