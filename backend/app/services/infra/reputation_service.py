@@ -203,22 +203,35 @@ class ReputationService:
 
         Parameters
         ----------
-        target      : raw target (URL/domain/IP)
+        target      : raw target (URL/domain/IP/hash)
         target_type : classified IOC type
         hostname    : extracted hostname (e.g. "evil.example.com" from URL)
         """
         async def _none() -> None:
             return None
 
-        # AbuseIPDB only applies to IPs
+        is_hash = target_type == "hash"
+
+        # ── AbuseIPDB: IP only ─────────────────────────────────────────────────
         abuseipdb_task = (
             self._check_abuseipdb(hostname)
             if target_type == "ip"
             else _none()
         )
 
-        urlhaus_task = self._check_urlhaus(hostname)
-        threatfox_task = self._check_threatfox(hostname)
+        # ── URLhaus: not applicable for hashes ────────────────────────────────
+        urlhaus_task = (
+            _none()
+            if is_hash
+            else self._check_urlhaus(hostname)
+        )
+
+        # ── ThreatFox: search by hash directly, or by hostname ────────────────
+        # ThreatFox supports MD5/SHA1/SHA256 lookups natively
+        threatfox_query = target if is_hash else hostname
+        threatfox_task = self._check_threatfox(threatfox_query)
+
+        # ── OTX: only for ip/domain/url ────────────────────────────────────────
         otx_task = (
             self._check_otx(hostname, target_type)
             if target_type in ("ip", "domain", "url")
@@ -242,7 +255,8 @@ class ReputationService:
         return ReputationResults(
             abuseipdb=_safe(abuseipdb_res, AbuseIPDBResult(error="Task failed."))
             if target_type == "ip" else None,
-            urlhaus=_safe(urlhaus_res, URLhausResult(error="Task failed.")),
+            urlhaus=_safe(urlhaus_res, URLhausResult(error="Task failed."))
+            if not is_hash else None,
             threatfox=_safe(threatfox_res, ThreatFoxResult(error="Task failed.")),
             otx=_safe(otx_res, OTXPulsesResult(error="Task failed."))
             if target_type in ("ip", "domain", "url") else None,

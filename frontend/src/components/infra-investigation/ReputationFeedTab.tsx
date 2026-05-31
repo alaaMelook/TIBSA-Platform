@@ -144,7 +144,9 @@ export function ReputationFeedTab({ results }: Props) {
         title="URLhaus"
         icon={<Globe className="w-4 h-4 text-blue-400" />}
         badge={
-          urlhaus && !urlhaus.error ? (
+          !urlhaus ? (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-slate-600 bg-slate-800/50 border-slate-700/50">N/A</span>
+          ) : urlhaus && !urlhaus.error ? (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
               urlhaus.query_status === "is_host" || urlhaus.query_status === "is_listed"
                 ? "text-red-400 bg-red-500/10 border-red-500/20"
@@ -158,7 +160,7 @@ export function ReputationFeedTab({ results }: Props) {
         }
       >
         {!urlhaus ? (
-          <NotApplicable reason="URLhaus data unavailable." />
+          <NotApplicable reason="URLhaus does not support hash lookups — only IPs, domains, and URLs." />
         ) : urlhaus.error ? (
           <ErrorState message={urlhaus.error} />
         ) : urlhaus.query_status === "is_host" || urlhaus.query_status === "is_listed" ? (
@@ -228,7 +230,9 @@ export function ReputationFeedTab({ results }: Props) {
         title="AlienVault OTX"
         icon={<ShieldAlert className="w-4 h-4 text-cyan-400" />}
         badge={
-          otx && !otx.error ? (
+          !otx ? (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded border text-slate-600 bg-slate-800/50 border-slate-700/50">N/A</span>
+          ) : otx && !otx.error ? (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
               otx.pulse_count > 0
                 ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
@@ -242,7 +246,7 @@ export function ReputationFeedTab({ results }: Props) {
         }
       >
         {!otx ? (
-          <NotApplicable reason="OTX is not applicable for this target type." />
+          <NotApplicable reason="AlienVault OTX pulse lookup is only available for IPs, domains, and URLs — not hash values." />
         ) : otx.error ? (
           <ErrorState message={otx.error} />
         ) : otx.pulse_count > 0 ? (
