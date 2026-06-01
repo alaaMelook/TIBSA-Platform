@@ -8,6 +8,15 @@ export interface AdminStats {
     threatsToday: number;
     systemUptime: number; // percentage
     avgResponseTime: number; // ms
+    infra?: {
+        total: number;
+        today: number;
+        running: number;
+        completed: number;
+        failed: number;
+        avgRiskScore: number;
+        highRiskCount: number;
+    };
 }
 
 export interface StatCardData {

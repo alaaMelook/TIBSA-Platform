@@ -135,16 +135,14 @@ const sidebarLinks: SidebarLink[] = [
     { href: "/dashboard/profile", label: "Profile", icon: <IconProfile /> },
 ];
 
-// Shown only when inside /dashboard/infra-investigations (and sub-routes)
-const infraLinks: SidebarLink[] = [
-    { href: "/dashboard/infra-investigations", label: "Infra Intelligence", icon: <IconInfra /> },
-];
+
 
 const adminLinks: SidebarLink[] = [
     { href: "/admin", label: "Overview", icon: <IconOverview />, adminOnly: true },
     { href: "/admin/users", label: "User Management", icon: <IconUsers />, adminOnly: true },
     { href: "/admin/threats", label: "Threat Feeds", icon: <IconShield />, adminOnly: true },
     { href: "/admin/analytics", label: "Analytics", icon: <IconAnalytics />, adminOnly: true },
+    { href: "/admin/infra-analytics", label: "Infra Analytics", icon: <IconInfra />, adminOnly: true },
     { href: "/admin/system", label: "System Health", icon: <IconHeart />, adminOnly: true },
     { href: "/admin/audit", label: "Audit Log", icon: <IconAudit />, adminOnly: true },
     { href: "/admin/settings", label: "Settings", icon: <IconSettings />, adminOnly: true },
@@ -178,22 +176,12 @@ export function Sidebar() {
 
     const isAdmin = user?.role === "admin";
     const isAdminSection = pathname.startsWith("/admin");
-    const isInfraSection = pathname === "/dashboard/infra-investigations" ||
-        pathname.startsWith("/dashboard/infra-investigations/");
 
     // Pick which link set to render
-    const links = isAdminSection && isAdmin
-        ? adminLinks
-        : isInfraSection
-            ? infraLinks
-            : sidebarLinks;
+    const links = isAdminSection && isAdmin ? adminLinks : sidebarLinks;
 
     // Section title shown when expanded
-    const sectionTitle = isAdminSection
-        ? "TIBSA SOC Nexus"
-        : isInfraSection
-            ? "Infra Intelligence"
-            : "TIBSA Shield";
+    const sectionTitle = isAdminSection ? "TIBSA SOC Nexus" : "TIBSA Shield";
 
     return (
         <aside

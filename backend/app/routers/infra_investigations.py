@@ -14,7 +14,7 @@ import asyncio
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status, Request
 from supabase import Client
 
 from app.dependencies import get_current_user, get_supabase
@@ -68,6 +68,7 @@ def _to_detail(row: dict) -> InfraInvestigationDetail:
 )
 async def start_infra_investigation(
     request: InfraCreateRequest,
+    fastapi_request: Request,
     background_tasks: BackgroundTasks,
     supabase: Client = Depends(get_supabase),
     current_user: dict = Depends(get_current_user),
@@ -118,6 +119,27 @@ async def start_infra_investigation(
         )
 
     background_tasks.add_task(_run_pipeline)
+
+    # Log to audit_logs
+    try:
+        from app.services.auth_service import parse_user_agent
+        client_ip = fastapi_request.client.host if fastapi_request.client else "0.0.0.0"
+        user_agent_header = fastapi_request.headers.get("user-agent", "Unknown")
+        supabase.table("audit_logs").insert({
+            "user_id": auth_user.id,
+            "action_type": "INFRA_INVESTIGATION_CREATED",
+            "severity": "info",
+            "message": f"User started infra investigation for target: {target}",
+            "ip_address": client_ip,
+            "metadata": {
+                "resource": "infra_investigation",
+                "target": target,
+                "target_type": investigation.get("target_type", "url"),
+                "user_agent": parse_user_agent(user_agent_header)
+            }
+        }).execute()
+    except Exception as e:
+        logger.warning("Failed to insert audit log for infra investigation: %s", e)
 
     return APIResponse(
         success=True,

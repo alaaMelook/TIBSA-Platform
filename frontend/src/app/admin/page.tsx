@@ -133,7 +133,8 @@ export default function AdminPage() {
                     threatsDetected: s.threats.total,
                     threatsToday: s.threats.today, // Map to actual threats found today from API
                     systemUptime: 99.9,
-                    avgResponseTime: 45
+                    avgResponseTime: 45,
+                    infra: s.infra
                 });
             }
 
@@ -376,6 +377,81 @@ export default function AdminPage() {
                     trend="neutral"
                     delay={500}
                 />
+            </div>
+
+            {/* ── Infrastructure Intel Stats Grid ─────────────────── */}
+            <div className="border-t border-white/[0.08] pt-6 mt-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                        Infrastructure Intelligence Metrics
+                    </h2>
+                    <Link href="/admin/infra-analytics" className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+                        Detailed Analytics →
+                    </Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
+                    <StatCard
+                        label="Total Infra Inv."
+                        value={stats?.infra?.total || 0}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconScans />}
+                        color="cyan"
+                        trend="neutral"
+                        delay={0}
+                    />
+                    <StatCard
+                        label="Investigations Today"
+                        value={stats?.infra?.today || 0}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconClock />}
+                        color="blue"
+                        trend="neutral"
+                        delay={100}
+                    />
+                    <StatCard
+                        label="Running Inv."
+                        value={stats?.infra?.running || 0}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconActive />}
+                        color="green"
+                        trend="neutral"
+                        delay={200}
+                    />
+                    <StatCard
+                        label="Failed Inv."
+                        value={stats?.infra?.failed || 0}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconShield />}
+                        color="red"
+                        trend="neutral"
+                        delay={300}
+                    />
+                    <StatCard
+                        label="Avg Risk Score"
+                        value={stats?.infra?.avgRiskScore || 0}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconShield />}
+                        color="amber"
+                        trend="neutral"
+                        delay={400}
+                    />
+                    <StatCard
+                        label="High Risk IOCs"
+                        value={stats?.infra?.highRiskCount || 0}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconShield />}
+                        color="purple"
+                        trend="neutral"
+                        delay={500}
+                    />
+                </div>
             </div>
 
             {/* ── Charts Row: Threat Trends + Distribution ── */}

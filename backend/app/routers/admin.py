@@ -54,6 +54,25 @@ async def get_admin_stats(
     scans_with_threats = len(set(f.get("investigation_id") for f in findings_data if f.get("investigation_id")))
     detection_rate = round((scans_with_threats / total_scans * 100), 1) if total_scans > 0 else 0.0
 
+    # Source: infra_investigations table
+    # Query: COUNT(*)
+    # Endpoint: GET /api/v1/admin/stats
+    try:
+        infra_resp = supabase.table("infra_investigations").select("id, started_at, status, risk_score").execute()
+        infra_data = infra_resp.data or []
+    except Exception:
+        infra_data = []
+
+    total_infra = len(infra_data)
+    infra_today = sum(1 for i in infra_data if i.get("started_at") and i.get("started_at") >= today_str)
+    infra_running = sum(1 for i in infra_data if i.get("status") in ("running", "pending"))
+    infra_completed = sum(1 for i in infra_data if i.get("status") == "completed")
+    infra_failed = sum(1 for i in infra_data if i.get("status") == "failed")
+    
+    completed_risk_scores = [i.get("risk_score") or 0.0 for i in infra_data if i.get("status") == "completed"]
+    avg_risk_score = round(sum(completed_risk_scores) / len(completed_risk_scores), 1) if completed_risk_scores else 0.0
+    high_risk_infra = sum(1 for i in infra_data if (i.get("risk_score") or 0.0) >= 60.0)
+
     return {
         "users": {
             "total": total_users,
@@ -70,6 +89,15 @@ async def get_admin_stats(
             "critical": critical_threats,
             "today": threats_today,
             "detectionRate": detection_rate
+        },
+        "infra": {
+            "total": total_infra,
+            "today": infra_today,
+            "running": infra_running,
+            "completed": infra_completed,
+            "failed": infra_failed,
+            "avgRiskScore": avg_risk_score,
+            "highRiskCount": high_risk_infra
         }
     }
 
@@ -517,6 +545,7 @@ async def investigate_context(
     }
     
     unique_devices = {}  # Key: parsed name, Value: raw user agent
+    infra_investigations = []
     
     if context_type == "ip":
         # 1. Fetch real GeoIP data from free API
@@ -575,6 +604,17 @@ async def investigate_context(
                         unique_devices[parsed_ua] = raw_ua
         except Exception:
             pass
+
+        # 5. Fetch related infra investigations for this IP
+        try:
+            infra_resp = supabase.table("infra_investigations") \
+                .select("id, target, target_type, status, risk_score, started_at") \
+                .eq("target", value) \
+                .limit(10) \
+                .execute()
+            infra_investigations = infra_resp.data or []
+        except Exception:
+            pass
             
     elif context_type == "user":
         # 1. User Info
@@ -627,8 +667,21 @@ async def investigate_context(
                             unique_devices[parsed_ua] = raw_ua
             except Exception:
                 pass
+
+        # 5. Fetch related infra investigations for this user ID
+        if user_id:
+            try:
+                infra_resp = supabase.table("infra_investigations") \
+                    .select("id, target, target_type, status, risk_score, started_at") \
+                    .eq("user_id", user_id) \
+                    .limit(10) \
+                    .execute()
+                infra_investigations = infra_resp.data or []
+            except Exception:
+                pass
                 
     result["devices"] = [{"name": name, "raw": raw} for name, raw in unique_devices.items()]
+    result["infra_investigations"] = infra_investigations
     return result
 
 
@@ -901,3 +954,142 @@ async def purge_historical_scan_data(
             status_code=500,
             content={"success": False, "message": f"Failed to purge scan data: {str(e)}"}
         )
+
+@router.get("/infra-analytics", response_model=Dict[str, Any])
+async def get_admin_infra_analytics(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    Get detailed metrics for the Infrastructure Intelligence Analytics page.
+    """
+    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_str = today.isoformat()
+
+    try:
+        infra_resp = supabase.table("infra_investigations").select("id, target, target_type, status, risk_score, started_at, completed_at, user_id").execute()
+        infra_data = infra_resp.data or []
+    except Exception:
+        infra_data = []
+        
+    total_infra = len(infra_data)
+    infra_today = sum(1 for i in infra_data if i.get("started_at") and i.get("started_at") >= today_str)
+    infra_running = sum(1 for i in infra_data if i.get("status") in ("running", "pending"))
+    infra_completed = sum(1 for i in infra_data if i.get("status") == "completed")
+    infra_failed = sum(1 for i in infra_data if i.get("status") == "failed")
+    
+    completed_risk_scores = [i.get("risk_score") or 0.0 for i in infra_data if i.get("status") == "completed"]
+    avg_risk_score = round(sum(completed_risk_scores) / len(completed_risk_scores), 1) if completed_risk_scores else 0.0
+    high_risk_infra = sum(1 for i in infra_data if (i.get("risk_score") or 0.0) >= 60.0)
+
+    # 1. IOC Type Distribution (IP, Domain, URL, Hash, Email)
+    ioc_counts = {"ip": 0, "domain": 0, "url": 0, "hash": 0, "email": 0}
+    for i in infra_data:
+        ttype = (i.get("target_type") or "url").lower()
+        if ttype in ioc_counts:
+            ioc_counts[ttype] += 1
+        else:
+            ioc_counts[ttype] = ioc_counts.get(ttype, 0) + 1
+            
+    ioc_distribution = [{"name": k.upper(), "value": v} for k, v in ioc_counts.items()]
+
+    # 2. Trends: Investigation Trends (last 30 days)
+    trends_dict = {}
+    for i in range(30, -1, -1):
+        dt = (datetime.now(timezone.utc) - timedelta(days=i))
+        date_key = dt.strftime("%b %d")
+        trends_dict[date_key] = {"date": date_key, "count": 0, "high_risk": 0}
+        
+    for i in infra_data:
+        started_at = i.get("started_at")
+        if started_at:
+            try:
+                val = started_at.split(".")[0].split("+")[0]
+                dt = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S")
+                date_key = dt.strftime("%b %d")
+                if date_key in trends_dict:
+                    trends_dict[date_key]["count"] += 1
+                    if (i.get("risk_score") or 0.0) >= 60.0:
+                        trends_dict[date_key]["high_risk"] += 1
+            except Exception:
+                pass
+                
+    trends_list = list(trends_dict.values())
+
+    # 3. Top Investigated IOCs
+    ioc_stats = {}
+    for i in infra_data:
+        target = i.get("target")
+        if target:
+            if target not in ioc_stats:
+                ioc_stats[target] = {"target": target, "type": i.get("target_type", "url"), "count": 0, "max_risk": 0.0}
+            ioc_stats[target]["count"] += 1
+            risk = i.get("risk_score") or 0.0
+            if risk > ioc_stats[target]["max_risk"]:
+                ioc_stats[target]["max_risk"] = risk
+                
+    top_iocs = list(ioc_stats.values())
+    top_iocs.sort(key=lambda x: x["count"], reverse=True)
+    top_iocs = top_iocs[:10]
+
+    # Map analyst names
+    user_names = {}
+    try:
+        users_resp = supabase.table("users").select("id, full_name, email").execute()
+        for u in (users_resp.data or []):
+            user_names[u["id"]] = u.get("full_name") or u.get("email").split("@")[0]
+    except Exception:
+        pass
+
+    # 4. Top High-Risk Investigations
+    high_risk_list = []
+    for i in infra_data:
+        risk = i.get("risk_score") or 0.0
+        if risk >= 60.0:
+            uid = i.get("user_id")
+            high_risk_list.append({
+                "id": i.get("id"),
+                "target": i.get("target"),
+                "type": i.get("target_type"),
+                "risk_score": risk,
+                "status": i.get("status"),
+                "started_at": i.get("started_at"),
+                "analyst": user_names.get(uid, "System")
+            })
+    high_risk_list.sort(key=lambda x: x["risk_score"], reverse=True)
+    top_high_risk = high_risk_list[:10]
+
+    # 5. Recent Investigations
+    recent_list = []
+    for i in infra_data:
+        uid = i.get("user_id")
+        recent_list.append({
+            "id": i.get("id"),
+            "target": i.get("target"),
+            "type": i.get("target_type"),
+            "risk_score": i.get("risk_score") or 0.0,
+            "status": i.get("status"),
+            "current_stage": i.get("current_stage"),
+            "progress_percent": i.get("progress_percent") or 0.0,
+            "started_at": i.get("started_at"),
+            "analyst": user_names.get(uid, "System")
+        })
+    recent_list.sort(key=lambda x: x["started_at"] or "", reverse=True)
+    recent_infra = recent_list[:10]
+
+    return {
+        "stats": {
+            "total": total_infra,
+            "today": infra_today,
+            "running": infra_running,
+            "completed": infra_completed,
+            "failed": infra_failed,
+            "avgRiskScore": avg_risk_score,
+            "highRiskCount": high_risk_infra
+        },
+        "iocDistribution": ioc_distribution,
+        "trends": trends_list,
+        "topIocs": top_iocs,
+        "topHighRisk": top_high_risk,
+        "recent": recent_infra
+    }

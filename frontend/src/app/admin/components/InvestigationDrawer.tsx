@@ -179,6 +179,58 @@ export function InvestigationDrawer({ isOpen, onClose, context }: InvestigationD
                         </div>
                     </div>
                 )}
+
+                {/* INFRA INVESTIGATIONS */}
+                {data.infra_investigations && data.infra_investigations.length > 0 && (
+                    <div>
+                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            Infra Intelligence Investigations ({data.infra_investigations.length})
+                        </h4>
+                        <div className="space-y-2">
+                            {data.infra_investigations.map((inv: any, i: number) => {
+                                const riskColor =
+                                    inv.risk_score >= 75 ? "text-red-400" :
+                                    inv.risk_score >= 60 ? "text-orange-400" :
+                                    inv.risk_score >= 40 ? "text-amber-400" : "text-emerald-400";
+                                const statusColors: Record<string, string> = {
+                                    completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                                    failed: "bg-red-500/10 text-red-400 border-red-500/20",
+                                    running: "bg-blue-500/10 text-blue-400 border-blue-500/20 animate-pulse",
+                                    pending: "bg-slate-800 text-slate-400 border-slate-700",
+                                    stopped: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+                                };
+                                return (
+                                    <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-cyan-500/[0.03] border border-cyan-500/10 hover:bg-cyan-500/[0.06] transition-colors">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-mono text-slate-200 truncate">{inv.target}</p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                                                    {inv.target_type}
+                                                </span>
+                                                {inv.started_at && (
+                                                    <span className="text-[10px] text-slate-500 font-mono">
+                                                        {new Date(inv.started_at).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                            {inv.status === "completed" && (
+                                                <span className={`text-sm font-black font-mono ${riskColor}`}>{Math.round(inv.risk_score)}</span>
+                                            )}
+                                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${statusColors[inv.status] || statusColors.pending}`}>
+                                                {inv.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };

@@ -14,6 +14,10 @@ import {
   Search,
   SlidersHorizontal,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   TrendingUp,
   Skull,
   Activity,
@@ -32,7 +36,7 @@ function StatusBadge({ status }: { status: string }) {
   }
 }
 
-export default function InfraHistoryPage() {
+export function InfraHistoryContent() {
   const router = useRouter();
   const { token } = useAuth();
 
@@ -47,6 +51,10 @@ export default function InfraHistoryPage() {
   const [riskFilter, setRiskFilter] = useState<string>("all"); // 'all', 'critical', 'high', 'medium', 'clean'
   const [sortBy, setSortBy] = useState<"date" | "risk">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Pagination state
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch all history data
   const fetchHistory = useCallback(async () => {
@@ -159,6 +167,21 @@ export default function InfraHistoryPage() {
 
     return result;
   }, [history, searchQuery, selectedTypes, selectedStatus, riskFilter, sortBy, sortOrder]);
+
+  // Reset page to 1 whenever filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedTypes, selectedStatus, riskFilter, sortBy, sortOrder]);
+
+  // Paginated slice
+  const totalPages = Math.max(1, Math.ceil(filteredHistory.length / PAGE_SIZE));
+  const paginatedHistory = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredHistory.slice(start, start + PAGE_SIZE);
+  }, [filteredHistory, currentPage]);
+
+  const canPrev = currentPage > 1;
+  const canNext = currentPage < totalPages;
 
   return (
     <div className="space-y-6">
@@ -383,7 +406,7 @@ export default function InfraHistoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
-                {filteredHistory.map((inv) => {
+                {paginatedHistory.map((inv) => {
                   const isFailed    = inv.status === "failed";
                   const riskColor   =
                     isFailed        ? "text-slate-500" :
@@ -440,9 +463,130 @@ export default function InfraHistoryPage() {
                 })}
               </tbody>
             </table>
+
+            {/* ── Pagination Controls ── */}
+            <div className="flex items-center justify-between border-t border-white/[0.06] pt-4 mt-2 px-2">
+              {/* Left: record count */}
+              <p className="text-[11px] text-slate-500 font-medium">
+                Showing{" "}
+                <span className="text-slate-300 font-bold">
+                  {Math.min((currentPage - 1) * PAGE_SIZE + 1, filteredHistory.length)}
+                </span>
+                {"–"}
+                <span className="text-slate-300 font-bold">
+                  {Math.min(currentPage * PAGE_SIZE, filteredHistory.length)}
+                </span>
+                {" of "}
+                <span className="text-slate-300 font-bold">{filteredHistory.length}</span>
+                {" records"}
+              </p>
+
+              {/* Right: page nav */}
+              <div className="flex items-center gap-1">
+                {/* First */}
+                <button
+                  type="button"
+                  disabled={!canPrev}
+                  onClick={() => setCurrentPage(1)}
+                  className={`p-1.5 rounded-lg border transition-all ${
+                    canPrev
+                      ? "border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+                      : "border-transparent text-slate-700 cursor-not-allowed"
+                  }`}
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+
+                {/* Previous */}
+                <button
+                  type="button"
+                  disabled={!canPrev}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                    canPrev
+                      ? "border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+                      : "border-transparent text-slate-700 cursor-not-allowed"
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                  </span>
+                </button>
+
+                {/* Page indicator */}
+                <div className="flex items-center gap-1 mx-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((page) => {
+                      // Show first, last, current, and neighbors
+                      if (page === 1 || page === totalPages) return true;
+                      if (Math.abs(page - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .reduce<(number | "...")[]>((acc, page, idx, arr) => {
+                      if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push("...");
+                      acc.push(page);
+                      return acc;
+                    }, [])
+                    .map((item, idx) =>
+                      item === "..." ? (
+                        <span key={`dots-${idx}`} className="text-slate-600 text-xs px-1">…</span>
+                      ) : (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setCurrentPage(item as number)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            currentPage === item
+                              ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 shadow-sm shadow-cyan-500/10"
+                              : "border border-white/[0.06] text-slate-500 hover:text-slate-200 hover:bg-white/[0.06]"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    )}
+                </div>
+
+                {/* Next */}
+                <button
+                  type="button"
+                  disabled={!canNext}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                    canNext
+                      ? "border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+                      : "border-transparent text-slate-700 cursor-not-allowed"
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    Next <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
+                </button>
+
+                {/* Last */}
+                <button
+                  type="button"
+                  disabled={!canNext}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className={`p-1.5 rounded-lg border transition-all ${
+                    canNext
+                      ? "border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+                      : "border-transparent text-slate-700 cursor-not-allowed"
+                  }`}
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </Card>
     </div>
   );
+}
+
+export default function InfraHistoryPage() {
+  return <InfraHistoryContent />;
 }

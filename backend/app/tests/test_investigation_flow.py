@@ -490,13 +490,13 @@ def test_investigation_results_endpoint_logic():
         
         # Since it's pending, calling the route logic directly should trigger a 409
         with pytest.raises(HTTPException) as excinfo:
-            await get_investigation_results(id=investigation.id, supabase=supabase, current_user={})
+            await get_investigation_results(id=investigation.id, supabase=supabase, current_user={"auth_user": attrdict(id="test-user")})
         assert excinfo.value.status_code == 409
 
         # Now update to completed and verify it succeeds
         supabase.table("investigations").update({"status": "completed"}).eq("id", investigation.id).execute()
         
-        res = await get_investigation_results(id=investigation.id, supabase=supabase, current_user={})
+        res = await get_investigation_results(id=investigation.id, supabase=supabase, current_user={"auth_user": attrdict(id="test-user")})
         assert res.success is True
         assert res.data.status == "completed"
 
