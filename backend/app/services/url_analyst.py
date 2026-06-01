@@ -206,30 +206,34 @@ def analyze_url(
 
     # ── Layer 3: AI phishing classifier ───────────────────────────────────
     ai_score = 0.0
-    ai_available = ai_data is not None and ai_data.get("model") != "model_not_loaded"
+    ai_available = ai_data is not None and ai_data.get("model_available", ai_data.get("model") != "model_not_loaded")
     if ai_available:
         is_phishing = ai_data.get("is_phishing", False)
-        ai_conf = ai_data.get("confidence", 0.0)
+        p_phishing = ai_data.get("phishing_probability")
+        if p_phishing is None:
+            # Legacy format: confidence stored raw P(phishing)
+            p_phishing = ai_data.get("confidence", 0.0)
+        ai_score = min(1.0, max(0.0, float(p_phishing)))
+        p_safe = 1.0 - ai_score
         if is_phishing:
-            ai_score = ai_conf
-            signals.append(f"AI: classified as phishing ({ai_conf:.1%} confidence)")
+            signals.append(f"AI: classified as phishing ({ai_score:.1%} probability)")
         else:
-            signals.append(f"AI: classified as safe ({1 - ai_conf:.1%} confidence)")
+            signals.append(f"AI: classified as safe ({p_safe:.1%} confidence)")
 
     # ── Weighted combination ──────────────────────────────────────────────
-    # Weights: Heuristic 30%, VT 35%, AI 35%
+    # Weights: Heuristic 20%, VT 50%, AI 30% (VT-dominant, aligned with primary scorer)
     weights = []
     scores = []
 
-    weights.append(0.30)
+    weights.append(0.20)
     scores.append(heuristic_score)
 
     if vt_available:
-        weights.append(0.35)
+        weights.append(0.50)
         scores.append(vt_score)
 
     if ai_available:
-        weights.append(0.35)
+        weights.append(0.30)
         scores.append(ai_score)
 
     # Normalize weights

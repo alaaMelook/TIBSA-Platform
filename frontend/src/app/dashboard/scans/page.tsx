@@ -207,7 +207,17 @@ interface AIClassifierDetails {
     url: string;
     is_phishing: boolean;
     confidence: number;
+    safe_probability?: number;
+    phishing_probability?: number;
     model: string;
+}
+
+interface ScoreBreakdown {
+    vt_score?: number;
+    ai_score?: number;
+    vt_weight?: number;
+    ai_weight?: number;
+    weighted_score?: number;
 }
 
 // ─── Malware Analyst Result ───────────────────────────────────────
@@ -238,6 +248,7 @@ interface CombinedDetails {
     threat_level?: string;
     threat_score?: number;
     verdict?: string;
+    score_breakdown?: ScoreBreakdown;
     analyst?: MalwareAnalystResult;
     url_analyst?: URLAnalystResult;
 }
@@ -585,8 +596,22 @@ function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
 
 // ─── Threat Score Display ──────────────────────────────────────────
 
-function ThreatScoreDisplay({ score, verdict }: { score: number; verdict: string }) {
+function ThreatScoreDisplay({
+    score,
+    verdict,
+    breakdown,
+}: {
+    score: number;
+    verdict: string;
+    breakdown?: ScoreBreakdown;
+}) {
     const pct = Math.round(score * 100);
+    const vtWeightPct = breakdown?.vt_weight != null
+        ? Math.round(breakdown.vt_weight * 100)
+        : 70;
+    const aiWeightPct = breakdown?.ai_weight != null
+        ? Math.round(breakdown.ai_weight * 100)
+        : 30;
 
     const verdictConfig: Record<string, { color: string; bg: string; border: string; ring: string; icon: string }> = {
         Malicious: { color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", ring: "stroke-red-500", icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" },
@@ -613,7 +638,7 @@ function ThreatScoreDisplay({ score, verdict }: { score: number; verdict: string
                 </div>
                 <div>
                     <p className="text-sm font-semibold text-slate-200">Combined Threat Score</p>
-                    <p className="text-[10px] text-slate-500">Weighted: 60% AI · 40% VirusTotal</p>
+                    <p className="text-[10px] text-slate-500">Weighted: {vtWeightPct}% VirusTotal · {aiWeightPct}% AI</p>
                 </div>
             </div>
 
@@ -670,11 +695,11 @@ function ThreatScoreDisplay({ score, verdict }: { score: number; verdict: string
                         <div className="grid grid-cols-2 gap-2">
                             <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2">
                                 <p className="text-[10px] text-slate-500 font-medium">AI Weight</p>
-                                <p className="text-sm font-bold text-purple-400">60%</p>
+                                <p className="text-sm font-bold text-purple-400">{aiWeightPct}%</p>
                             </div>
                             <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2">
                                 <p className="text-[10px] text-slate-500 font-medium">VT Weight</p>
-                                <p className="text-sm font-bold text-blue-400">40%</p>
+                                <p className="text-sm font-bold text-blue-400">{vtWeightPct}%</p>
                             </div>
                         </div>
 
@@ -1234,6 +1259,7 @@ function ScanDetailModal({
                                         <ThreatScoreDisplay
                                             score={(rawDetails as CombinedDetails).threat_score!}
                                             verdict={(rawDetails as CombinedDetails).verdict!}
+                                            breakdown={(rawDetails as CombinedDetails).score_breakdown}
                                         />
                                     </div>
                                 )}
