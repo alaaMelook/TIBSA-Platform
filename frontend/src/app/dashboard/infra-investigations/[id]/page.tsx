@@ -18,8 +18,9 @@ import { Button } from "@/components/ui";
 import {
   ArrowLeft, Globe, AlertOctagon, Clock, RefreshCw, StopCircle,
   ShieldAlert, Search, GitBranch, AlertTriangle, Sparkles, Network,
-  Loader2, CheckCircle, XCircle,
+  Loader2, CheckCircle, XCircle, Download,
 } from "lucide-react";
+import { generateInfraPDFReport } from "../infraReportGenerator";
 
 // ─── Loading animation ─────────────────────────────────────────────────────────
 
@@ -276,6 +277,16 @@ export default function InfraInvestigationWorkspace() {
           <span className="text-xs text-slate-500 font-mono flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />{activeDuration}
           </span>
+          {isTerminal && results && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => generateInfraPDFReport(investigation)}
+              className="flex items-center gap-1.5 bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 font-bold"
+            >
+              <Download className="w-4 h-4" /> Export Report
+            </Button>
+          )}
           <button onClick={() => refresh()} className="p-2 rounded-lg border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all">
             <RefreshCw className="w-4 h-4" />
           </button>
