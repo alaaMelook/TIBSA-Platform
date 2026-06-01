@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { Globe, Clock, Sparkles, Sliders } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard/infra-investigations/scanner",   label: "Scanner",    icon: <Globe className="w-3.5 h-3.5" />,    exact: true  },
-  { href: "/dashboard/infra-investigations",          label: "History",    icon: <Clock className="w-3.5 h-3.5" />,    exact: false },
+  { href: "/dashboard/infra-investigations",          label: "Scanner",    icon: <Globe className="w-3.5 h-3.5" />,    exact: true  },
+  { href: "/dashboard/infra-investigations/history",   label: "History",    icon: <Clock className="w-3.5 h-3.5" />,    exact: true  },
   { href: "/dashboard/infra-investigations/reports",   label: "AI Reports", icon: <Sparkles className="w-3.5 h-3.5" />, exact: true  },
   { href: "/dashboard/infra-investigations/settings",  label: "Settings",   icon: <Sliders className="w-3.5 h-3.5" />,  exact: true  },
 ];
