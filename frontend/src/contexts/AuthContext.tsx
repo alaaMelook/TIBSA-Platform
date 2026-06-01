@@ -8,6 +8,7 @@ import type { User, AuthState, LoginCredentials, RegisterCredentials } from "@/t
 
 interface AuthContextType extends AuthState {
     login: (credentials: LoginCredentials) => Promise<void>;
+    loginWithOAuth: (provider: "google" | "github") => Promise<void>;
     register: (credentials: RegisterCredentials) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
@@ -166,6 +167,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/");
     };
 
+    const loginWithOAuth = async (provider: "google" | "github") => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider,
+            options: {
+                redirectTo: `${window.location.origin}/dashboard`,
+            },
+        });
+        if (error) throw new Error(error.message);
+    };
+
     const refreshUser = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
@@ -174,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ ...state, login, register, logout, refreshUser }}>
+        <AuthContext.Provider value={{ ...state, login, loginWithOAuth, register, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );

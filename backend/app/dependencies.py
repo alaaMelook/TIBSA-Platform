@@ -70,6 +70,8 @@ async def get_current_user(
     """
     Extract and verify the current user from the JWT token.
     Uses in-memory cache to avoid hitting Supabase Auth on every request.
+    Detects OAuth logins (Google, GitHub) and logs them to audit_logs.
+    Auto-creates a profile row for new OAuth users.
     """
     try:
         token = credentials.credentials
@@ -78,7 +80,6 @@ async def get_current_user(
         cached = _get_cached_user(token)
         if cached:
             from datetime import datetime, timezone
-            # Check if user is active (from cache)
             ACTIVE_PRESENCE[cached.id] = datetime.now(timezone.utc).isoformat()
             _update_db_last_seen(supabase, cached.id)
             return {"auth_user": cached, "token": token}
@@ -90,19 +91,62 @@ async def get_current_user(
                 detail="Invalid or expired token",
             )
 
+        auth_user = user_response.user
+
         # Check if user is inactive in the users table
-        user_record = supabase.table("users").select("is_active").eq("id", user_response.user.id).single().execute()
-        if user_record.data and user_record.data.get("is_active") is False:
+        user_record = supabase.table("users").select("is_active").eq("id", auth_user.id).execute()
+        if user_record.data and user_record.data[0].get("is_active") is False:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Your account has been deactivated. Please contact support.",
             )
 
-        _cache_user(token, user_response.user)
+        # ── Auto-create profile for new OAuth users ───────────────
+        if not user_record.data:
+            try:
+                email = auth_user.email or ""
+                meta = auth_user.user_metadata or {}
+                full_name = (
+                    meta.get("full_name")
+                    or meta.get("name")
+                    or meta.get("user_name")
+                    or (email.split("@")[0] if email else "User")
+                )
+                supabase.table("users").insert({
+                    "id": auth_user.id,
+                    "email": email,
+                    "full_name": full_name,
+                    "role": "user",
+                    "is_active": True,
+                }).execute()
+            except Exception:
+                pass  # Ignore duplicate inserts (concurrent requests)
+
+        # ── Audit log for OAuth logins (first appearance in session) ──
+        if auth_user.id not in ACTIVE_PRESENCE:
+            try:
+                app_meta = auth_user.app_metadata or {}
+                provider = app_meta.get("provider", "email")
+                if provider in ("google", "github"):
+                    from datetime import datetime, timezone
+                    supabase.table("audit_logs").insert({
+                        "user_id": auth_user.id,
+                        "action_type": "LOGIN",
+                        "severity": "info",
+                        "message": f"User signed in via {provider.title()} OAuth.",
+                        "metadata": {
+                            "resource": "auth",
+                            "provider": provider,
+                        },
+                    }).execute()
+            except Exception:
+                pass  # Never block auth on audit failure
+
+        _cache_user(token, auth_user)
         from datetime import datetime, timezone
-        ACTIVE_PRESENCE[user_response.user.id] = datetime.now(timezone.utc).isoformat()
-        _update_db_last_seen(supabase, user_response.user.id)
-        return {"auth_user": user_response.user, "token": token}
+        ACTIVE_PRESENCE[auth_user.id] = datetime.now(timezone.utc).isoformat()
+        _update_db_last_seen(supabase, auth_user.id)
+        return {"auth_user": auth_user, "token": token}
     except HTTPException:
         raise
     except Exception as e:
