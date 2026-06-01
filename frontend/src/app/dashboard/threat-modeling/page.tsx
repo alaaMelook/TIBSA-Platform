@@ -377,6 +377,7 @@ export default function ThreatModelingPage() {
     const [saveMsg, setSaveMsg] = useState("");
     const [saveErr, setSaveErr] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [autoSaved, setAutoSaved] = useState(false);
     const [nameError, setNameErr] = useState("");
     const [showWarning, setShowWarning] = useState(false);
 
@@ -498,6 +499,41 @@ export default function ThreatModelingPage() {
                 return;
             }
             setShowWarning(!!response.generic_warning);
+
+            // ── Auto-save to database ──
+            if (token) {
+                setIsSaving(true);
+                setAutoSaved(false);
+                try {
+                    await api.post(
+                        "/api/v1/threat-modeling/analyses",
+                        {
+                            project_name: form.projectName,
+                            app_type: form.appType,
+                            uses_auth: form.usesAuth,
+                            uses_database: form.usesDatabase,
+                            has_admin_panel: form.hasAdminPanel,
+                            uses_external_apis: form.usesExternalAPIs,
+                            stores_sensitive_data: form.storesSensitiveData,
+                            frameworks: form.frameworks,
+                            languages: form.languages,
+                            deploy_envs: form.deployEnvs,
+                            deploy_types: form.deployTypes,
+                            databases: form.databases,
+                            protocols: form.protocols,
+                        },
+                        token,
+                    );
+                    setAutoSaved(true);
+                    setSaveMsg("✅ Report auto-saved to your history.");
+                    setTimeout(() => setSaveMsg(""), 5000);
+                } catch {
+                    setSaveErr("⚠️ Auto-save failed — you can save manually if needed.");
+                    setTimeout(() => setSaveErr(""), 6000);
+                } finally {
+                    setIsSaving(false);
+                }
+            }
         } catch (error) {
             console.error("STRIDE analysis failed:", error);
             // Fallback to a basic error result
@@ -518,7 +554,7 @@ export default function ThreatModelingPage() {
         setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
     };
 
-    const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setSaveErr(""); setNameErr(""); setShowWarning(false); };
+    const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setSaveErr(""); setNameErr(""); setShowWarning(false); setAutoSaved(false); };
 
     const handleSave = async () => {
         if (!result || !token) return;
@@ -814,12 +850,21 @@ export default function ThreatModelingPage() {
                                             </svg>
                                             Download JSON
                                         </Button>
-                                        <Button variant="secondary" size="sm" onClick={handleSave} disabled={!canSave}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                                            </svg>
-                                            {isSaving ? "Saving…" : "Save Report"}
-                                        </Button>
+                                        {isSaving ? (
+                                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 px-3 py-2">
+                                                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Saving…
+                                            </span>
+                                        ) : autoSaved ? (
+                                            <span className="inline-flex items-center gap-1.5 text-xs text-green-400 px-3 py-2">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Saved
+                                            </span>
+                                        ) : null}
                                         <Button variant="ghost" size="sm" onClick={handleReset}>
                                             <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

@@ -1,4 +1,3 @@
-# MODIFIED: FIX 5 | Mapped each STRIDE category to correct ASVS chapters (Spoofing→V2+V3, Tampering→V6+V12, Repudiation→V7, InfoDisc→V8+V9, DoS→V11+V12, PrivElev→V4+V13); added missing ASVSControl entries with level/requirement_text/verification_method
 """
 Threat Modeling – ASVS Control Mapping.
 
@@ -13,21 +12,17 @@ from dataclasses import dataclass
 from app.models.threat_modeling import STRIDECategory, ThreatItem
 
 
-# ─── STRIDE → ASVS Control ID Mapping (FIX 5) ─────────────────────────────
-# Maps each STRIDE category to the correct ASVS chapters per spec:
-#   Spoofing       → V2 (Authentication) + V3 (Session Management)
-#   Tampering      → V6 (Cryptography)  + V12 (Files & Resources)
-#   Repudiation    → V7 (Error Handling & Logging)
-#   Info Disclosure→ V8 (Data Protection) + V9 (Communications)
-#   DoS            → V11 (Business Logic) + V12 (Files & Resources)
-#   Priv Elevation → V4 (Access Control) + V13 (API & Web Services)
+# ─── STRIDE → ASVS Control ID Mapping ────────────────────────────────────────
+# Maps each STRIDE category to its 3 highest-priority ASVS control IDs.
+# The IDs are stored directly on ThreatItem.asvs_controls so the frontend
+# can render them as clickable ASVS references (e.g. "V2.1.1").
 STRIDE_TO_ASVS_IDS: Dict[STRIDECategory, List[str]] = {
     STRIDECategory.SPOOFING:               ["V2.1.1", "V2.2.4", "V3.2.2"],
-    STRIDECategory.TAMPERING:              ["V6.2.1", "V6.2.2", "V12.1.1"],
-    STRIDECategory.REPUDIATION:            ["V7.1.1", "V7.1.2", "V7.2.1"],
-    STRIDECategory.INFORMATION_DISCLOSURE: ["V8.1.1", "V8.2.1", "V9.1.1"],
-    STRIDECategory.DENIAL_OF_SERVICE:      ["V11.1.1", "V11.1.2", "V12.1.1"],
-    STRIDECategory.ELEVATION_OF_PRIVILEGE: ["V4.1.1", "V4.1.3", "V13.1.1"],
+    STRIDECategory.TAMPERING:              ["V5.1.3", "V4.1.2", "V6.1.2"],
+    STRIDECategory.REPUDIATION:            ["V8.1.2", "V8.1.3", "V4.1.1"],
+    STRIDECategory.INFORMATION_DISCLOSURE: ["V9.1.3", "V7.1.1", "V10.1.1"],
+    STRIDECategory.DENIAL_OF_SERVICE:      ["V13.1.2", "V10.1.2", "V4.1.5"],
+    STRIDECategory.ELEVATION_OF_PRIVILEGE: ["V4.1.3", "V4.1.4", "V2.3.1"],
 }
 
 
@@ -560,233 +555,6 @@ class ASVSControlDatabase:
                 level="L2",
                 requirement="14.1.3",
                 stride_categories=[STRIDECategory.TAMPERING]
-            ),
-
-            # ─────────────────────────────────────────────────────────────────
-            # FIX 5: Missing ASVS chapters required by the updated STRIDE_TO_ASVS_IDS.
-            # V6 = Cryptography (Tampering), V7 = Error Handling & Logging (Repudiation),
-            # V8 = Data Protection (Info Disclosure), V9 = Communications (Info Disclosure),
-            # V11 = Business Logic (DoS), V13 = API & Web Services (Priv Elevation)
-            # ─────────────────────────────────────────────────────────────────
-
-            # V6 – Cryptography (maps to Tampering per FIX 5)
-            "V6.2.1": ASVSControl(
-                id="V6.2.1",
-                category="Cryptography",
-                description="Verify that all cryptographic modules fail securely and errors are handled in a way that does not enable Padding Oracle attacks.",
-                level="L1",
-                requirement="6.2.1",
-                stride_categories=[STRIDECategory.TAMPERING]
-            ),
-            "V6.2.2": ASVSControl(
-                id="V6.2.2",
-                category="Cryptography",
-                description="Verify that industry proven or government approved cryptographic algorithms, modes, and libraries are used, instead of custom coded cryptography.",
-                level="L2",
-                requirement="6.2.2",
-                stride_categories=[STRIDECategory.TAMPERING, STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V6.2.3": ASVSControl(
-                id="V6.2.3",
-                category="Cryptography",
-                description="Verify that encryption initialization vector, cipher configuration, and block modes are configured securely using the latest advice.",
-                level="L2",
-                requirement="6.2.3",
-                stride_categories=[STRIDECategory.TAMPERING]
-            ),
-            "V6.2.5": ASVSControl(
-                id="V6.2.5",
-                category="Cryptography",
-                description="Verify that known insecure block modes (i.e. ECB, etc.), padding modes (i.e. PKCS#1 v1.5, etc.), ciphers with small block sizes (i.e. Triple-DES, Blowfish, etc.), and weak hashing algorithms (i.e. MD5, SHA1, etc.) are not used unless required for backwards compatibility.",
-                level="L1",
-                requirement="6.2.5",
-                stride_categories=[STRIDECategory.TAMPERING, STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-
-            # V7 – Error Handling & Logging (maps to Repudiation per FIX 5)
-            "V7.1.1": ASVSControl(
-                id="V7.1.1",
-                category="Error Handling and Logging",
-                description="Verify that the application does not log credentials or payment details. Session tokens should only be stored in logs in an irreversible, hashed form.",
-                level="L1",
-                requirement="7.1.1",
-                stride_categories=[STRIDECategory.REPUDIATION, STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V7.1.2": ASVSControl(
-                id="V7.1.2",
-                category="Error Handling and Logging",
-                description="Verify that the application does not log other sensitive data as defined under local privacy laws or relevant security policy.",
-                level="L1",
-                requirement="7.1.2",
-                stride_categories=[STRIDECategory.REPUDIATION, STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V7.2.1": ASVSControl(
-                id="V7.2.1",
-                category="Error Handling and Logging",
-                description="Verify that all authentication decisions are logged, without storing sensitive session tokens or passwords. This should include requests with relevant metadata needed for security investigations.",
-                level="L2",
-                requirement="7.2.1",
-                stride_categories=[STRIDECategory.REPUDIATION]
-            ),
-            "V7.2.2": ASVSControl(
-                id="V7.2.2",
-                category="Error Handling and Logging",
-                description="Verify that all access control decisions can be logged and all failed decisions are logged. This should include requests with relevant metadata needed for security investigations.",
-                level="L2",
-                requirement="7.2.2",
-                stride_categories=[STRIDECategory.REPUDIATION, STRIDECategory.ELEVATION_OF_PRIVILEGE]
-            ),
-            "V7.3.1": ASVSControl(
-                id="V7.3.1",
-                category="Error Handling and Logging",
-                description="Verify that the logging system has controls to prevent unauthorized access and cannot be manipulated to erase or tamper with existing records.",
-                level="L2",
-                requirement="7.3.1",
-                stride_categories=[STRIDECategory.REPUDIATION, STRIDECategory.TAMPERING]
-            ),
-
-            # V8 – Data Protection (maps to Information Disclosure per FIX 5)
-            "V8.1.1": ASVSControl(
-                id="V8.1.1",
-                category="Data Protection",
-                description="Verify that the application protects sensitive data from being cached in server components such as load balancers and application caches.",
-                level="L2",
-                requirement="8.1.1",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V8.1.2": ASVSControl(
-                id="V8.1.2",
-                category="Data Protection",
-                description="Verify that all cached or temporary copies of sensitive data stored on the server are protected from unauthorized access or purged/invalidated after the authorized user accesses the sensitive data.",
-                level="L2",
-                requirement="8.1.2",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V8.2.1": ASVSControl(
-                id="V8.2.1",
-                category="Data Protection",
-                description="Verify that the application sets sufficient anti-caching headers so that sensitive data is not cached in modern browsers.",
-                level="L1",
-                requirement="8.2.1",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V8.2.2": ASVSControl(
-                id="V8.2.2",
-                category="Data Protection",
-                description="Verify that data stored in client side storage (such as HTML5 local storage, session storage, IndexedDB, regular cookies or Flash cookies) does not contain sensitive data or PII.",
-                level="L1",
-                requirement="8.2.2",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V8.3.1": ASVSControl(
-                id="V8.3.1",
-                category="Data Protection",
-                description="Verify that sensitive data is sent to the server in the HTTP message body or headers, and that query string parameters from any HTTP verb do not contain sensitive data.",
-                level="L1",
-                requirement="8.3.1",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-
-            # V9 – Communications (maps to Information Disclosure per FIX 5)
-            "V9.1.1": ASVSControl(
-                id="V9.1.1",
-                category="Communications",
-                description="Verify that TLS is used for all client connectivity, and does not fall back to insecure or unencrypted communications.",
-                level="L1",
-                requirement="9.1.1",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE, STRIDECategory.TAMPERING]
-            ),
-            "V9.1.2": ASVSControl(
-                id="V9.1.2",
-                category="Communications",
-                description="Verify using up to date TLS testing tools that only strong cipher suites are enabled, with the strongest cipher suites set as preferred.",
-                level="L1",
-                requirement="9.1.2",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V9.1.3": ASVSControl(
-                id="V9.1.3",
-                category="Communications",
-                description="Verify that old versions of SSL and TLS protocols, algorithms, ciphers, and configuration are disabled, such as SSLv2, SSLv3, or TLS 1.0 and 1.1. The latest version of TLS should be the preferred cipher suite.",
-                level="L1",
-                requirement="9.1.3",
-                stride_categories=[STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-
-            # V11 – Business Logic (maps to Denial of Service per FIX 5)
-            "V11.1.1": ASVSControl(
-                id="V11.1.1",
-                category="Business Logic",
-                description="Verify that the application will only process business logic flows for the same user in sequential step order and without skipping steps.",
-                level="L1",
-                requirement="11.1.1",
-                stride_categories=[STRIDECategory.DENIAL_OF_SERVICE, STRIDECategory.ELEVATION_OF_PRIVILEGE]
-            ),
-            "V11.1.2": ASVSControl(
-                id="V11.1.2",
-                category="Business Logic",
-                description="Verify that the application will only process business logic flows with all steps being processed in realistic human time, i.e. transactions are not submitted too quickly.",
-                level="L1",
-                requirement="11.1.2",
-                stride_categories=[STRIDECategory.DENIAL_OF_SERVICE]
-            ),
-            "V11.1.4": ASVSControl(
-                id="V11.1.4",
-                category="Business Logic",
-                description="Verify that the application has anti-automation controls to protect against excessive calls such as mass data exfiltration, business logic requests, file uploads or denial of service attacks.",
-                level="L1",
-                requirement="11.1.4",
-                stride_categories=[STRIDECategory.DENIAL_OF_SERVICE]
-            ),
-            "V11.1.6": ASVSControl(
-                id="V11.1.6",
-                category="Business Logic",
-                description="Verify that the application does not suffer from \"Time Of Check to Time Of Use\" (TOCTOU) issues or other race conditions for sensitive operations.",
-                level="L2",
-                requirement="11.1.6",
-                stride_categories=[STRIDECategory.DENIAL_OF_SERVICE, STRIDECategory.TAMPERING]
-            ),
-
-            # V13 – API & Web Services (maps to Priv Elevation per FIX 5)
-            "V13.1.1": ASVSControl(
-                id="V13.1.1",
-                category="API and Web Service",
-                description="Verify that all application components use the same encodings and parsers to avoid parsing attacks that exploit different URI or file parsing behavior that could be used in SSRF and RFI attacks.",
-                level="L1",
-                requirement="13.1.1",
-                stride_categories=[STRIDECategory.ELEVATION_OF_PRIVILEGE, STRIDECategory.TAMPERING]
-            ),
-            "V13.1.2": ASVSControl(
-                id="V13.1.2",
-                category="API and Web Service",
-                description="Verify that API URLs do not expose sensitive information, such as the API key, session tokens etc.",
-                level="L1",
-                requirement="13.1.2",
-                stride_categories=[STRIDECategory.ELEVATION_OF_PRIVILEGE, STRIDECategory.INFORMATION_DISCLOSURE]
-            ),
-            "V13.1.3": ASVSControl(
-                id="V13.1.3",
-                category="API and Web Service",
-                description="Verify that API endpoints are protected by access controls, including HTTP methods and verb tampering protection.",
-                level="L1",
-                requirement="13.1.3",
-                stride_categories=[STRIDECategory.ELEVATION_OF_PRIVILEGE]
-            ),
-            "V13.2.1": ASVSControl(
-                id="V13.2.1",
-                category="API and Web Service",
-                description="Verify that enabled RESTful HTTP methods are a valid choice for the user or action, such that normal users cannot use DELETE or PUT on protected API or resources.",
-                level="L1",
-                requirement="13.2.1",
-                stride_categories=[STRIDECategory.ELEVATION_OF_PRIVILEGE, STRIDECategory.TAMPERING]
-            ),
-            "V13.2.3": ASVSControl(
-                id="V13.2.3",
-                category="API and Web Service",
-                description="Verify that RESTful web services that utilize cookies are protected from Cross-Site Request Forgery via the use of at least one or more of the following: double submit cookie pattern, CSRF nonces, or Origin request header checks.",
-                level="L1",
-                requirement="13.2.3",
-                stride_categories=[STRIDECategory.ELEVATION_OF_PRIVILEGE, STRIDECategory.TAMPERING]
             ),
         }
 

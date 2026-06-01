@@ -1,4 +1,3 @@
-# MODIFIED: FIX 3 | Dynamic risk_score computation (weighted avg High=3/Med=2/Low=1, floor=65 for High); per-threat priority scores computed individually via base_score*stride_weight*asset_sensitivity; risk_label thresholds 0-39=Low,40-64=Med,65-84=High,85-100=Critical
 """
 Threat Modeling – Heatmap Generation Service.
 
@@ -13,108 +12,6 @@ from dataclasses import dataclass
 from collections import defaultdict
 
 from app.models.threat_modeling import ThreatItem, HeatmapData, STRIDECategory, ThreatStatus
-
-
-# ─── Module-level risk scoring helpers (FIX 3) ───────────────────────────────────
-
-# STRIDE category weight multipliers for priority score computation.
-_STRIDE_WEIGHT: Dict[str, float] = {
-    "SPOOFING":               1.2,
-    "TAMPERING":              1.1,
-    "REPUDIATION":            0.9,
-    "INFORMATION_DISCLOSURE": 1.3,
-    "DENIAL_OF_SERVICE":      1.0,
-    "ELEVATION_OF_PRIVILEGE": 1.4,
-}
-
-# Asset sensitivity multiplier derived from data classification strings.
-_SENSITIVITY_MULTIPLIER: Dict[str, float] = {
-    "confidential": 1.3,
-    "restricted":   1.2,
-    "high":         1.2,
-    "medium":       1.0,
-    "low":          0.8,
-    "public":       0.7,
-}
-
-
-def _get_stride_weight(stride_category: Optional[STRIDECategory]) -> float:
-    """Return the numeric STRIDE weight for a given STRIDECategory."""
-    if stride_category is None:
-        return 1.0
-    return _STRIDE_WEIGHT.get(stride_category.value.upper().replace(" ", "_"), 1.0)
-
-
-def _get_asset_sensitivity_multiplier(threat: ThreatItem) -> float:
-    """
-    Derive an asset sensitivity multiplier from available threat metadata.
-
-    Falls back to 1.0 if no sensitivity information is available.
-    Uses threat.risk as a proxy for asset sensitivity when dedicated
-    data-classification metadata is absent.
-    """
-    risk = (threat.risk or "").lower()
-    return _SENSITIVITY_MULTIPLIER.get(risk, 1.0)
-
-
-def compute_overall_risk_score(threats: List[ThreatItem]) -> int:
-    """
-    FIX 3 – Compute an overall risk score (0–100) from a threat list.
-
-    Formula: weighted average of all threat base_scores where
-      High   threats have weight = 3
-      Medium threats have weight = 2
-      Low    threats have weight = 1
-
-    Floor: if ANY threat has risk_level == 'High', the final score is ≥ 65.
-
-    risk_label mapping:
-      0–39   → Low
-      40–64  → Medium
-      65–84  → High
-      85–100 → Critical
-    """
-    if not threats:
-        return 0
-
-    weight_map = {"High": 3, "Medium": 2, "Low": 1}
-    total_weight = 0
-    weighted_sum = 0.0
-
-    for t in threats:
-        # Use base_score if present, fall back to priority_score, then 50
-        base = getattr(t, "base_score", None) or t.priority_score or 50
-        w = weight_map.get(t.risk or "Medium", 1)
-        total_weight += w
-        weighted_sum += base * w
-
-    score = round(weighted_sum / total_weight) if total_weight else 0
-
-    # Enforce floor of 65 when any High-risk threat is present
-    has_high = any(t.risk == "High" for t in threats)
-    if has_high:
-        score = max(score, 65)
-
-    return min(100, score)
-
-
-def risk_label_from_score(score: int) -> str:
-    """
-    FIX 3 – Convert a 0–100 score to a risk label using the canonical thresholds.
-
-      0–39   → Low
-      40–64  → Medium
-      65–84  → High
-      85–100 → Critical
-    """
-    if score >= 85:
-        return "Critical"
-    if score >= 65:
-        return "High"
-    if score >= 40:
-        return "Medium"
-    return "Low"
-
 
 
 @dataclass
@@ -482,11 +379,6 @@ class HeatmapGenerator:
             threat_id, x_coordinate (0.0-1.0), y_coordinate (0.0-1.0),
             risk_score (0-100), category.
 
-        FIX 3: risk_score is now computed individually per threat as:
-            base_score * stride_weight * asset_sensitivity_multiplier
-        ensuring no two unrelated threats share an identical score unless
-        their inputs are genuinely identical.
-
         x-axis = normalised Likelihood, y-axis = normalised Impact.
         Both are derived from the threat's risk level since ThreatItem has no
         explicit likelihood/impact fields.
@@ -501,20 +393,11 @@ class HeatmapGenerator:
             x = round(likelihood_score / self.max_likelihood, 2)
             y = round(impact_score / self.max_impact, 2)
 
-            # FIX 3: compute risk_score dynamically using the formula:
-            #   risk_score = base_score * stride_weight * asset_sensitivity_multiplier
-            base = getattr(threat, "base_score", None) or threat.priority_score or round(
-                likelihood_score * impact_score / self.max_impact * 20
-            )
-            stride_w = _get_stride_weight(threat.stride_category)
-            sensitivity_m = _get_asset_sensitivity_multiplier(threat)
-            computed_score = min(100, round(base * stride_w * sensitivity_m))
-
             heatmap_points.append(HeatmapData(
                 threat_id=threat.id,
                 x_coordinate=x,
                 y_coordinate=y,
-                risk_score=computed_score,
+                risk_score=threat.priority_score if threat.priority_score else round(likelihood_score * impact_score / self.max_impact * 20),
                 category=(
                     threat.stride_category.value
                     if threat.stride_category

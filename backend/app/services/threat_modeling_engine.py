@@ -1,4 +1,3 @@
-# MODIFIED: FIX 4 | Called get_stack_aware_threats() after _build_threats and merged/deduplicated stack-aware threats before enrichment; updated _risk_label thresholds to match FIX 3 spec (0-39=Low,40-64=Medium,65-84=High,85-100=Critical); risk_score now uses weighted-average compute_overall_risk_score
 """
 Threat Modeling – Enhanced threat generation engine.
 
@@ -42,7 +41,7 @@ from app.services.stride_rules import (
 from app.services.capec_enrichment import CAPECEnrichmentService, THREAT_TITLE_TO_CAPEC
 from app.services.asvs_mapping import ASVSControlDatabase, STRIDE_TO_ASVS_IDS
 from app.services.llm_summarization import LLMSummarizationService
-from app.services.heatmap_generator import HeatmapGenerator, compute_overall_risk_score, risk_label_from_score
+from app.services.heatmap_generator import HeatmapGenerator
 from app.services.export_service import ExportService
 
 
@@ -348,19 +347,12 @@ def _enrich_threat(threat: ThreatItem) -> ThreatItem:
 
 
 def _risk_label(score: int) -> str:
-    """
-    Convert risk score to label (FIX 3 thresholds).
-
-      0–39   → Low
-      40–64  → Medium
-      65–84  → High
-      85–100 → Critical
-    """
-    if score >= 85:
+    """Convert risk score to label."""
+    if score >= 80:
         return "Critical"
-    if score >= 65:
+    if score >= 60:
         return "High"
-    if score >= 40:
+    if score >= 35:
         return "Medium"
     return "Low"
 
@@ -498,39 +490,11 @@ def analyze_stride(
 
     # Step 1: Generate base threats + raw additive score (backward-compatible)
     threats, raw_score = _build_threats(req)
-
-    # Step 1b FIX 4: Generate stack-aware threats from STRIDE engine and merge
-    # Build tech_context from the request fields
-    characteristics: List[str] = []
-    if getattr(req, 'stores_sensitive_data', False):
-        characteristics.append('Stores Sensitive Data')
-    if getattr(req, 'has_admin_panel', False):
-        characteristics.append('Has Admin Panel')
-
-    tech_context: Dict[str, Any] = {
-        "frameworks":      req.frameworks or [],
-        "databases":       req.databases or [],
-        "protocols":       req.protocols or [],
-        "characteristics": characteristics,
-        "system_metadata": getattr(req, 'system_metadata', {}) or {},
-    }
-
-    stack_aware_threats = _engine.stride_engine.get_stack_aware_threats(
-        normalized_arch=None,
-        tech_context=tech_context,
-    )
-
-    # Merge: prefer existing title-keyed threats; append new stack-aware ones
-    existing_ids = {t.id for t in threats}
-    existing_titles = {t.title for t in threats}
-    for sat in stack_aware_threats:
-        if sat.id not in existing_ids and sat.title not in existing_titles:
-            threats.append(sat)
-            existing_ids.add(sat.id)
-            existing_titles.add(sat.title)
-
+    
     # Step 2: Apply stack-specific context (suppressions & injections)
     context_threats, generic_warning = _apply_stack_context(threats, req)
+    
+    capped_score = min(raw_score, 100) # (Optionally recalculate raw_score here based on injections)
 
     # Step 3: Deterministic enrichment for every threat
     enriched_threats = [_enrich_threat(t) for t in context_threats]
@@ -543,15 +507,12 @@ def analyze_stride(
     if generate_heatmap:
         heatmap_data = _engine.heatmap_generator.generate_per_threat_heatmap(enriched_threats)
 
-    # FIX 3: Use weighted-average risk score instead of raw additive accumulation
-    final_score = compute_overall_risk_score(enriched_threats)
-
     return ThreatModelAnalyzeResponse(
         threats=enriched_threats,
         mitigations=mitigations,
         heatmap_data=heatmap_data,
-        risk_score=final_score,
-        risk_label=_risk_label(final_score),
+        risk_score=capped_score,
+        risk_label=_risk_label(capped_score),
         generic_warning=generic_warning,
     )
 

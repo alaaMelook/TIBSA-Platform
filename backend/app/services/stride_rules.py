@@ -1,4 +1,3 @@
-# MODIFIED: FIX 1, FIX 4 | Updated base_score values (0-100 scale) for all 6 STRIDE rules; added get_stack_aware_threats() for tech-stack context-aware threat generation
 """
 Threat Modeling – STRIDE Rules Engine.
 
@@ -292,10 +291,10 @@ def _compute_overall_risk_score(threats: List[ThreatItem]) -> int:
 
     score = round(weighted_sum / total_weight) if total_weight else 0
 
-    # Guarantee floor of 65 when any High-risk threat exists (FIX 3 spec)
+    # Guarantee floor of 70 when any High-risk threat exists
     has_high = any(t.risk == "High" for t in threats)
     if has_high:
-        score = max(score, 65)
+        score = max(score, 70)
 
     return min(100, score)
 
@@ -715,20 +714,18 @@ class STRIDEEngine:
         """
         return [
             # S – Spoofing: likelihood=4, impact=4 → score=80
-            # base_score=75 reflects High risk (entry points without auth, internet-exposed)
             STRIDERule(
                 category=STRIDECategory.SPOOFING,
                 name="Authentication Bypass",
-                condition="Entry points without authentication exposed to internet",
+                condition="Entry points without authentication",
                 threat_template="Spoofing through unauthenticated entry points",
                 mitigation_template="Implement authentication",
                 risk_level="High",
-                base_score=75,
+                base_score=15,
                 likelihood=4,
                 impact=4,
             ),
             # T – Tampering: likelihood=3, impact=5 → score=84
-            # base_score=70 reflects High risk (unencrypted sensitive data flows)
             STRIDERule(
                 category=STRIDECategory.TAMPERING,
                 name="Data Integrity Violation",
@@ -736,59 +733,56 @@ class STRIDEEngine:
                 threat_template="Data tampering in transit",
                 mitigation_template="Implement encryption",
                 risk_level="High",
-                base_score=70,
+                base_score=18,
                 likelihood=3,
                 impact=5,
             ),
             # R – Repudiation: likelihood=2, impact=3 → score=52
-            # base_score=50 reflects Medium risk (missing audit_logging flag)
             STRIDERule(
                 category=STRIDECategory.REPUDIATION,
                 name="Audit Logging Absence",
-                condition="Missing audit_logging flag on system metadata",
+                condition="No audit logging",
                 threat_template="Actions cannot be tracked",
                 mitigation_template="Implement audit logging",
                 risk_level="Medium",
-                base_score=50,
+                base_score=10,
                 likelihood=2,
                 impact=3,
             ),
-            # I – Information Disclosure: likelihood=4, impact=5 → score=92
-            # base_score=80 reflects High risk (sensitive assets reachable via internet-exposed entry points)
+            # I – Information Disclosure: likelihood=3, impact=5 → score=84
+            # Use slightly different values to keep scores distinct from T
             STRIDERule(
                 category=STRIDECategory.INFORMATION_DISCLOSURE,
                 name="Data Exposure",
-                condition="Sensitive assets reachable via internet-exposed entry points",
+                condition="Sensitive data accessible via internet",
                 threat_template="Confidential data disclosure",
                 mitigation_template="Implement access controls",
                 risk_level="High",
-                base_score=80,
+                base_score=20,
                 likelihood=4,
                 impact=5,
             ),
             # D – Denial of Service: likelihood=3, impact=3 → score=60
-            # base_score=55 reflects Medium risk (internet-exposed surfaces with no rate limiting)
             STRIDERule(
                 category=STRIDECategory.DENIAL_OF_SERVICE,
                 name="Service Unavailability",
-                condition="Internet-exposed surfaces with no rate limiting",
+                condition="Internet-exposed entry points",
                 threat_template="Denial of service attacks",
                 mitigation_template="Implement DoS protection",
                 risk_level="Medium",
-                base_score=55,
+                base_score=12,
                 likelihood=3,
                 impact=3,
             ),
             # E – Elevation of Privilege: likelihood=2, impact=5 → score=76
-            # base_score=72 reflects High risk (trust boundary crossings with high-risk network zones)
             STRIDERule(
                 category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
                 name="Privilege Escalation",
-                condition="Trust boundary crossings with high-risk network zones",
+                condition="Weak trust boundaries",
                 threat_template="Unauthorized privilege elevation",
                 mitigation_template="Implement access controls",
                 risk_level="High",
-                base_score=72,
+                base_score=18,
                 likelihood=2,
                 impact=5,
             ),
@@ -812,11 +806,9 @@ class STRIDEEngine:
         threats = self.generate_threats(architecture, system_metadata)
         score = self.compute_overall_risk_score(threats)
         
-        # Calculate risk label using FIX 3 thresholds
+        # Calculate risk label
         risk_label = "Low"
-        if score >= 85:
-            risk_label = "Critical"
-        elif score >= 65:
+        if score >= 70:
             risk_label = "High"
         elif score >= 40:
             risk_label = "Medium"
@@ -851,256 +843,7 @@ class STRIDEEngine:
         """
         Compute an overall risk score (0–100) from the threat list.
 
-        If any threat is High risk, the score is ≥ 65 (FIX 3 floor).
+        If any threat is High risk, the score is ≥ 70.
         Score is computed dynamically from individual priority_scores.
         """
         return _compute_overall_risk_score(threats)
-
-    def get_stack_aware_threats(
-        self,
-        normalized_arch: Any,
-        tech_context: Dict[str, Any],
-    ) -> List[ThreatItem]:
-        """
-        FIX 4 – Generate tech-stack-aware threats that supplement the core STRIDE pass.
-
-        Parameters
-        ----------
-        normalized_arch:
-            A NormalizedArchitecture instance (or any object with an .assets list).
-            Unused directly here but kept for future asset-level analysis.
-        tech_context:
-            Dict with keys:
-              - 'frameworks'        : List[str]
-              - 'databases'         : List[str]
-              - 'protocols'         : List[str]
-              - 'characteristics'   : List[str]  (e.g. ['Stores Sensitive Data', 'Has Admin Panel'])
-              - 'system_metadata'   : Dict[str, Any]  (passed through for mitigation enrichment)
-
-        Returns
-        -------
-        List[ThreatItem] – deduplicated stack-specific threats.
-        """
-        threats: List[ThreatItem] = []
-        seen_ids: set = set()
-
-        frameworks  = [f.lower() for f in (tech_context.get("frameworks") or [])]
-        databases   = [d.lower() for d in (tech_context.get("databases") or [])]
-        protocols   = [p.lower() for p in (tech_context.get("protocols") or [])]
-        chars       = [c.lower() for c in (tech_context.get("characteristics") or [])]
-        sys_meta    = tech_context.get("system_metadata") or {}
-
-        def _add(threat: ThreatItem) -> None:
-            if threat.id not in seen_ids:
-                seen_ids.add(threat.id)
-                threats.append(threat)
-
-        # ── Framework rules ────────────────────────────────────────────
-
-        # Django / Laravel / Rails → CSRF threat
-        if any(fw in frameworks for fw in ("django", "laravel", "rails")):
-            _add(ThreatItem(
-                id="stack-csrf-framework",
-                title="Cross-Site Request Forgery (CSRF)",
-                stride_category=STRIDECategory.TAMPERING,
-                risk="Medium",
-                category="Web Security",
-                description=(
-                    "Django/Laravel/Rails applications expose state-changing endpoints that are "
-                    "vulnerable to CSRF if anti-forgery tokens are missing or misconfigured."
-                ),
-                mitigation=self._append_framework_mitigations_by_category(
-                    "Use framework-built-in CSRF middleware (e.g. Django {% csrf_token %}, "
-                    "Laravel VerifyCsrfToken, Rails protect_from_forgery). "
-                    "Set SameSite=Strict on session cookies.",
-                    STRIDECategory.TAMPERING,
-                    sys_meta,
-                ),
-                base_score=48,
-                priority_score=48,
-            ))
-
-        # React / Vue / Angular → DOM XSS / Client-side injection threat
-        if any(fw in frameworks for fw in ("react", "vue", "angular", "next.js", "nuxt")):
-            _add(ThreatItem(
-                id="stack-dom-xss-frontend",
-                title="DOM XSS / Client-Side Injection",
-                stride_category=STRIDECategory.TAMPERING,
-                risk="Medium",
-                category="Web Security",
-                description=(
-                    "React/Vue/Angular applications may be vulnerable to DOM-based XSS "
-                    "when user-controlled data is passed to dangerous sinks such as "
-                    "innerHTML, dangerouslySetInnerHTML, or document.write without sanitization."
-                ),
-                mitigation=self._append_framework_mitigations_by_category(
-                    "Avoid dangerouslySetInnerHTML (React) / v-html (Vue) / bypassSecurityTrustHtml (Angular). "
-                    "Sanitize all HTML with DOMPurify before rendering. "
-                    "Enforce a strict Content Security Policy (CSP).",
-                    STRIDECategory.TAMPERING,
-                    sys_meta,
-                ),
-                base_score=52,
-                priority_score=52,
-            ))
-
-        # ── Database rules ─────────────────────────────────────────────
-
-        # MongoDB → NoSQL Injection (CAPEC-261)
-        if "mongodb" in databases:
-            _add(ThreatItem(
-                id="stack-nosql-injection-mongodb",
-                title="NoSQL Injection (MongoDB)",
-                stride_category=STRIDECategory.TAMPERING,
-                risk="High",
-                category="Injection",
-                description=(
-                    "MongoDB query operators (e.g. $where, $regex, $gt) embedded in unsanitized "
-                    "user input can bypass authentication or dump entire collections. "
-                    "[CAPEC-261, CWE-943]"
-                ),
-                mitigation=(
-                    "Sanitize all inputs to strip MongoDB operators before query construction. "
-                    "Use Mongoose schema validation with strict mode. "
-                    "Disable the $where operator in MongoDB configuration. "
-                    "Apply principle of least privilege on database accounts."
-                ),
-                capec_id="CAPEC-261",
-                base_score=73,
-                priority_score=73,
-            ))
-
-        # PostgreSQL / MySQL → SQL Injection (CAPEC-66)
-        if any(db in databases for db in ("postgresql", "mysql", "mariadb", "postgres")):
-            _add(ThreatItem(
-                id="stack-sql-injection-relational",
-                title="SQL Injection",
-                stride_category=STRIDECategory.TAMPERING,
-                risk="High",
-                category="Injection",
-                description=(
-                    "SQL injection in PostgreSQL/MySQL backends allows attackers to read, "
-                    "modify, or delete data by injecting malicious SQL through unsanitized inputs. "
-                    "[CAPEC-66, CWE-89]"
-                ),
-                mitigation=(
-                    "Use parameterized queries or prepared statements exclusively. "
-                    "Never concatenate user input into SQL strings. "
-                    "Apply least-privilege database accounts and enable query logging."
-                ),
-                capec_id="CAPEC-66",
-                base_score=80,
-                priority_score=80,
-            ))
-
-        # ── Protocol rules ─────────────────────────────────────────────
-
-        # HTTP (plain) → Man-in-the-Middle
-        if any(p in protocols for p in ("http (plain)", "http")):
-            _add(ThreatItem(
-                id="stack-mitm-http",
-                title="Man-in-the-Middle via Unencrypted HTTP",
-                stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
-                risk="High",
-                category="Network Security",
-                description=(
-                    "Transmitting data over plain HTTP exposes credentials, tokens, and sensitive "
-                    "payloads to passive eavesdropping and active Man-in-the-Middle (MitM) attacks. "
-                    "[CAPEC-94, CWE-319]"
-                ),
-                mitigation=(
-                    "Migrate to HTTPS everywhere. Enforce HTTP Strict Transport Security (HSTS) "
-                    "with a minimum max-age of 31536000. Redirect all HTTP traffic to HTTPS and "
-                    "configure TLS 1.2+ with strong cipher suites."
-                ),
-                capec_id="CAPEC-94",
-                base_score=78,
-                priority_score=78,
-            ))
-
-        # WebSocket / WSS → WebSocket Hijacking
-        if any(p in protocols for p in ("websocket", "wss", "websocket / wss")):
-            _add(ThreatItem(
-                id="stack-websocket-hijacking",
-                title="WebSocket Hijacking",
-                stride_category=STRIDECategory.TAMPERING,
-                risk="Medium",
-                category="Network Security",
-                description=(
-                    "WebSocket connections that do not validate the Origin header or require "
-                    "authentication tokens at upgrade time are vulnerable to cross-site WebSocket "
-                    "hijacking, enabling attackers to read messages or inject commands. "
-                    "[CAPEC-111, CWE-346]"
-                ),
-                mitigation=(
-                    "Validate the Origin header on every WebSocket upgrade request. "
-                    "Use WSS (TLS-wrapped) exclusively. "
-                    "Require authentication tokens at connection time and re-validate periodically."
-                ),
-                capec_id="CAPEC-111",
-                base_score=57,
-                priority_score=57,
-            ))
-
-        # ── Characteristics rules ───────────────────────────────────────
-
-        # Stores Sensitive Data → elevate any existing Information Disclosure threats
-        # (handled in threat_modeling_engine.py merge step; also add a base threat here)
-        if "stores sensitive data" in chars:
-            _add(ThreatItem(
-                id="stack-info-disclosure-sensitive",
-                title="Sensitive Data Information Disclosure",
-                stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
-                risk="High",   # Elevated to High per spec
-                category="Data Security",
-                description=(
-                    "The system stores sensitive data (PII, credentials, financial records). "
-                    "Misconfigured access controls, weak encryption, or verbose error messages "
-                    "can expose this data to unauthorized parties."
-                ),
-                mitigation=(
-                    "Classify and inventory all sensitive data. Encrypt at rest (AES-256) and "
-                    "in transit (TLS 1.3+). Apply data masking in logs. Enforce strict access "
-                    "controls and run quarterly data access audits."
-                ),
-                base_score=82,
-                priority_score=82,
-            ))
-
-        # Has Admin Panel → Broken Access Control targeting admin surface
-        if "has admin panel" in chars:
-            _add(ThreatItem(
-                id="stack-broken-access-admin",
-                title="Broken Access Control on Admin Panel",
-                stride_category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
-                risk="High",
-                category="Authorization",
-                description=(
-                    "The admin panel exposes privileged functionality. Missing or bypassable "
-                    "access controls allow low-privilege users or unauthenticated attackers to "
-                    "perform administrative actions, leading to full system compromise."
-                ),
-                mitigation=(
-                    "Implement server-side role enforcement on every admin route. "
-                    "Require MFA for all admin accounts. Restrict admin access by IP allowlist "
-                    "where feasible. Audit all admin actions and alert on anomalies. "
-                    "Pen-test the admin surface at least annually."
-                ),
-                base_score=85,
-                priority_score=85,
-            ))
-
-        return threats
-
-    def _append_framework_mitigations_by_category(
-        self,
-        base_mitigation: str,
-        stride_category: STRIDECategory,
-        system_metadata: Dict[str, Any],
-    ) -> str:
-        """Helper used by get_stack_aware_threats to append framework mitigations."""
-        extras = _get_framework_mitigations(stride_category, system_metadata)
-        if extras:
-            joined = " ".join(extras)
-            return f"{base_mitigation} Additionally: {joined}"
-        return base_mitigation
