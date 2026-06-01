@@ -15,10 +15,12 @@ from app.config import settings
 from app.services.virustotal_service import VirusTotalService
 from app.services import malice_service
 from app.services.ml_engine import MLEngine
+from app.services.phishing_feedback import record_scan_feedback
 from app.services.notification_service import NotificationService
 from app.services.threat_scoring import compute_threat_score
 from app.services.malware_analyst import analyze_malware
 from app.services.url_analyst import analyze_url
+from app.services.virustotal_service import normalize_url_for_vt
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +69,10 @@ class ScanService:
                     "Configure VIRUSTOTAL_API_KEY or train the phishing model."
                 ),
             )
+        normalized = normalize_url_for_vt(url)
         scan_id = str(uuid.uuid4())
-        saved = self._insert_scan(scan_id, user_id, "url", url)
-        background_tasks.add_task(self._run_url_scan, scan_id, url)
+        saved = self._insert_scan(scan_id, user_id, "url", normalized)
+        background_tasks.add_task(self._run_url_scan, scan_id, normalized)
         return saved
 
     async def scan_file(
@@ -344,9 +347,8 @@ class ScanService:
     async def _execute_url_combined_scan(self, scan_id: str, url: str) -> None:
         """
         Run VirusTotal + AI phishing classifier in parallel for URL scans.
-        Merges results using the logic:
-          - VT malicious/suspicious OR AI phishing → High
-          - Both sources say safe                  → Clean
+        Merges results via weighted scoring (VT 70%, AI 30%) with
+        security-first overrides when VT confirms malicious detections.
         """
         def _is_cancelled() -> bool:
             try:
@@ -371,7 +373,7 @@ class ScanService:
 
             # Build concurrent tasks
             vt_task = (
-                self.vt.scan_url(url)
+                self.vt.scan_url(url, debug=settings.debug)
                 if self.vt
                 else asyncio.sleep(0, result=None)
             )
@@ -407,19 +409,28 @@ class ScanService:
 
             ai_is_phishing = ai_data.get("is_phishing", False)
             ai_confidence  = ai_data.get("confidence", 0.0)
+            ai_model_available = ai_data.get("model_available", ai_data.get("model") != "model_not_loaded")
+            ai_phishing_probability = ai_data.get("phishing_probability")
+            if ai_phishing_probability is None and ai_model_available:
+                # Legacy scans stored raw P(phishing) in confidence
+                ai_phishing_probability = ai_confidence
 
-            threat_score, verdict, final_level = compute_threat_score(
+            threat_score, verdict, final_level, score_breakdown = compute_threat_score(
                 vt_malicious=vt_malicious,
                 vt_total=vt_total,
+                vt_suspicious=vt_suspicious,
                 ai_is_phishing=ai_is_phishing,
                 ai_confidence=ai_confidence,
+                ai_phishing_probability=ai_phishing_probability if ai_model_available else None,
+                ai_model_available=ai_model_available,
+                url=url,
             )
 
             # ── URL Analyst — structured threat assessment ────────────
             url_analysis = analyze_url(
                 url=url,
                 vt_data=vt_data if not vt_data.get("error") else None,
-                ai_data=ai_data if ai_data.get("model") != "model_not_loaded" else None,
+                ai_data=ai_data if ai_model_available else None,
             )
 
             # ── Build summary ─────────────────────────────────────────
@@ -432,10 +443,15 @@ class ScanService:
                 summary_parts.append("VirusTotal: scan failed")
 
             ai_label = "phishing" if ai_is_phishing else "safe"
-            if ai_data.get("model") != "model_not_loaded":
+            if ai_model_available:
+                p_phish_str = (
+                    f"{ai_phishing_probability:.1%}"
+                    if ai_phishing_probability is not None
+                    else "N/A"
+                )
                 summary_parts.append(
                     f"AI Model: classified as {ai_label} "
-                    f"(confidence: {ai_confidence:.1%})"
+                    f"(confidence: {ai_confidence:.1%}, p_phishing: {p_phish_str})"
                 )
             else:
                 summary_parts.append("AI Model: not loaded")
@@ -449,8 +465,26 @@ class ScanService:
             summary = ". ".join(summary_parts) + f". Threat Score: {threat_score:.2f} ({verdict}). Overall threat level: {final_level}."
 
             logger.info(
-                "URL scan %s — VT: %s/%s malicious, AI: %s (%.2f), Score: %.2f, Verdict: %s, level: %s, URL-class: %s",
-                scan_id, vt_malicious, vt_total, ai_label, ai_confidence, threat_score, verdict, final_level, url_analysis.classification,
+                "URL scan %s — VT: %s/%s malicious (%s suspicious) source=%s mock=%s, "
+                "AI: %s (confidence=%.2f, p_phishing=%s), "
+                "Score: %.2f (before_override=%.2f) Verdict: %s, level: %s, "
+                "override=%s, URL-class: %s, breakdown: %s",
+                scan_id,
+                vt_malicious,
+                vt_total,
+                vt_suspicious,
+                vt_data.get("source", "unknown"),
+                vt_data.get("mock", self.vt.uses_mock_data if self.vt else None),
+                ai_label,
+                ai_confidence,
+                score_breakdown.get("ai_phishing_probability"),
+                threat_score,
+                score_breakdown.get("weighted_score_before_override"),
+                verdict,
+                final_level,
+                score_breakdown.get("override_applied"),
+                url_analysis.classification,
+                score_breakdown,
             )
 
             self.supabase.table("scans").update({
@@ -466,12 +500,28 @@ class ScanService:
                     "virustotal": vt_data,
                     "ai_classifier": ai_data,
                     "threat_score": threat_score,
+                    "score_breakdown": score_breakdown,
                     "verdict": verdict,
                     "threat_level": final_level,
                     "url_analyst": url_analysis.to_dict(),
+                    "vt_uses_mock": self.vt.uses_mock_data if self.vt else None,
+                    "submitted_url": vt_data.get("submitted_url", url),
                 },
                 "indicators": url_analysis.signals,
             }).execute()
+
+            # ── Live feedback loop (VT-authoritative labels for retraining) ──
+            if ai_model_available and vt_data and not vt_data.get("error"):
+                try:
+                    await asyncio.to_thread(
+                        record_scan_feedback,
+                        url=url,
+                        scan_id=scan_id,
+                        ai_data=ai_data,
+                        vt_data=vt_data,
+                    )
+                except Exception as fb_exc:  # noqa: BLE001
+                    logger.warning("Failed to record live feedback for %s: %s", scan_id, fb_exc)
 
             self._notify_completion(scan_id, final_level)
 

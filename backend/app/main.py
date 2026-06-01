@@ -107,6 +107,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(scans.router, prefix="/api/v1/scans", tags=["Scans"])
+app.include_router(diagnostics.router, prefix="/api/v1/diagnostics", tags=["Diagnostics"])
 app.include_router(threats.router, prefix="/api/v1/threats", tags=["Threat Intelligence"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(website_scanner.router, prefix="/api/v1/website-scanner", tags=["Website Scanner"])

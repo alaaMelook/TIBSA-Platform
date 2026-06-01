@@ -1,0 +1,16 @@
+url,ai_prediction,ai_phishing_probability,vt_malicious,vt_suspicious,vt_total,final_label,label_source,scan_id,timestamp
+https://opensees.wixstudio.com/enus,0,0.0,19,1,93,1,vt_malicious,d42ff8e0-8c6b-46a2-8f5c-98398b416968,2026-05-31T10:28:53.844888+00:00
+https://en-dydx.wixstudio.com/exchange,0,0.0001,0,0,93,0,vt_clean_ai_safe,b393ca1e-1d11-499d-bcc5-5a17d4eb1927,2026-06-01T13:10:26.910413+00:00
+https://paypal-login-secure.xyz,0,0.2382,0,0,93,0,vt_clean_ai_safe,0f7b0a57-e4a4-4d2c-9197-9c76804a3bd2,2026-06-01T13:28:41.465411+00:00
+https://paypal.com,0,0.0001,0,0,93,0,vt_clean_ai_safe,fe05692d-86b4-4a46-b158-6fcfb8ec5054,2026-06-01T13:41:09.010839+00:00
+https://microsoft.com,0,0.0001,24,4,93,1,vt_malicious,cafaf541-e6fa-4552-8579-bc23d31eed7d,2026-06-01T13:41:24.458676+00:00
+https://amazon.com,0,0.0014,0,0,93,0,vt_clean_ai_safe,57d00b97-48bb-420f-adba-bbcb1473b14a,2026-06-01T13:41:47.202697+00:00
+https://microsoft.com,0,0.0001,0,0,92,0,vt_clean_ai_safe,a07558bc-3336-4691-9edd-dcac5aa25b40,2026-06-01T14:03:50.617843+00:00
+https://opensees.wixstudio.com/enus,0,0.0,19,0,92,1,vt_malicious,7986519c-ca3e-4c87-bcde-8d13dfb95b38,2026-06-01T14:05:41.457658+00:00
+https://en-dydx.wixstudio.com/exchange,0,0.0002,16,0,92,1,vt_malicious,74393396-1bd6-4b75-9ca2-639fdcc11147,2026-06-01T14:19:13.794045+00:00
+https://opensees.wixstudio.com/enus,0,0.0,19,0,92,1,vt_malicious,936ef829-aef9-4b31-98e5-154d87ca1bf5,2026-06-01T14:23:31.610937+00:00
+https://gerenteportalpj.digital,0,0.2597,7,0,92,1,vt_malicious,583cf6ca-ada6-4d3d-a464-64116a948d1f,2026-06-01T14:24:34.214058+00:00
+https://paypal-login-secure.xyz,0,0.2336,13,2,92,1,vt_malicious,fc317a13-df13-4d84-bd2e-b4fa46344afd,2026-06-01T14:29:58.107630+00:00
+https://microsoft-account-verify.top,0,0.0434,0,0,92,0,vt_clean_ai_safe,0afc21b3-6a91-484c-8cae-df2234d9266c,2026-06-01T14:35:57.018401+00:00
+https://opensees.wixstudio.com/enus,0,0.0061,19,0,92,1,vt_malicious,8c187d8d-d0e6-404f-986d-b8d586d8dc02,2026-06-01T15:33:54.527583+00:00
+https://bradesco.pjempresascorp.digital,1,0.3801,18,0,92,1,vt_malicious,4dc36f22-f2f6-4293-b9d4-cf91f41dba4e,2026-06-01T15:35:14.564331+00:00

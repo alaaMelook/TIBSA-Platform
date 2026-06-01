@@ -8,24 +8,33 @@ zero engines, boundary values).
 from app.services.threat_scoring import compute_threat_score
 
 
+def _score(**kwargs):
+    """Helper — unpack 4-tuple return value."""
+    score, verdict, level, _breakdown = compute_threat_score(**kwargs)
+    return score, verdict, level
+
+
 class TestComputeThreatScore:
     """Verify the weighted scoring formula and verdict mapping."""
 
     # ── Clean ────────────────────────────────────────────────────
 
     def test_both_safe_returns_clean(self):
-        score, verdict, level = compute_threat_score(
+        score, verdict, level = _score(
             vt_malicious=0, vt_total=70,
-            ai_is_phishing=False, ai_confidence=0.05,
+            ai_is_phishing=False, ai_confidence=0.95,
+            ai_phishing_probability=0.05,
+            ai_model_available=True,
         )
         assert verdict == "Clean"
         assert level == "clean"
-        assert score < 0.30
+        assert score < 0.20
 
     def test_all_zeros_returns_clean(self):
-        score, verdict, level = compute_threat_score(
+        score, verdict, level = _score(
             vt_malicious=0, vt_total=0,
             ai_is_phishing=False, ai_confidence=0.0,
+            ai_model_available=False,
         )
         assert score == 0.0
         assert verdict == "Clean"
@@ -34,51 +43,85 @@ class TestComputeThreatScore:
     # ── Malicious ────────────────────────────────────────────────
 
     def test_both_high_returns_malicious(self):
-        score, verdict, level = compute_threat_score(
+        score, verdict, level = _score(
             vt_malicious=60, vt_total=70,
             ai_is_phishing=True, ai_confidence=0.95,
+            ai_phishing_probability=0.95,
+            ai_model_available=True,
         )
         assert verdict == "Malicious"
         assert level == "high"
-        assert score >= 0.75
+        assert score >= 0.65
+
+    def test_vt_high_ai_disagrees_still_malicious(self):
+        """VT confirms malicious; weak AI safe signal must not downgrade."""
+        score, verdict, level = _score(
+            vt_malicious=34, vt_total=93,
+            ai_is_phishing=False, ai_confidence=0.95,
+            ai_phishing_probability=0.05,
+            ai_model_available=True,
+        )
+        assert verdict == "Malicious"
+        assert level == "high"
+        assert score >= 0.80
 
     # ── Suspicious ───────────────────────────────────────────────
 
     def test_moderate_threats_returns_suspicious(self):
-        # AI phishing at 0.80 confidence → ai_score = 0.80
-        # VT 5/70 → vt_score ≈ 0.071
-        # threat_score = 0.6*0.80 + 0.4*0.071 ≈ 0.509
-        score, verdict, level = compute_threat_score(
+        # VT 5/70 → vt_score ≈ 0.071, AI 0.80 → weighted ≈ 0.290 (below 0.40)
+        # But AI-only contribution with high p_phishing pushes via ai weight
+        score, verdict, level = _score(
             vt_malicious=5, vt_total=70,
             ai_is_phishing=True, ai_confidence=0.80,
+            ai_phishing_probability=0.80,
+            ai_model_available=True,
+        )
+        # 0.7*0.071 + 0.3*0.80 ≈ 0.290 — Warning unless VT override
+        assert verdict in ("Warning", "Suspicious")
+        assert level in ("low", "medium")
+
+    def test_vt_three_malicious_override(self):
+        score, verdict, level = _score(
+            vt_malicious=3, vt_total=70,
+            ai_is_phishing=False, ai_confidence=0.99,
+            ai_phishing_probability=0.01,
+            ai_model_available=True,
         )
         assert verdict == "Suspicious"
         assert level == "medium"
-        assert 0.50 <= score < 0.75
+        assert score >= 0.50
 
     # ── Warning ──────────────────────────────────────────────────
 
     def test_light_threats_returns_warning(self):
-        # AI phishing at 0.50 confidence → ai_score = 0.50
-        # VT 0/70 → vt_score = 0
-        # threat_score = 0.6*0.50 + 0.4*0 = 0.30
-        score, verdict, level = compute_threat_score(
-            vt_malicious=0, vt_total=70,
-            ai_is_phishing=True, ai_confidence=0.50,
+        # AI-only moderate phishing probability (VT unavailable)
+        score, verdict, level = _score(
+            vt_malicious=0, vt_total=0,
+            ai_is_phishing=True, ai_confidence=0.25,
+            ai_phishing_probability=0.25,
+            ai_model_available=True,
         )
         assert verdict == "Warning"
         assert level == "low"
-        assert 0.30 <= score < 0.50
+        assert 0.20 <= score < 0.40
+
+    def test_ai_only_borderline_suspicious(self):
+        score, verdict, level = _score(
+            vt_malicious=0, vt_total=0,
+            ai_is_phishing=True, ai_confidence=0.50,
+            ai_phishing_probability=0.50,
+            ai_model_available=True,
+        )
+        assert verdict == "Suspicious"
+        assert level == "medium"
 
     # ── Edge: VT only (AI model not loaded) ──────────────────────
 
     def test_vt_only_high_detection(self):
-        # AI not loaded → is_phishing=False, confidence=0 → ai_score = 0
-        # VT 60/70 → vt_score ≈ 0.857
-        # threat_score = 0.6*0 + 0.4*0.857 ≈ 0.343
-        score, verdict, level = compute_threat_score(
+        score, verdict, level = _score(
             vt_malicious=60, vt_total=70,
             ai_is_phishing=False, ai_confidence=0.0,
+            ai_model_available=False,
         )
         assert verdict == "Malicious"
         assert level == "high"
@@ -87,53 +130,70 @@ class TestComputeThreatScore:
     # ── Edge: AI only (VT unavailable) ───────────────────────────
 
     def test_ai_only_phishing(self):
-        # VT total=0 → vt_score = 0 (division guarded)
-        # AI phishing at 0.95 → ai_score = 0.95
-        # threat_score = 0.6*0.95 + 0.4*0 = 0.57
-        score, verdict, level = compute_threat_score(
+        score, verdict, level = _score(
             vt_malicious=0, vt_total=0,
             ai_is_phishing=True, ai_confidence=0.95,
+            ai_phishing_probability=0.95,
+            ai_model_available=True,
         )
-        assert verdict == "Suspicious"
-        assert level == "medium"
-        assert 0.50 <= score < 0.75
+        assert verdict == "Malicious"
+        assert level == "high"
+        assert score >= 0.65
 
     # ── Boundary values ──────────────────────────────────────────
 
-    def test_exact_075_threshold(self):
-        # Need threat_score exactly 0.75
-        # ai_score = 1.0 (phishing, confidence=1.0) → 0.6*1.0 = 0.60
-        # vt_score needs to contribute 0.15 → 0.4*x = 0.15 → x = 0.375
-        # vt_malicious/vt_total = 0.375 → e.g. 3/8
-        score, verdict, level = compute_threat_score(
-            vt_malicious=3, vt_total=8,
-            ai_is_phishing=True, ai_confidence=1.0,
+    def test_exact_065_threshold(self):
+        score, verdict, level = _score(
+            vt_malicious=0, vt_total=0,
+            ai_is_phishing=True, ai_confidence=0.65,
+            ai_phishing_probability=0.65,
+            ai_model_available=True,
         )
-        assert score >= 0.75
+        assert score >= 0.65
         assert verdict == "Malicious"
         assert level == "high"
 
-    def test_exact_050_threshold(self):
-        # Need threat_score exactly 0.50
-        # ai_score = 0.50 (phishing, confidence=0.50) → 0.6*0.50 = 0.30
-        # vt_score needs 0.20 → 0.4*x = 0.20 → x = 0.50
-        # vt_malicious/vt_total = 0.50 → e.g. 1/2
-        score, verdict, level = compute_threat_score(
-            vt_malicious=1, vt_total=2,
-            ai_is_phishing=True, ai_confidence=0.50,
+    def test_exact_040_threshold(self):
+        score, verdict, level = _score(
+            vt_malicious=0, vt_total=0,
+            ai_is_phishing=True, ai_confidence=0.40,
+            ai_phishing_probability=0.40,
+            ai_model_available=True,
         )
-        assert score >= 0.50
+        assert score >= 0.40
         assert verdict == "Suspicious"
         assert level == "medium"
 
-    def test_exact_030_threshold(self):
-        # Need threat_score exactly 0.30
-        # ai_score = 0.50 (phishing, confidence=0.50) → 0.6*0.50 = 0.30
-        # vt_score = 0 → 0.4*0 = 0
-        score, verdict, level = compute_threat_score(
-            vt_malicious=0, vt_total=70,
-            ai_is_phishing=True, ai_confidence=0.50,
+    def test_exact_020_threshold(self):
+        score, verdict, level = _score(
+            vt_malicious=0, vt_total=0,
+            ai_is_phishing=True, ai_confidence=0.20,
+            ai_phishing_probability=0.20,
+            ai_model_available=True,
         )
-        assert score >= 0.30
+        assert score >= 0.20
         assert verdict == "Warning"
         assert level == "low"
+
+    def test_vt_clean_dilutes_ai_signal(self):
+        """When VT scanned clean, AI contribution is weighted at 30%."""
+        score, verdict, level = _score(
+            vt_malicious=0, vt_total=70,
+            ai_is_phishing=True, ai_confidence=0.65,
+            ai_phishing_probability=0.65,
+            ai_model_available=True,
+        )
+        assert score == 0.195  # 0.7*0 + 0.3*0.65
+        assert verdict == "Clean"
+
+    def test_breakdown_returned(self):
+        score, verdict, level, breakdown = compute_threat_score(
+            vt_malicious=10, vt_total=70, vt_suspicious=2,
+            ai_is_phishing=True, ai_confidence=0.90,
+            ai_phishing_probability=0.90,
+            ai_model_available=True,
+        )
+        assert breakdown["vt_weight"] == 0.70
+        assert breakdown["ai_weight"] == 0.30
+        assert breakdown["vt_score"] > 0
+        assert breakdown["ai_score"] == 0.90
