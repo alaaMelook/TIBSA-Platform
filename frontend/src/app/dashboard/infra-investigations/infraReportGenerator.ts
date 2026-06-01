@@ -1,7 +1,8 @@
 /**
  * Premium SOC-Style PDF report generator for Threat Infrastructure Intelligence investigations.
  * Uses jsPDF to compile complex threat intelligence data into an elegant, high-impact PDF layout.
- * Optimized with high-contrast Slate-900 typography and conditional section rendering (hiding empty sections).
+ * Optimized with high-contrast Slate-900 typography, conditional section rendering, and dynamic wrapping.
+ * Fully self-scaling boxes and multi-line wrapping prevent any overflow or clipping of text.
  */
 import jsPDF from "jspdf";
 import { InfraInvestigation, InfraInvestigationResults, ThreatIndicatorCheck } from "@/types/infra_investigation";
@@ -712,20 +713,23 @@ export function generateInfraPDFReport(
     y += 7;
 
     indicators.checks.forEach((chk) => {
-      checkPage(18);
-      
       const isTriggered = chk.triggered;
       const borderC = isTriggered ? getIndicatorColor(chk.severity) : [226, 232, 240];
       const bgC = isTriggered ? [254, 242, 242] : [248, 250, 252];
 
+      // Self-scaling description text height to avoid box overflow
+      const descLines = doc.splitTextToSize(sanitize(chk.description), contentW - 55);
+      const boxH = Math.max(16, descLines.length * 5 + 8);
+      checkPage(boxH + 3.5);
+
       doc.setFillColor(bgC[0], bgC[1], bgC[2]);
       doc.setDrawColor(borderC[0], borderC[1], borderC[2]);
       doc.setLineWidth(0.4);
-      doc.roundedRect(margin, y, contentW, 15, 0.5, 0.5, "FD");
+      doc.roundedRect(margin, y, contentW, boxH, 0.5, 0.5, "FD");
 
       // Custom bullet indicator
       doc.setFillColor(borderC[0], borderC[1], borderC[2]);
-      doc.rect(margin + 5, y + 5.5, 4, 4, "F");
+      doc.rect(margin + 5, y + (boxH - 4) / 2, 4, 4, "F");
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10.5);
@@ -735,20 +739,20 @@ export function generateInfraPDFReport(
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
-      doc.text(sanitize(chk.description), margin + 14, y + 11);
+      doc.text(descLines, margin + 14, y + 11.5);
 
       // Trigger Badge State right
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       if (isTriggered) {
         doc.setTextColor(220, 38, 38);
-        doc.text(`TRIGGERED (${chk.severity.toUpperCase()})`, pageW - margin - 6, y + 9, { align: "right" });
+        doc.text(`TRIGGERED (${chk.severity.toUpperCase()})`, pageW - margin - 6, y + (boxH - 6) / 2 + 3.5, { align: "right" });
       } else {
         doc.setTextColor(100, 116, 139);
-        doc.text("CLEAN", pageW - margin - 6, y + 9, { align: "right" });
+        doc.text("CLEAN", pageW - margin - 6, y + (boxH - 6) / 2 + 3.5, { align: "right" });
       }
 
-      y += 18;
+      y += boxH + 3.5;
     });
     y += 6;
   }
@@ -775,11 +779,16 @@ export function generateInfraPDFReport(
 
     corr.relationships.forEach((rule) => {
       if (!rule.triggered) return;
-      checkPage(30);
+      
+      const evStr = rule.evidence?.join("; ") || "";
+      const evLines = doc.splitTextToSize(`Evidence: ${evStr}`, contentW - 12);
+      const cardH = 15 + evLines.length * 5.5;
+      checkPage(cardH + 5);
+
       doc.setFillColor(254, 243, 199); // Amber 100
       doc.setDrawColor(245, 158, 11);   // Amber 500
       doc.setLineWidth(0.5);
-      doc.roundedRect(margin, y, contentW, 22, 0.5, 0.5, "FD");
+      doc.roundedRect(margin, y, contentW, cardH, 0.5, 0.5, "FD");
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
@@ -791,11 +800,9 @@ export function generateInfraPDFReport(
       doc.setTextColor(120, 53, 4);
       doc.text(`Relationship: ${sanitize(rule.relationship_type)}  |  Correlation Confidence: ${rule.confidence.toUpperCase()}`, margin + 6, y + 12);
       
-      const evStr = rule.evidence?.join("; ") || "";
-      const evLines = doc.splitTextToSize(`Evidence: ${evStr}`, contentW - 16);
       doc.text(evLines, margin + 6, y + 18);
 
-      y += 26;
+      y += cardH + 5;
     });
     y += 6;
   }
@@ -852,7 +859,14 @@ export function generateInfraPDFReport(
       });
     }
 
-    const consoleBoxH = logLines.length * 5.5 + 10;
+    // Split tree lines to size dynamically to avoid overflowing the console box
+    const flatLogLines: string[] = [];
+    logLines.forEach((line) => {
+      const splitLines = doc.splitTextToSize(sanitize(line), contentW - 14);
+      flatLogLines.push(...splitLines);
+    });
+
+    const consoleBoxH = flatLogLines.length * 5.5 + 10;
     checkPage(consoleBoxH + 12);
     doc.roundedRect(margin, y, contentW, consoleBoxH, 1, 1, "FD");
 
@@ -860,8 +874,8 @@ export function generateInfraPDFReport(
     doc.setFontSize(10); // Very clear high-contrast monospace text
     doc.setTextColor(15, 23, 42); // Black text
     
-    logLines.forEach((line, index) => {
-      doc.text(sanitize(line), margin + 6, y + 7 + index * 5.5);
+    flatLogLines.forEach((line, index) => {
+      doc.text(line, margin + 6, y + 7 + index * 5.5);
     });
     
     y += consoleBoxH + 12;
@@ -884,25 +898,28 @@ export function generateInfraPDFReport(
     y += 9;
 
     actions.forEach((action, i) => {
-      checkPage(18);
+      // Split description text to calculate height dynamically to avoid overflowing checklist items
+      const actLines = doc.splitTextToSize(sanitize(action), contentW - 20);
+      const boxH = Math.max(14, actLines.length * 5.5 + 4);
+      checkPage(boxH + 4);
       
       doc.setFillColor(241, 245, 249);
-      doc.roundedRect(margin, y, contentW, 14, 0.5, 0.5, "F");
+      doc.roundedRect(margin, y, contentW, boxH, 0.5, 0.5, "F");
 
+      // Draw square counter vertically centered
       doc.setFillColor(15, 23, 42);
-      doc.rect(margin + 4, y + 4, 6, 6, "F");
+      doc.rect(margin + 4, y + (boxH - 6) / 2, 6, 6, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
-      doc.text(`${i + 1}`, margin + 7, y + 8.5, { align: "center" });
+      doc.text(`${i + 1}`, margin + 7, y + (boxH - 6) / 2 + 4.5, { align: "center" });
 
       doc.setTextColor(15, 23, 42); // High-contrast black
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.5);
-      const actLines = doc.splitTextToSize(sanitize(action), contentW - 20);
       doc.text(actLines, margin + 14, y + 8.2);
 
-      y += 18;
+      y += boxH + 4;
     });
     y += 6;
   }
@@ -929,7 +946,13 @@ export function generateInfraPDFReport(
     `SSL ENCRYPT SUBJECT : ${sanitize(enr?.ssl?.subject_cn || "N/A")}`
   ];
 
-  const appBoxH = appData.length * 5.5 + 10;
+  const flatAppData: string[] = [];
+  appData.forEach((line) => {
+    const splitLines = doc.splitTextToSize(sanitize(line), contentW - 12);
+    flatAppData.push(...splitLines);
+  });
+
+  const appBoxH = flatAppData.length * 5.5 + 10;
   checkPage(appBoxH + 6);
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
@@ -939,8 +962,8 @@ export function generateInfraPDFReport(
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42); // High-contrast black raw logs
   
-  appData.forEach((line, index) => {
-    doc.text(sanitize(line), margin + 6, y + 7 + index * 5.5);
+  flatAppData.forEach((line, index) => {
+    doc.text(line, margin + 6, y + 7 + index * 5.5);
   });
 
   // ───────────────────────────────────────────────────────────────────────────
