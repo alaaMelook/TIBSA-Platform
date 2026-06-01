@@ -1,3 +1,4 @@
+# MODIFIED: FIX 1, FIX 4 | Updated base_score values (0-100 scale) for all 6 STRIDE rules; added get_stack_aware_threats() for tech-stack context-aware threat generation
 """
 Threat Modeling – STRIDE Rules Engine.
 
@@ -16,6 +17,289 @@ from app.services.normalized_schema import (
 )
 
 
+# ─── Deterministic Lookup Tables ─────────────────────────────────────────────
+
+# Maps legacy threat category strings (as produced by _build_threats) to the
+# corresponding STRIDE category.  Used by the enrichment pipeline so every
+# threat gets a deterministic STRIDE classification without keyword guessing.
+CATEGORY_TO_STRIDE: Dict[str, STRIDECategory] = {
+    "Injection":        STRIDECategory.TAMPERING,
+    "Authentication":   STRIDECategory.SPOOFING,
+    "Authorization":    STRIDECategory.ELEVATION_OF_PRIVILEGE,
+    "Data Security":    STRIDECategory.INFORMATION_DISCLOSURE,
+    "Web Security":     STRIDECategory.TAMPERING,
+    "Infrastructure":   STRIDECategory.ELEVATION_OF_PRIVILEGE,
+    "API Security":     STRIDECategory.ELEVATION_OF_PRIVILEGE,
+    "Supply Chain":     STRIDECategory.TAMPERING,
+    "Network Security": STRIDECategory.INFORMATION_DISCLOSURE,
+    "IoT Security":     STRIDECategory.SPOOFING,
+    "Multi-tenancy":    STRIDECategory.ELEVATION_OF_PRIVILEGE,
+    "Framework Risk":   STRIDECategory.TAMPERING,
+    "Language Risk":    STRIDECategory.TAMPERING,
+    "Audit":            STRIDECategory.REPUDIATION,
+    "Availability":     STRIDECategory.DENIAL_OF_SERVICE,
+}
+
+# Default Likelihood (1–5) and Impact (1–5) per STRIDE category.
+# priority_score formula: (likelihood * 0.4) + (impact * 0.6) * 20  → 0–100 range.
+STRIDE_DEFAULTS: Dict[STRIDECategory, Dict[str, int]] = {
+    STRIDECategory.SPOOFING:               {"likelihood": 3, "impact": 4},
+    STRIDECategory.TAMPERING:              {"likelihood": 3, "impact": 4},
+    STRIDECategory.REPUDIATION:            {"likelihood": 2, "impact": 3},
+    STRIDECategory.INFORMATION_DISCLOSURE: {"likelihood": 3, "impact": 5},
+    STRIDECategory.DENIAL_OF_SERVICE:      {"likelihood": 3, "impact": 3},
+    STRIDECategory.ELEVATION_OF_PRIVILEGE: {"likelihood": 2, "impact": 5},
+}
+
+# Additive adjustments applied to default L and I values based on risk label.
+# "High" threat → +1 to both L and I; "Low" threat → -1.
+RISK_ADJUSTMENTS: Dict[str, int] = {
+    "High":   1,
+    "Medium": 0,
+    "Low":   -1,
+}
+
+# ─── Framework-specific mitigation snippets ───────────────────────────────────
+# Keyed by lower-cased framework/language name; value is a list of
+# mitigation strings injected into threats when that framework is selected.
+FRAMEWORK_MITIGATIONS: Dict[str, Dict[STRIDECategory, str]] = {
+    "django": {
+        STRIDECategory.TAMPERING:              "Use Django's {% csrf_token %} template tag for all state-changing forms.",
+        STRIDECategory.SPOOFING:               "Enable Django's AUTH_PASSWORD_VALIDATORS and use django-allauth for robust authentication.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Set SECURE_HSTS_SECONDS, SECURE_SSL_REDIRECT, and SECURE_CONTENT_TYPE_NOSNIFF in Django settings.",
+        STRIDECategory.REPUDIATION:            "Use Django's built-in logging framework with a tamper-evident backend (e.g., django-db-logger).",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply Django's CONN_MAX_AGE and configure Gunicorn worker timeouts to limit resource exhaustion.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Leverage Django's permission system and @permission_required decorators; never trust client-side roles.",
+    },
+    "fastapi": {
+        STRIDECategory.SPOOFING:               "Use FastAPI's OAuth2PasswordBearer with JWT and HTTPBearer dependency injection.",
+        STRIDECategory.TAMPERING:              "Use Pydantic models for strict input validation on every FastAPI endpoint.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Set CORS origins explicitly via FastAPI's CORSMiddleware; avoid wildcard origins.",
+        STRIDECategory.REPUDIATION:            "Integrate Python's structlog or Loguru with request middleware for request-level audit trails.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use slowapi (Starlette rate-limiter) to enforce per-endpoint rate limits in FastAPI.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use FastAPI's Depends() for role enforcement and verify scopes inside each protected route.",
+    },
+    "flask": {
+        STRIDECategory.TAMPERING:              "Enable Flask-WTF CSRF protection (CSRFProtect) globally in the Flask application factory.",
+        STRIDECategory.SPOOFING:               "Use Flask-Login with a strong SECRET_KEY and session.permanent=False to limit session lifetime.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Set Flask's SESSION_COOKIE_SECURE, SESSION_COOKIE_HTTPONLY, and PREFERRED_URL_SCHEME='https'.",
+        STRIDECategory.REPUDIATION:            "Use Flask's app.logger with a RotatingFileHandler and log all authentication events.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply Flask-Limiter with Redis storage to rate-limit sensitive Flask routes.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Flask-Principal or Flask-Security roles; validate permissions server-side on every request.",
+    },
+    "express": {
+        STRIDECategory.TAMPERING:              "Use csurf middleware and helmet.js to enforce CSRF tokens and security headers in Express.",
+        STRIDECategory.SPOOFING:               "Use passport.js with JWT strategy and short-lived tokens; rotate refresh tokens on each use.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Apply helmet() globally in Express to set X-Frame-Options, CSP, and other security headers.",
+        STRIDECategory.REPUDIATION:            "Use morgan combined with winston to emit structured access logs for every Express request.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply express-rate-limit middleware globally and per-route in the Express application.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use express-jwt-permissions or CASL to enforce role-based access control on Express routes.",
+    },
+    "nestjs": {
+        STRIDECategory.TAMPERING:              "Use NestJS's built-in ValidationPipe with class-validator decorators for strict DTO validation.",
+        STRIDECategory.SPOOFING:               "Use @nestjs/passport with JWT strategy and Guards for authentication in NestJS.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Enable NestJS Helmet middleware and configure CORS with explicit allowed origins.",
+        STRIDECategory.REPUDIATION:            "Use NestJS interceptors to log all incoming requests and responses with correlation IDs.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply @nestjs/throttler module with rate limits on all public NestJS controllers.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use NestJS RolesGuard with @Roles() decorator to enforce RBAC at the controller level.",
+    },
+    "spring boot": {
+        STRIDECategory.TAMPERING:              "Enable Spring Security's CSRF protection and use @Valid annotations for input validation.",
+        STRIDECategory.SPOOFING:               "Configure Spring Security's formLogin with BCryptPasswordEncoder and MFA support.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Set Spring Security's Content-Security-Policy and HSTS headers via HttpSecurity configuration.",
+        STRIDECategory.REPUDIATION:            "Use Spring AOP with @Around advice to log all service-layer method calls with Spring Actuator audit events.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use Bucket4j with Spring Boot to implement token-bucket rate limiting on REST endpoints.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Spring Security's @PreAuthorize('hasRole()') and method-level security for fine-grained authorization.",
+    },
+    "laravel": {
+        STRIDECategory.TAMPERING:              "Laravel auto-applies CSRF protection via VerifyCsrfToken middleware; verify it is not excluded for any route.",
+        STRIDECategory.SPOOFING:               "Use Laravel Sanctum or Passport for API authentication with token expiry.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Set Laravel's SECURE_COOKIES=true and configure Secure, HttpOnly session flags in config/session.php.",
+        STRIDECategory.REPUDIATION:            "Use Laravel's built-in audit logging via spatie/laravel-activitylog for all model changes.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply Laravel's ThrottleRequests middleware globally for rate limiting of API routes.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Laravel Gates and Policies for authorization; never perform authorization in the view layer.",
+    },
+    "rails": {
+        STRIDECategory.TAMPERING:              "Rails includes CSRF protection via protect_from_forgery; ensure it is enabled with :exception strategy.",
+        STRIDECategory.SPOOFING:               "Use Devise gem with password complexity validations, account lockout, and Omniauth for OAuth.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Enable Rails' force_ssl and use SecureHeaders gem to set CSP, HSTS, and other headers.",
+        STRIDECategory.REPUDIATION:            "Use audited or paper_trail gem to track model-level changes for audit trails in Rails.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply rack-attack gem for request throttling and blocking in Rails applications.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Pundit or CanCanCan for authorization; define explicit policies for each resource.",
+    },
+    "asp.net": {
+        STRIDECategory.TAMPERING:              "Use ASP.NET Core's AntiforgeryToken and ValidateAntiForgeryToken attribute on POST endpoints.",
+        STRIDECategory.SPOOFING:               "Configure ASP.NET Core Identity with password hashing (BCrypt) and two-factor authentication.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Use ASP.NET Core's UseHsts() and UseHttpsRedirection() middleware in the pipeline.",
+        STRIDECategory.REPUDIATION:            "Use Serilog with the Audit.NET library to log all action-level events in ASP.NET Core.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply ASP.NET Core's built-in rate limiting middleware (Microsoft.AspNetCore.RateLimiting) in Program.cs.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use ASP.NET Core Authorization Policies with [Authorize(Policy='...')] on controllers.",
+    },
+    "react": {
+        STRIDECategory.TAMPERING:              "Use React's dangerouslySetInnerHTML sparingly and sanitize all HTML with DOMPurify before rendering.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Never store sensitive tokens in localStorage; use HttpOnly cookies for session management in React apps.",
+        STRIDECategory.SPOOFING:               "Use PKCE flow (Authorization Code + PKCE) for OAuth in React SPAs; avoid implicit flow.",
+        STRIDECategory.REPUDIATION:            "Log all user-initiated state changes to a backend audit service from React event handlers.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Debounce expensive API calls and implement client-side request queuing in React components.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Enforce authorization server-side; React role checks are UI-only and must not replace backend guards.",
+    },
+    "next.js": {
+        STRIDECategory.TAMPERING:              "Use Next.js API route middleware to validate CSRF tokens and sanitize request bodies.",
+        STRIDECategory.SPOOFING:               "Use NextAuth.js with PKCE and secure session strategy (database or JWT with short expiry).",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Configure Next.js security headers in next.config.js (X-Frame-Options, CSP, HSTS).",
+        STRIDECategory.REPUDIATION:            "Use Next.js API middleware to log all mutations to a centralized audit log service.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply Vercel rate limiting or next-rate-limit middleware on Next.js API routes.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use NextAuth.js session callbacks to verify roles on the server; protect pages with getServerSideProps.",
+    },
+    "python": {
+        STRIDECategory.TAMPERING:              "Use Python's secrets module for token generation and bleach library for HTML sanitization.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Avoid logging sensitive data; use Python's logging module with a production formatter that masks secrets.",
+        STRIDECategory.SPOOFING:               "Use PyJWT with RS256 algorithm and short-lived tokens for Python-based authentication.",
+        STRIDECategory.REPUDIATION:            "Implement structured JSON logging with Python's structlog to capture audit-grade event records.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use Python's asyncio timeouts and circuit-breaker patterns (e.g., pybreaker) for external calls.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Python's functools.wraps for permission decorator chains and validate roles server-side.",
+    },
+    "javascript": {
+        STRIDECategory.TAMPERING:              "Use DOMPurify to sanitize HTML and avoid eval(); enforce Content-Security-Policy headers.",
+        STRIDECategory.SPOOFING:               "Use the Web Crypto API for cryptographic operations; avoid custom JWT libraries.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Use HttpOnly and Secure cookie flags; avoid exposing sensitive data in client-side JS bundles.",
+        STRIDECategory.REPUDIATION:            "Send audit events from the frontend to a backend logging service using the Beacon API.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Implement client-side request deduplication and exponential backoff for API retries in JavaScript.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Never rely on client-side role checks for authorization; always validate permissions in the backend.",
+    },
+    "typescript": {
+        STRIDECategory.TAMPERING:              "Use Zod or io-ts for runtime type validation in TypeScript to prevent unexpected data mutations.",
+        STRIDECategory.SPOOFING:               "Use strongly typed JWT payloads with TypeScript interfaces and validate them on every request.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Enable TypeScript's strict mode to catch potential null dereferences that may leak sensitive data.",
+        STRIDECategory.REPUDIATION:            "Use TypeScript's discriminated unions for audit event types to ensure type-safe logging.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use TypeScript-aware rate limiting middleware (e.g., express-rate-limit with TS types).",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Define permission enums in TypeScript and use exhaustive checks to enforce RBAC logic.",
+    },
+    "java": {
+        STRIDECategory.TAMPERING:              "Use Bean Validation (JSR-380) annotations (@NotNull, @Size) for input validation in Java.",
+        STRIDECategory.SPOOFING:               "Use Spring Security or Apache Shiro with BCrypt hashing and MFA for Java applications.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Apply OWASP Java HTML Sanitizer and ensure no sensitive data appears in Java exception messages.",
+        STRIDECategory.REPUDIATION:            "Use Log4j2 with structured JSON layout and a WORM-compliant log storage backend in Java.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply Resilience4j rate-limiter and circuit-breaker patterns in Java services.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Java Security Manager policies and enforce method-level security with Spring's @Secured.",
+    },
+    "go": {
+        STRIDECategory.TAMPERING:              "Use Go's encoding/json with strict struct tags and validate all input with go-playground/validator.",
+        STRIDECategory.SPOOFING:               "Use golang-jwt/jwt with RS256 and short-lived tokens for Go service authentication.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Use Go's crypto/tls package with TLS 1.3 and disable weaker cipher suites.",
+        STRIDECategory.REPUDIATION:            "Use zap or zerolog for structured, leveled logging of all Go service security events.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use Go's context.WithTimeout and golang.org/x/time/rate for rate limiting in Go services.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Go's casbin library for RBAC/ABAC enforcement; validate roles in each HTTP handler.",
+    },
+    "php": {
+        STRIDECategory.TAMPERING:              "Use PHP's htmlspecialchars() and prepared statements (PDO) to prevent XSS and SQLi.",
+        STRIDECategory.SPOOFING:               "Use PHP's password_hash(PASSWORD_BCRYPT) and verify tokens with hash_equals() to prevent timing attacks.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Disable PHP error display in production (display_errors=Off) and use a logging library like Monolog.",
+        STRIDECategory.REPUDIATION:            "Use Monolog with a database or syslog handler to record audit events in PHP applications.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use PHP's session-based rate limiting or a Redis-backed throttler for PHP API endpoints.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use PHP's SPL_AUTOLOAD and an authorization library (e.g., PHP-Auth, Zend Permissions) for RBAC.",
+    },
+    "ruby": {
+        STRIDECategory.TAMPERING:              "Rails' CSRF protection covers Ruby apps; additionally use strong_parameters to prevent mass assignment.",
+        STRIDECategory.SPOOFING:               "Use Devise with Argon2 password hashing and two-factor authentication in Ruby on Rails.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Use Rails credentials (rails credentials:edit) to store secrets; never hard-code them in Ruby.",
+        STRIDECategory.REPUDIATION:            "Use Audited or PaperTrail gem to create immutable audit trails for all Ruby model changes.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use Rack::Attack middleware for IP-based rate limiting and throttling in Ruby applications.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Pundit policies for authorization in Ruby; raise Pundit::NotAuthorizedError on violations.",
+    },
+    "rust": {
+        STRIDECategory.TAMPERING:              "Leverage Rust's ownership model to prevent buffer overflows; use Serde for strict deserialization.",
+        STRIDECategory.SPOOFING:               "Use Rust's argon2 crate for password hashing and jsonwebtoken crate for JWT handling.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Use Rust's secrecy crate to wrap sensitive data and prevent accidental debug-logging of secrets.",
+        STRIDECategory.REPUDIATION:            "Use Rust's tracing crate with structured spans for audit-grade logging of Rust service events.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use tower::ServiceBuilder with RateLimit layer for per-route rate limiting in Rust/Axum services.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use Rust's type system to encode permission states at compile-time; validate roles in middleware.",
+    },
+    "c#": {
+        STRIDECategory.TAMPERING:              "Use ASP.NET Core's ModelState.IsValid and data annotation validators ([Required], [MaxLength]) in C#.",
+        STRIDECategory.SPOOFING:               "Use Microsoft.Identity.Web with MSAL for C# service authentication with Entra ID (Azure AD).",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Use C#'s SecureString for sensitive in-memory data and avoid logging PII in .NET applications.",
+        STRIDECategory.REPUDIATION:            "Use Application Insights or Serilog with structured sinks for C# audit event logging.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Use ASP.NET Core RateLimiting middleware (System.Threading.RateLimiting) in C# applications.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use [Authorize(Roles='...')] and policy-based authorization with IAuthorizationService in C#.",
+    },
+    "c / c++": {
+        STRIDECategory.TAMPERING:              "Use bounds-checked functions (strncpy, snprintf) and ASAN/UBSAN during C/C++ development.",
+        STRIDECategory.SPOOFING:               "Use OpenSSL or libsodium for cryptographic operations in C/C++ to prevent authentication bypass.",
+        STRIDECategory.INFORMATION_DISCLOSURE: "Zero out sensitive buffers with explicit_bzero() or SecureZeroMemory() in C/C++ before freeing.",
+        STRIDECategory.REPUDIATION:            "Use syslog() with LOG_AUTHPRIV facility for security-relevant audit events in C/C++ daemons.",
+        STRIDECategory.DENIAL_OF_SERVICE:      "Apply resource limits (setrlimit) and watchdog timers in C/C++ services to prevent DoS.",
+        STRIDECategory.ELEVATION_OF_PRIVILEGE: "Use POSIX capabilities (cap_set_proc) and drop privileges after initialization in C/C++ daemons.",
+    },
+}
+
+
+def _compute_priority_score(likelihood: int, impact: int) -> int:
+    """
+    Compute a unique priority score using the canonical formula.
+
+    Formula: (likelihood * 0.4) + (impact * 0.6) * 20
+    Both likelihood and impact are integers in the range 1–5.
+    Result is rounded to an integer in the range 8–100.
+    """
+    raw = ((likelihood * 0.4) + (impact * 0.6)) * 20
+    return min(100, max(0, round(raw)))
+
+
+def _get_framework_mitigations(
+    stride_category: STRIDECategory,
+    system_metadata: Dict[str, Any]
+) -> List[str]:
+    """
+    Return a list of framework/language-specific mitigation strings for a given
+    STRIDE category, derived from the frameworks and languages listed in
+    system_metadata.
+    """
+    extra: List[str] = []
+    selected: List[str] = (
+        system_metadata.get("frameworks", [])
+        + system_metadata.get("languages", [])
+    )
+    for tech in selected:
+        key = tech.lower()
+        tech_map = FRAMEWORK_MITIGATIONS.get(key)
+        if tech_map:
+            mitigation = tech_map.get(stride_category)
+            if mitigation and mitigation not in extra:
+                extra.append(mitigation)
+    return extra
+
+
+def _compute_overall_risk_score(threats: List[ThreatItem]) -> int:
+    """
+    Compute an overall risk score (0–100) from the threat list dynamically.
+
+    Rules:
+    - If any threat has risk == 'High', the returned score is ≥ 70.
+    - Score is the weighted average of individual priority_scores, clamped to 0–100.
+    """
+    if not threats:
+        return 0
+
+    weights = {"High": 3, "Medium": 2, "Low": 1}
+    total_weight = 0
+    weighted_sum = 0.0
+
+    for t in threats:
+        w = weights.get(t.risk, 1)
+        total_weight += w
+        weighted_sum += t.priority_score * w
+
+    score = round(weighted_sum / total_weight) if total_weight else 0
+
+    # Guarantee floor of 65 when any High-risk threat exists (FIX 3 spec)
+    has_high = any(t.risk == "High" for t in threats)
+    if has_high:
+        score = max(score, 65)
+
+    return min(100, score)
+
+
 @dataclass
 class STRIDERule:
     """Represents a STRIDE rule for threat generation."""
@@ -26,6 +310,17 @@ class STRIDERule:
     mitigation_template: str
     risk_level: RiskLevel
     base_score: int
+
+    # Per-rule likelihood and impact (1–5) used for priority_score computation.
+    # Each rule must have distinct (likelihood, impact) so scores are unique.
+    likelihood: int = 3
+    impact: int = 4
+
+    def _priority_score(self, adj: int = 0) -> int:
+        """Return the canonical priority score with an optional adjustment."""
+        l = max(1, min(5, self.likelihood + adj))
+        i = max(1, min(5, self.impact + adj))
+        return _compute_priority_score(l, i)
 
     def evaluate(self, architecture: NormalizedArchitecture,
                  system_metadata: Dict[str, Any]) -> List[ThreatItem]:
@@ -48,14 +343,43 @@ class STRIDERule:
 
         return threats
 
+    # ── helpers ──────────────────────────────────────────────────────────────
+
+    def _append_framework_mitigations(
+        self,
+        base_mitigation: str,
+        system_metadata: Dict[str, Any],
+    ) -> str:
+        """Append framework/language-specific mitigations to a base mitigation string."""
+        extras = _get_framework_mitigations(self.category, system_metadata)
+        if extras:
+            joined = " ".join(extras)
+            return f"{base_mitigation} Additionally: {joined}"
+        return base_mitigation
+
+    # ── per-category evaluators ───────────────────────────────────────────────
+
     def _evaluate_spoofing(self, architecture: NormalizedArchitecture,
-                          system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                           system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Evaluate spoofing threats."""
         threats = []
 
+        # Only generate Spoofing threat if architecture.entry_points exist AND authentication_required=False
+        if not architecture.entry_points:
+            return threats
+
         # Check entry points without authentication
         for ep in architecture.entry_points:
-            if not ep.authentication_required and ep.exposed_to_internet:
+            if not ep.authentication_required:
+                # Internet-exposed unauthenticated → higher likelihood
+                l = min(5, self.likelihood + 1)
+                i = self.impact
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Implement strong authentication mechanisms for {ep.name}, "
+                    f"such as OAuth 2.0, API keys, or mutual TLS."
+                )
                 threat = ThreatItem(
                     id=f"spoof-{ep.id}",
                     title=f"Spoofing via {ep.name}",
@@ -65,23 +389,29 @@ class STRIDERule:
                         f"An attacker could spoof legitimate users or systems through the "
                         f"{ep.name} entry point, which lacks authentication and is exposed to the internet."
                     ),
-                    mitigation=(
-                        f"Implement strong authentication mechanisms for {ep.name}, "
-                        f"such as OAuth 2.0, API keys, or mutual TLS."
-                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                     stride_category=STRIDECategory.SPOOFING,
                     affected_assets=[ep.id],
                     entry_points=[ep.id],
-                    priority_score=self.base_score + 10  # Higher for internet-exposed
+                    priority_score=ps,
                 )
                 threats.append(threat)
 
         return threats
 
     def _evaluate_tampering(self, architecture: NormalizedArchitecture,
-                           system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                             system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Evaluate tampering threats."""
         threats = []
+
+        app_type = system_metadata.get("app_type", "")
+        if isinstance(app_type, list):
+            app_type = " ".join(app_type)
+        frameworks = system_metadata.get("frameworks", [])
+
+        # Only generate Tampering (CSRF/XSS) if: "Web" in architecture.app_type AND frameworks is not empty
+        if "Web" not in app_type or not frameworks:
+            return threats
 
         # Check data flows without encryption
         for df in architecture.data_flows:
@@ -90,6 +420,14 @@ class STRIDERule:
                 dest_asset = architecture.get_asset_by_id(df.destination_asset_id)
 
                 if source_asset and dest_asset:
+                    l = self.likelihood
+                    i = min(5, self.impact + 1)  # Unencrypted high-sensitivity → higher impact
+                    ps = _compute_priority_score(l, i)
+
+                    base_mitigation = (
+                        f"Implement end-to-end encryption for the {df.name} data flow, "
+                        f"such as TLS 1.3 or application-level encryption."
+                    )
                     threat = ThreatItem(
                         id=f"tamper-{df.id}",
                         title=f"Data Tampering in {df.name}",
@@ -99,26 +437,31 @@ class STRIDERule:
                             f"Sensitive data flowing from {source_asset.name} to {dest_asset.name} "
                             f"is not encrypted and could be tampered with in transit."
                         ),
-                        mitigation=(
-                            f"Implement end-to-end encryption for the {df.name} data flow, "
-                            f"such as TLS 1.3 or application-level encryption."
-                        ),
+                        mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                         stride_category=STRIDECategory.TAMPERING,
                         affected_assets=[df.source_asset_id, df.destination_asset_id],
-                        priority_score=self.base_score + 15
+                        priority_score=ps,
                     )
                     threats.append(threat)
 
         return threats
 
     def _evaluate_repudiation(self, architecture: NormalizedArchitecture,
-                             system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                               system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Evaluate repudiation threats."""
         threats = []
 
         # Check for lack of audit logging
         audit_enabled = system_metadata.get("audit_logging", False)
         if not audit_enabled:
+            l = self.likelihood
+            i = self.impact
+            ps = _compute_priority_score(l, i)
+
+            base_mitigation = (
+                "Implement centralized audit logging for all security-relevant events, "
+                "user actions, and system changes with tamper-proof storage."
+            )
             threat = ThreatItem(
                 id="repudiation-no-audit",
                 title="Lack of Audit Logging",
@@ -128,19 +471,43 @@ class STRIDERule:
                     "The system does not implement comprehensive audit logging, "
                     "making it impossible to track user actions and detect security incidents."
                 ),
-                mitigation=(
-                    "Implement centralized audit logging for all security-relevant events, "
-                    "user actions, and system changes with tamper-proof storage."
-                ),
+                mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                 stride_category=STRIDECategory.REPUDIATION,
-                priority_score=self.base_score
+                priority_score=ps,
             )
             threats.append(threat)
+
+        # Additional check: no non-repudiation on sensitive entry points
+        for ep in architecture.entry_points:
+            if ep.exposed_to_internet and not system_metadata.get("audit_logging", False):
+                l = min(5, self.likelihood + 1)
+                i = self.impact
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Implement per-request audit logging on {ep.name} to record "
+                    "source IP, user identity, timestamp, and action performed."
+                )
+                threat = ThreatItem(
+                    id=f"repudiation-ep-{ep.id}",
+                    title=f"Untracked Actions via {ep.name}",
+                    risk="Medium",
+                    category="Audit",
+                    description=(
+                        f"Actions performed through the internet-exposed {ep.name} entry point "
+                        "are not logged, making it impossible to attribute actions to specific users."
+                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                    stride_category=STRIDECategory.REPUDIATION,
+                    entry_points=[ep.id],
+                    priority_score=ps,
+                )
+                threats.append(threat)
 
         return threats
 
     def _evaluate_information_disclosure(self, architecture: NormalizedArchitecture,
-                                        system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                                          system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Evaluate information disclosure threats."""
         threats = []
 
@@ -154,6 +521,14 @@ class STRIDERule:
                 ]
 
                 for ep in exposed_eps:
+                    l = self.likelihood
+                    i = min(5, self.impact + 1)  # Confidential data → higher impact
+                    ps = _compute_priority_score(l, i)
+
+                    base_mitigation = (
+                        f"Implement proper access controls, data masking, and encryption "
+                        f"for {asset.name} when accessed via {ep.name}."
+                    )
                     threat = ThreatItem(
                         id=f"disclosure-{asset.id}-{ep.id}",
                         title=f"Information Disclosure of {asset.name}",
@@ -163,27 +538,59 @@ class STRIDERule:
                             f"Confidential data in {asset.name} could be disclosed through "
                             f"the internet-exposed {ep.name} entry point."
                         ),
-                        mitigation=(
-                            f"Implement proper access controls, data masking, and encryption "
-                            f"for {asset.name} when accessed via {ep.name}."
-                        ),
+                        mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                         stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
                         affected_assets=[asset.id],
                         entry_points=[ep.id],
-                        priority_score=self.base_score + 20
+                        priority_score=ps,
                     )
                     threats.append(threat)
+
+        # Check for unencrypted data flows carrying sensitive data
+        for df in architecture.data_flows:
+            if not df.encryption and df.sensitivity in ["High", "Confidential"]:
+                l = min(5, self.likelihood + 1)
+                i = self.impact
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Enable TLS 1.3 or higher for the {df.name} data flow to prevent "
+                    "passive eavesdropping and data leakage."
+                )
+                threat = ThreatItem(
+                    id=f"disclosure-flow-{df.id}",
+                    title=f"Sensitive Data Exposure in {df.name}",
+                    risk="High",
+                    category="Data Security",
+                    description=(
+                        f"Sensitive data transmitted via {df.name} is not encrypted "
+                        "and could be intercepted by a passive eavesdropper."
+                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                    stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
+                    affected_assets=[df.source_asset_id, df.destination_asset_id],
+                    priority_score=ps,
+                )
+                threats.append(threat)
 
         return threats
 
     def _evaluate_denial_of_service(self, architecture: NormalizedArchitecture,
-                                   system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                                     system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Evaluate denial of service threats."""
         threats = []
 
         # Check internet-exposed entry points
         for ep in architecture.entry_points:
             if ep.exposed_to_internet:
+                l = min(5, self.likelihood + 1)  # Internet-exposed → higher likelihood
+                i = self.impact
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Implement rate limiting, DDoS protection, and resource quotas "
+                    f"for {ep.name}. Consider using a CDN or load balancer with DoS protection."
+                )
                 threat = ThreatItem(
                     id=f"dos-{ep.id}",
                     title=f"Denial of Service via {ep.name}",
@@ -193,26 +600,58 @@ class STRIDERule:
                         f"The {ep.name} entry point is exposed to the internet and could be "
                         f"targeted for denial of service attacks, making the system unavailable."
                     ),
-                    mitigation=(
-                        f"Implement rate limiting, DDoS protection, and resource quotas "
-                        f"for {ep.name}. Consider using a CDN or load balancer with DoS protection."
-                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                     stride_category=STRIDECategory.DENIAL_OF_SERVICE,
                     entry_points=[ep.id],
-                    priority_score=self.base_score + 5
+                    priority_score=ps,
+                )
+                threats.append(threat)
+
+        # Additional: unauthenticated endpoints are higher DoS risk
+        for ep in architecture.entry_points:
+            if ep.exposed_to_internet and not ep.authentication_required:
+                l = min(5, self.likelihood + 2)  # Unauthenticated → even higher
+                i = min(5, self.impact + 1)
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Require authentication or implement CAPTCHA for {ep.name} "
+                    "to prevent anonymous resource exhaustion attacks."
+                )
+                threat = ThreatItem(
+                    id=f"dos-unauth-{ep.id}",
+                    title=f"Unauthenticated DoS Risk at {ep.name}",
+                    risk="High",
+                    category="Availability",
+                    description=(
+                        f"The unauthenticated {ep.name} endpoint is exposed to the internet, "
+                        "making it trivially easy to exhaust server resources without credentials."
+                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                    stride_category=STRIDECategory.DENIAL_OF_SERVICE,
+                    entry_points=[ep.id],
+                    priority_score=ps,
                 )
                 threats.append(threat)
 
         return threats
 
     def _evaluate_elevation_of_privilege(self, architecture: NormalizedArchitecture,
-                                        system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                                          system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Evaluate elevation of privilege threats."""
         threats = []
 
         # Check trust boundaries
         for tb in architecture.trust_boundaries:
             if tb.risk_level == "High":
+                l = self.likelihood
+                i = min(5, self.impact + 1)  # High risk boundary → higher impact
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Implement strict access controls and privilege separation across "
+                    f"the {tb.name} boundary. Use principle of least privilege."
+                )
                 threat = ThreatItem(
                     id=f"elevation-{tb.id}",
                     title=f"Privilege Elevation across {tb.name}",
@@ -222,13 +661,37 @@ class STRIDERule:
                         f"The {tb.name} trust boundary could be exploited to elevate privileges "
                         f"from {tb.source_zone} to {tb.target_zone}."
                     ),
-                    mitigation=(
-                        f"Implement strict access controls and privilege separation across "
-                        f"the {tb.name} boundary. Use principle of least privilege."
-                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                     stride_category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
                     trust_boundaries=[tb.id],
-                    priority_score=self.base_score + 15
+                    priority_score=ps,
+                )
+                threats.append(threat)
+
+        # Additional: assets with high sensitivity but low access control metadata
+        for asset in architecture.assets:
+            if asset.sensitivity_level == "High":
+                l = min(5, self.likelihood + 1)
+                i = self.impact
+                ps = _compute_priority_score(l, i)
+
+                base_mitigation = (
+                    f"Enforce least-privilege access to {asset.name}: use role-based access control "
+                    "and validate permissions on every request touching this asset."
+                )
+                threat = ThreatItem(
+                    id=f"elevation-asset-{asset.id}",
+                    title=f"Unauthorized Access to High-Sensitivity Asset {asset.name}",
+                    risk="High",
+                    category="Authorization",
+                    description=(
+                        f"The high-sensitivity asset {asset.name} may be accessible by principals "
+                        "with insufficient privileges if authorization checks are missing or weak."
+                    ),
+                    mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                    stride_category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
+                    affected_assets=[asset.id],
+                    priority_score=ps,
                 )
                 threats.append(threat)
 
@@ -242,17 +705,30 @@ class STRIDEEngine:
         self.rules = self._initialize_rules()
 
     def _initialize_rules(self) -> List[STRIDERule]:
-        """Initialize STRIDE rules."""
+        """
+        Initialize STRIDE rules.
+
+        Each rule has a distinct (likelihood, impact) pair so that the
+        canonical priority_score formula produces unique values per rule type.
+
+        Priority score = ((likelihood * 0.4) + (impact * 0.6)) * 20
+        """
         return [
+            # S – Spoofing: likelihood=4, impact=4 → score=80
+            # base_score=75 reflects High risk (entry points without auth, internet-exposed)
             STRIDERule(
                 category=STRIDECategory.SPOOFING,
                 name="Authentication Bypass",
-                condition="Entry points without authentication",
+                condition="Entry points without authentication exposed to internet",
                 threat_template="Spoofing through unauthenticated entry points",
                 mitigation_template="Implement authentication",
                 risk_level="High",
-                base_score=15
+                base_score=75,
+                likelihood=4,
+                impact=4,
             ),
+            # T – Tampering: likelihood=3, impact=5 → score=84
+            # base_score=70 reflects High risk (unencrypted sensitive data flows)
             STRIDERule(
                 category=STRIDECategory.TAMPERING,
                 name="Data Integrity Violation",
@@ -260,48 +736,100 @@ class STRIDEEngine:
                 threat_template="Data tampering in transit",
                 mitigation_template="Implement encryption",
                 risk_level="High",
-                base_score=18
+                base_score=70,
+                likelihood=3,
+                impact=5,
             ),
+            # R – Repudiation: likelihood=2, impact=3 → score=52
+            # base_score=50 reflects Medium risk (missing audit_logging flag)
             STRIDERule(
                 category=STRIDECategory.REPUDIATION,
                 name="Audit Logging Absence",
-                condition="No audit logging",
+                condition="Missing audit_logging flag on system metadata",
                 threat_template="Actions cannot be tracked",
                 mitigation_template="Implement audit logging",
                 risk_level="Medium",
-                base_score=10
+                base_score=50,
+                likelihood=2,
+                impact=3,
             ),
+            # I – Information Disclosure: likelihood=4, impact=5 → score=92
+            # base_score=80 reflects High risk (sensitive assets reachable via internet-exposed entry points)
             STRIDERule(
                 category=STRIDECategory.INFORMATION_DISCLOSURE,
                 name="Data Exposure",
-                condition="Sensitive data accessible via internet",
+                condition="Sensitive assets reachable via internet-exposed entry points",
                 threat_template="Confidential data disclosure",
                 mitigation_template="Implement access controls",
                 risk_level="High",
-                base_score=20
+                base_score=80,
+                likelihood=4,
+                impact=5,
             ),
+            # D – Denial of Service: likelihood=3, impact=3 → score=60
+            # base_score=55 reflects Medium risk (internet-exposed surfaces with no rate limiting)
             STRIDERule(
                 category=STRIDECategory.DENIAL_OF_SERVICE,
                 name="Service Unavailability",
-                condition="Internet-exposed entry points",
+                condition="Internet-exposed surfaces with no rate limiting",
                 threat_template="Denial of service attacks",
                 mitigation_template="Implement DoS protection",
                 risk_level="Medium",
-                base_score=12
+                base_score=55,
+                likelihood=3,
+                impact=3,
             ),
+            # E – Elevation of Privilege: likelihood=2, impact=5 → score=76
+            # base_score=72 reflects High risk (trust boundary crossings with high-risk network zones)
             STRIDERule(
                 category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
                 name="Privilege Escalation",
-                condition="Weak trust boundaries",
+                condition="Trust boundary crossings with high-risk network zones",
                 threat_template="Unauthorized privilege elevation",
                 mitigation_template="Implement access controls",
                 risk_level="High",
-                base_score=18
+                base_score=72,
+                likelihood=2,
+                impact=5,
             ),
         ]
 
+    def generate(self, architecture: NormalizedArchitecture,
+                 system_metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Wrapper method that enforces tech stack validation and returns a dict."""
+        has_frameworks = bool(getattr(architecture, 'frameworks', None))
+        has_languages = bool(getattr(architecture, 'languages', None))
+
+        if not has_frameworks and not has_languages:
+            return {
+                "threats": [],
+                "risk_score": None,
+                "risk_label": None,
+                "blocked": True,
+                "reason": "No technology stack selected."
+            }
+        
+        threats = self.generate_threats(architecture, system_metadata)
+        score = self.compute_overall_risk_score(threats)
+        
+        # Calculate risk label using FIX 3 thresholds
+        risk_label = "Low"
+        if score >= 85:
+            risk_label = "Critical"
+        elif score >= 65:
+            risk_label = "High"
+        elif score >= 40:
+            risk_label = "Medium"
+            
+        return {
+            "threats": threats,
+            "risk_score": score,
+            "risk_label": risk_label,
+            "warning": ""
+        }
+
     def generate_threats(self, architecture: NormalizedArchitecture,
-                        system_metadata: Dict[str, Any]) -> List[ThreatItem]:
+                         system_metadata: Dict[str, Any]) -> List[ThreatItem]:
         """Generate threats using STRIDE methodology."""
         all_threats = []
 
@@ -318,3 +846,261 @@ class STRIDEEngine:
                 seen_ids.add(threat.id)
 
         return unique_threats
+
+    def compute_overall_risk_score(self, threats: List[ThreatItem]) -> int:
+        """
+        Compute an overall risk score (0–100) from the threat list.
+
+        If any threat is High risk, the score is ≥ 65 (FIX 3 floor).
+        Score is computed dynamically from individual priority_scores.
+        """
+        return _compute_overall_risk_score(threats)
+
+    def get_stack_aware_threats(
+        self,
+        normalized_arch: Any,
+        tech_context: Dict[str, Any],
+    ) -> List[ThreatItem]:
+        """
+        FIX 4 – Generate tech-stack-aware threats that supplement the core STRIDE pass.
+
+        Parameters
+        ----------
+        normalized_arch:
+            A NormalizedArchitecture instance (or any object with an .assets list).
+            Unused directly here but kept for future asset-level analysis.
+        tech_context:
+            Dict with keys:
+              - 'frameworks'        : List[str]
+              - 'databases'         : List[str]
+              - 'protocols'         : List[str]
+              - 'characteristics'   : List[str]  (e.g. ['Stores Sensitive Data', 'Has Admin Panel'])
+              - 'system_metadata'   : Dict[str, Any]  (passed through for mitigation enrichment)
+
+        Returns
+        -------
+        List[ThreatItem] – deduplicated stack-specific threats.
+        """
+        threats: List[ThreatItem] = []
+        seen_ids: set = set()
+
+        frameworks  = [f.lower() for f in (tech_context.get("frameworks") or [])]
+        databases   = [d.lower() for d in (tech_context.get("databases") or [])]
+        protocols   = [p.lower() for p in (tech_context.get("protocols") or [])]
+        chars       = [c.lower() for c in (tech_context.get("characteristics") or [])]
+        sys_meta    = tech_context.get("system_metadata") or {}
+
+        def _add(threat: ThreatItem) -> None:
+            if threat.id not in seen_ids:
+                seen_ids.add(threat.id)
+                threats.append(threat)
+
+        # ── Framework rules ────────────────────────────────────────────
+
+        # Django / Laravel / Rails → CSRF threat
+        if any(fw in frameworks for fw in ("django", "laravel", "rails")):
+            _add(ThreatItem(
+                id="stack-csrf-framework",
+                title="Cross-Site Request Forgery (CSRF)",
+                stride_category=STRIDECategory.TAMPERING,
+                risk="Medium",
+                category="Web Security",
+                description=(
+                    "Django/Laravel/Rails applications expose state-changing endpoints that are "
+                    "vulnerable to CSRF if anti-forgery tokens are missing or misconfigured."
+                ),
+                mitigation=self._append_framework_mitigations_by_category(
+                    "Use framework-built-in CSRF middleware (e.g. Django {% csrf_token %}, "
+                    "Laravel VerifyCsrfToken, Rails protect_from_forgery). "
+                    "Set SameSite=Strict on session cookies.",
+                    STRIDECategory.TAMPERING,
+                    sys_meta,
+                ),
+                base_score=48,
+                priority_score=48,
+            ))
+
+        # React / Vue / Angular → DOM XSS / Client-side injection threat
+        if any(fw in frameworks for fw in ("react", "vue", "angular", "next.js", "nuxt")):
+            _add(ThreatItem(
+                id="stack-dom-xss-frontend",
+                title="DOM XSS / Client-Side Injection",
+                stride_category=STRIDECategory.TAMPERING,
+                risk="Medium",
+                category="Web Security",
+                description=(
+                    "React/Vue/Angular applications may be vulnerable to DOM-based XSS "
+                    "when user-controlled data is passed to dangerous sinks such as "
+                    "innerHTML, dangerouslySetInnerHTML, or document.write without sanitization."
+                ),
+                mitigation=self._append_framework_mitigations_by_category(
+                    "Avoid dangerouslySetInnerHTML (React) / v-html (Vue) / bypassSecurityTrustHtml (Angular). "
+                    "Sanitize all HTML with DOMPurify before rendering. "
+                    "Enforce a strict Content Security Policy (CSP).",
+                    STRIDECategory.TAMPERING,
+                    sys_meta,
+                ),
+                base_score=52,
+                priority_score=52,
+            ))
+
+        # ── Database rules ─────────────────────────────────────────────
+
+        # MongoDB → NoSQL Injection (CAPEC-261)
+        if "mongodb" in databases:
+            _add(ThreatItem(
+                id="stack-nosql-injection-mongodb",
+                title="NoSQL Injection (MongoDB)",
+                stride_category=STRIDECategory.TAMPERING,
+                risk="High",
+                category="Injection",
+                description=(
+                    "MongoDB query operators (e.g. $where, $regex, $gt) embedded in unsanitized "
+                    "user input can bypass authentication or dump entire collections. "
+                    "[CAPEC-261, CWE-943]"
+                ),
+                mitigation=(
+                    "Sanitize all inputs to strip MongoDB operators before query construction. "
+                    "Use Mongoose schema validation with strict mode. "
+                    "Disable the $where operator in MongoDB configuration. "
+                    "Apply principle of least privilege on database accounts."
+                ),
+                capec_id="CAPEC-261",
+                base_score=73,
+                priority_score=73,
+            ))
+
+        # PostgreSQL / MySQL → SQL Injection (CAPEC-66)
+        if any(db in databases for db in ("postgresql", "mysql", "mariadb", "postgres")):
+            _add(ThreatItem(
+                id="stack-sql-injection-relational",
+                title="SQL Injection",
+                stride_category=STRIDECategory.TAMPERING,
+                risk="High",
+                category="Injection",
+                description=(
+                    "SQL injection in PostgreSQL/MySQL backends allows attackers to read, "
+                    "modify, or delete data by injecting malicious SQL through unsanitized inputs. "
+                    "[CAPEC-66, CWE-89]"
+                ),
+                mitigation=(
+                    "Use parameterized queries or prepared statements exclusively. "
+                    "Never concatenate user input into SQL strings. "
+                    "Apply least-privilege database accounts and enable query logging."
+                ),
+                capec_id="CAPEC-66",
+                base_score=80,
+                priority_score=80,
+            ))
+
+        # ── Protocol rules ─────────────────────────────────────────────
+
+        # HTTP (plain) → Man-in-the-Middle
+        if any(p in protocols for p in ("http (plain)", "http")):
+            _add(ThreatItem(
+                id="stack-mitm-http",
+                title="Man-in-the-Middle via Unencrypted HTTP",
+                stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
+                risk="High",
+                category="Network Security",
+                description=(
+                    "Transmitting data over plain HTTP exposes credentials, tokens, and sensitive "
+                    "payloads to passive eavesdropping and active Man-in-the-Middle (MitM) attacks. "
+                    "[CAPEC-94, CWE-319]"
+                ),
+                mitigation=(
+                    "Migrate to HTTPS everywhere. Enforce HTTP Strict Transport Security (HSTS) "
+                    "with a minimum max-age of 31536000. Redirect all HTTP traffic to HTTPS and "
+                    "configure TLS 1.2+ with strong cipher suites."
+                ),
+                capec_id="CAPEC-94",
+                base_score=78,
+                priority_score=78,
+            ))
+
+        # WebSocket / WSS → WebSocket Hijacking
+        if any(p in protocols for p in ("websocket", "wss", "websocket / wss")):
+            _add(ThreatItem(
+                id="stack-websocket-hijacking",
+                title="WebSocket Hijacking",
+                stride_category=STRIDECategory.TAMPERING,
+                risk="Medium",
+                category="Network Security",
+                description=(
+                    "WebSocket connections that do not validate the Origin header or require "
+                    "authentication tokens at upgrade time are vulnerable to cross-site WebSocket "
+                    "hijacking, enabling attackers to read messages or inject commands. "
+                    "[CAPEC-111, CWE-346]"
+                ),
+                mitigation=(
+                    "Validate the Origin header on every WebSocket upgrade request. "
+                    "Use WSS (TLS-wrapped) exclusively. "
+                    "Require authentication tokens at connection time and re-validate periodically."
+                ),
+                capec_id="CAPEC-111",
+                base_score=57,
+                priority_score=57,
+            ))
+
+        # ── Characteristics rules ───────────────────────────────────────
+
+        # Stores Sensitive Data → elevate any existing Information Disclosure threats
+        # (handled in threat_modeling_engine.py merge step; also add a base threat here)
+        if "stores sensitive data" in chars:
+            _add(ThreatItem(
+                id="stack-info-disclosure-sensitive",
+                title="Sensitive Data Information Disclosure",
+                stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
+                risk="High",   # Elevated to High per spec
+                category="Data Security",
+                description=(
+                    "The system stores sensitive data (PII, credentials, financial records). "
+                    "Misconfigured access controls, weak encryption, or verbose error messages "
+                    "can expose this data to unauthorized parties."
+                ),
+                mitigation=(
+                    "Classify and inventory all sensitive data. Encrypt at rest (AES-256) and "
+                    "in transit (TLS 1.3+). Apply data masking in logs. Enforce strict access "
+                    "controls and run quarterly data access audits."
+                ),
+                base_score=82,
+                priority_score=82,
+            ))
+
+        # Has Admin Panel → Broken Access Control targeting admin surface
+        if "has admin panel" in chars:
+            _add(ThreatItem(
+                id="stack-broken-access-admin",
+                title="Broken Access Control on Admin Panel",
+                stride_category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
+                risk="High",
+                category="Authorization",
+                description=(
+                    "The admin panel exposes privileged functionality. Missing or bypassable "
+                    "access controls allow low-privilege users or unauthenticated attackers to "
+                    "perform administrative actions, leading to full system compromise."
+                ),
+                mitigation=(
+                    "Implement server-side role enforcement on every admin route. "
+                    "Require MFA for all admin accounts. Restrict admin access by IP allowlist "
+                    "where feasible. Audit all admin actions and alert on anomalies. "
+                    "Pen-test the admin surface at least annually."
+                ),
+                base_score=85,
+                priority_score=85,
+            ))
+
+        return threats
+
+    def _append_framework_mitigations_by_category(
+        self,
+        base_mitigation: str,
+        stride_category: STRIDECategory,
+        system_metadata: Dict[str, Any],
+    ) -> str:
+        """Helper used by get_stack_aware_threats to append framework mitigations."""
+        extras = _get_framework_mitigations(stride_category, system_metadata)
+        if extras:
+            joined = " ".join(extras)
+            return f"{base_mitigation} Additionally: {joined}"
+        return base_mitigation

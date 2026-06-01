@@ -311,10 +311,14 @@ class ThreatModelAnalyzeResponse(BaseModel):
     Identical shape to AnalysisResult on the frontend.
     """
     threats:    List[ThreatItem]
-    risk_score: int
-    risk_label: RiskLabel
+    risk_score: Optional[int] = None
+    risk_label: Optional[RiskLabel] = None
     mitigations: List[Mitigation]
     heatmap_data: List[HeatmapData]
+    generic_warning: bool = False
+    blocked: Optional[bool] = False
+    reason: Optional[str] = None
+
 
 
 class ExportRequest(BaseModel):

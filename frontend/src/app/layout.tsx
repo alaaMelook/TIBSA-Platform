@@ -25,6 +25,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined') {
+                const isMetaMaskError = (e) => {
+                  const msg = e.message || e.reason?.message || e.reason || '';
+                  return typeof msg === 'string' && (msg.includes('MetaMask') || msg.includes('chrome-extension://'));
+                };
+                window.addEventListener('error', (e) => {
+                  if (isMetaMaskError(e)) {
+                    e.stopImmediatePropagation();
+                  }
+                }, true);
+                window.addEventListener('unhandledrejection', (e) => {
+                  if (isMetaMaskError(e)) {
+                    e.stopImmediatePropagation();
+                  }
+                }, true);
+              }
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

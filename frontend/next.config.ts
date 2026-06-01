@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import path from "path";
+
 
 /**
  * 🔒 Security Headers — fixes ALL common header findings in one shot.
@@ -53,6 +55,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Remove X-Powered-By header
   poweredByHeader: false,
+
+  // Limit Turbopack to only watch and scan the repository root to prevent
+  // out-of-memory errors caused by scanning the entire user home directory.
+  turbopack: {
+    root: path.resolve(__dirname, ".."),
+  },
+
 
   // Apply security headers to ALL routes
   async headers() {

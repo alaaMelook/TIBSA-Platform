@@ -10,69 +10,72 @@ import { ScanHistory } from "./scan-history";
 // Types
 // ─────────────────────────────────────────────────────────────────────
 
-type AppType        = "Web" | "Mobile" | "API" | "Cloud";
-type RiskLevel      = "High" | "Medium" | "Low";
-type DeployEnv      = "On-Premise" | "Cloud (AWS / GCP / Azure)" | "Hybrid" | "Serverless" | "Containerized (Docker / K8s)" | "Edge";
-type DeployType     = "SaaS" | "Internal Tool" | "Open Source" | "Enterprise" | "B2C Product" | "IoT / Embedded";
-type DatabaseType   = "PostgreSQL" | "MySQL / MariaDB" | "MongoDB" | "Redis" | "SQLite" | "Elasticsearch" | "Firebase / Firestore" | "DynamoDB" | "MSSQL" | "Oracle";
-type ProtocolType   = "HTTPS" | "HTTP (plain)" | "WebSocket / WSS" | "gRPC" | "GraphQL" | "REST" | "MQTT" | "AMQP" | "FTP / SFTP" | "SSH";
-type FrameworkType  = "React" | "Next.js" | "Vue" | "Angular" | "Svelte" | "Django" | "FastAPI" | "Flask" | "Express" | "NestJS" | "Spring Boot" | "Laravel" | "Rails" | "ASP.NET";
-type LanguageType   = "TypeScript" | "JavaScript" | "Python" | "Java" | "Go" | "PHP" | "Ruby" | "C#" | "Rust" | "C / C++";
+type AppType = "Web" | "Mobile" | "API" | "Cloud";
+type RiskLevel = "High" | "Medium" | "Low";
+type DeployEnv = "On-Premise" | "Cloud (AWS / GCP / Azure)" | "Hybrid" | "Serverless" | "Containerized (Docker / K8s)" | "Edge";
+type DeployType = "SaaS" | "Internal Tool" | "Open Source" | "Enterprise" | "B2C Product" | "IoT / Embedded";
+type DatabaseType = "PostgreSQL" | "MySQL / MariaDB" | "MongoDB" | "Redis" | "SQLite" | "Elasticsearch" | "Firebase / Firestore" | "DynamoDB" | "MSSQL" | "Oracle";
+type ProtocolType = "HTTPS" | "HTTP (plain)" | "WebSocket / WSS" | "gRPC" | "GraphQL" | "REST" | "MQTT" | "AMQP" | "FTP / SFTP" | "SSH";
+type FrameworkType = "React" | "Next.js" | "Vue" | "Angular" | "Svelte" | "Django" | "FastAPI" | "Flask" | "Express" | "NestJS" | "Spring Boot" | "Laravel" | "Rails" | "ASP.NET";
+type LanguageType = "TypeScript" | "JavaScript" | "Python" | "Java" | "Go" | "PHP" | "Ruby" | "C#" | "Rust" | "C / C++";
 
 interface FormState {
     // Section 1 – Basic
-    projectName:         string;
-    appType:             AppType;
-    usesAuth:            boolean;
-    usesDatabase:        boolean;
-    hasAdminPanel:       boolean;
-    usesExternalAPIs:    boolean;
+    projectName: string;
+    appType: AppType;
+    usesAuth: boolean;
+    usesDatabase: boolean;
+    hasAdminPanel: boolean;
+    usesExternalAPIs: boolean;
     storesSensitiveData: boolean;
     // Section 2 – Stack
     frameworks: FrameworkType[];
-    languages:  LanguageType[];
+    languages: LanguageType[];
     // Section 3 – Environment
-    deployEnvs:   DeployEnv[];
-    deployTypes:  DeployType[];
+    deployEnvs: DeployEnv[];
+    deployTypes: DeployType[];
     // Section 4 – Data & Protocols
-    databases:  DatabaseType[];
-    protocols:  ProtocolType[];
+    databases: DatabaseType[];
+    protocols: ProtocolType[];
 }
 
 interface ThreatItem {
-    id:          string;
-    title:       string;
-    risk:        RiskLevel;
-    category:    string;
+    id: string;
+    title: string;
+    risk: RiskLevel;
+    category: string;
     description: string;
-    mitigation:  string;
-    priority?:   number;
+    mitigation: string;
+    priority?: number;
     stride_category?: string;
 }
 
 interface AnalysisResult {
-    threats:   ThreatItem[];
-    riskScore: number;
+    threats: ThreatItem[];
+    riskScore: number | null;
+    genericWarning?: boolean;
+    blocked?: boolean;
+    riskLabel?: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────
 // Static option sets
 // ─────────────────────────────────────────────────────────────────────
 
-const APP_TYPES:     AppType[]       = ["Web", "Mobile", "API", "Cloud"];
-const DEPLOY_ENVS:   DeployEnv[]     = ["On-Premise", "Cloud (AWS / GCP / Azure)", "Hybrid", "Serverless", "Containerized (Docker / K8s)", "Edge"];
-const DEPLOY_TYPES:  DeployType[]    = ["SaaS", "Internal Tool", "Open Source", "Enterprise", "B2C Product", "IoT / Embedded"];
-const DATABASE_OPTS: DatabaseType[]  = ["PostgreSQL", "MySQL / MariaDB", "MongoDB", "Redis", "SQLite", "Elasticsearch", "Firebase / Firestore", "DynamoDB", "MSSQL", "Oracle"];
-const PROTOCOL_OPTS: ProtocolType[]  = ["HTTPS", "HTTP (plain)", "WebSocket / WSS", "gRPC", "GraphQL", "REST", "MQTT", "AMQP", "FTP / SFTP", "SSH"];
+const APP_TYPES: AppType[] = ["Web", "Mobile", "API", "Cloud"];
+const DEPLOY_ENVS: DeployEnv[] = ["On-Premise", "Cloud (AWS / GCP / Azure)", "Hybrid", "Serverless", "Containerized (Docker / K8s)", "Edge"];
+const DEPLOY_TYPES: DeployType[] = ["SaaS", "Internal Tool", "Open Source", "Enterprise", "B2C Product", "IoT / Embedded"];
+const DATABASE_OPTS: DatabaseType[] = ["PostgreSQL", "MySQL / MariaDB", "MongoDB", "Redis", "SQLite", "Elasticsearch", "Firebase / Firestore", "DynamoDB", "MSSQL", "Oracle"];
+const PROTOCOL_OPTS: ProtocolType[] = ["HTTPS", "HTTP (plain)", "WebSocket / WSS", "gRPC", "GraphQL", "REST", "MQTT", "AMQP", "FTP / SFTP", "SSH"];
 const FRAMEWORK_OPTS: FrameworkType[] = ["React", "Next.js", "Vue", "Angular", "Svelte", "Django", "FastAPI", "Flask", "Express", "NestJS", "Spring Boot", "Laravel", "Rails", "ASP.NET"];
-const LANGUAGE_OPTS:  LanguageType[]  = ["TypeScript", "JavaScript", "Python", "Java", "Go", "PHP", "Ruby", "C#", "Rust", "C / C++"];
+const LANGUAGE_OPTS: LanguageType[] = ["TypeScript", "JavaScript", "Python", "Java", "Go", "PHP", "Ruby", "C#", "Rust", "C / C++"];
 
 const CHECKBOXES: { key: keyof FormState; label: string }[] = [
-    { key: "usesAuth",            label: "Uses Authentication"   },
-    { key: "usesDatabase",        label: "Uses Database"          },
-    { key: "hasAdminPanel",       label: "Has Admin Panel"        },
-    { key: "usesExternalAPIs",    label: "Uses External APIs"     },
-    { key: "storesSensitiveData", label: "Stores Sensitive Data"  },
+    { key: "usesAuth", label: "Uses Authentication" },
+    { key: "usesDatabase", label: "Uses Database" },
+    { key: "hasAdminPanel", label: "Has Admin Panel" },
+    { key: "usesExternalAPIs", label: "Uses External APIs" },
+    { key: "storesSensitiveData", label: "Stores Sensitive Data" },
 ];
 
 const initialForm: FormState = {
@@ -89,9 +92,9 @@ const initialForm: FormState = {
 // ─────────────────────────────────────────────────────────────────────
 
 const RISK_BADGE: Record<RiskLevel, string> = {
-    High:   "bg-red-500/15 text-red-400 border border-red-500/20",
+    High: "bg-red-500/15 text-red-400 border border-red-500/20",
     Medium: "bg-orange-500/15 text-orange-400 border border-orange-500/20",
-    Low:    "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
+    Low: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
 };
 
 const RISK_DOT: Record<RiskLevel, string> = {
@@ -104,12 +107,13 @@ const SCORE_COLOR: Record<string, string> = {
 
 const SCORE_LABEL_STYLE: Record<string, string> = {
     Critical: "bg-red-500/15 text-red-400",
-    High:     "bg-red-500/15 text-red-400",
-    Medium:   "bg-orange-500/15 text-orange-400",
-    Low:      "bg-green-500/15 text-green-400",
+    High: "bg-red-500/15 text-red-400",
+    Medium: "bg-orange-500/15 text-orange-400",
+    Low: "bg-green-500/15 text-green-400",
 };
 
-function getRiskLabel(score: number): string {
+function getRiskLabel(score: number | null): string {
+    if (score === null) return "Insufficient Data";
     if (score >= 80) return "Critical";
     if (score >= 60) return "High";
     if (score >= 35) return "Medium";
@@ -128,21 +132,21 @@ function getRiskLabel(score: number): string {
 type PillColor = "blue" | "indigo" | "violet" | "teal" | "emerald" | "rose";
 
 const PILL_ACTIVE: Record<PillColor, string> = {
-    blue:    "bg-blue-600 text-white border-blue-600",
-    indigo:  "bg-indigo-600 text-white border-indigo-600",
-    violet:  "bg-violet-600 text-white border-violet-600",
-    teal:    "bg-teal-600 text-white border-teal-600",
+    blue: "bg-blue-600 text-white border-blue-600",
+    indigo: "bg-indigo-600 text-white border-indigo-600",
+    violet: "bg-violet-600 text-white border-violet-600",
+    teal: "bg-teal-600 text-white border-teal-600",
     emerald: "bg-emerald-600 text-white border-emerald-600",
-    rose:    "bg-rose-600 text-white border-rose-600",
+    rose: "bg-rose-600 text-white border-rose-600",
 };
 
 const PILL_HOVER: Record<PillColor, string> = {
-    blue:    "hover:border-blue-400/50 hover:text-blue-400",
-    indigo:  "hover:border-indigo-400/50 hover:text-indigo-400",
-    violet:  "hover:border-violet-400/50 hover:text-violet-400",
-    teal:    "hover:border-teal-400/50 hover:text-teal-400",
+    blue: "hover:border-blue-400/50 hover:text-blue-400",
+    indigo: "hover:border-indigo-400/50 hover:text-indigo-400",
+    violet: "hover:border-violet-400/50 hover:text-violet-400",
+    teal: "hover:border-teal-400/50 hover:text-teal-400",
     emerald: "hover:border-emerald-400/50 hover:text-emerald-400",
-    rose:    "hover:border-rose-400/50 hover:text-rose-400",
+    rose: "hover:border-rose-400/50 hover:text-rose-400",
 };
 
 function MultiPillSelect<T extends string>({
@@ -165,11 +169,10 @@ function MultiPillSelect<T extends string>({
                             key={opt}
                             type="button"
                             onClick={() => onToggle(opt)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${
-                                active
-                                    ? PILL_ACTIVE[color]
-                                    : `bg-white/[0.04] text-slate-400 border-white/[0.08] ${PILL_HOVER[color]}`
-                            }`}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150 ${active
+                                ? PILL_ACTIVE[color]
+                                : `bg-white/[0.04] text-slate-400 border-white/[0.08] ${PILL_HOVER[color]}`
+                                }`}
                         >
                             {opt}
                         </button>
@@ -235,9 +238,9 @@ function buildPdfHtml(form: FormState, result: AnalysisResult): string {
         ? stackTags.map(t => `<span style="display:inline-block;padding:3px 10px;margin:3px;background:#eff6ff;color:#1d4ed8;border-radius:999px;font-size:12px;border:1px solid #bfdbfe">${t}</span>`).join("")
         : "<span style='color:#94a3b8;font-size:13px'>None selected</span>";
 
-    const highCount   = result.threats.filter(t => t.risk === "High").length;
-    const medCount    = result.threats.filter(t => t.risk === "Medium").length;
-    const lowCount    = result.threats.filter(t => t.risk === "Low").length;
+    const highCount = result.threats.filter(t => t.risk === "High").length;
+    const medCount = result.threats.filter(t => t.risk === "Medium").length;
+    const lowCount = result.threats.filter(t => t.risk === "Low").length;
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Threat Report — ${form.projectName}</title>
@@ -300,8 +303,8 @@ function buildPdfHtml(form: FormState, result: AnalysisResult): string {
 function downloadAsPDF(form: FormState, result: AnalysisResult) {
     const html = buildPdfHtml(form, result);
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url  = URL.createObjectURL(blob);
-    const win  = window.open(url, "_blank");
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
     if (win) {
         win.addEventListener("load", () => {
             setTimeout(() => {
@@ -369,15 +372,16 @@ function downloadAsJSON(form: FormState, result: AnalysisResult) {
 
 export default function ThreatModelingPage() {
     const { token, isLoading, isAuthenticated } = useAuth();
-    const [form, setForm]         = useState<FormState>(initialForm);
-    const [result, setResult]     = useState<AnalysisResult | null>(null);
-    const [saveMsg, setSaveMsg]   = useState("");
-    const [saveErr, setSaveErr]   = useState("");
+    const [form, setForm] = useState<FormState>(initialForm);
+    const [result, setResult] = useState<AnalysisResult | null>(null);
+    const [saveMsg, setSaveMsg] = useState("");
+    const [saveErr, setSaveErr] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [nameError, setNameErr] = useState("");
+    const [showWarning, setShowWarning] = useState(false);
 
     const canSubmit = !!token && !isLoading;
-    const canSave   = !!token && !isSaving;
+    const canSave = !!token && !isSaving;
 
     // Generic array toggle
     const toggleArr = useCallback(<T extends string>(key: keyof FormState, val: T) => {
@@ -446,7 +450,7 @@ export default function ThreatModelingPage() {
 
             // Call STRIDE analysis endpoint
             const response = await api.post<{
-                threats: Array<{
+                threats?: Array<{
                     id?: string;
                     title: string;
                     risk: string;
@@ -456,12 +460,14 @@ export default function ThreatModelingPage() {
                     priority_score?: number;
                     stride_category?: string;
                 }>;
-                risk_score: number;
+                risk_score: number | null;
+                generic_warning?: boolean;
+                blocked?: boolean;
             }>("/api/v1/threat-modeling/analyze/stride", requestData, token);
 
             // Transform backend response to frontend format
-            const analysisResult: AnalysisResult = {
-                threats: response.threats.map((threat) => ({
+            const transformedResponse: AnalysisResult = {
+                threats: (response.threats || []).map((threat) => ({
                     id: threat.id || threat.title.toLowerCase().replace(/\s+/g, "-"),
                     title: threat.title,
                     risk: threat.risk as RiskLevel,
@@ -472,9 +478,26 @@ export default function ThreatModelingPage() {
                     stride_category: threat.stride_category,
                 })),
                 riskScore: response.risk_score,
+                genericWarning: response.generic_warning,
+                blocked: response.blocked,
             };
 
-            setResult(analysisResult);
+            setResult(transformedResponse);
+
+            if (
+                transformedResponse.blocked === true ||
+                !transformedResponse.threats ||
+                transformedResponse.threats.length === 0
+            ) {
+                setResult({
+                    threats: [],
+                    riskScore: null,
+                    riskLabel: null,
+                    blocked: true
+                });
+                return;
+            }
+            setShowWarning(!!response.generic_warning);
         } catch (error) {
             console.error("STRIDE analysis failed:", error);
             // Fallback to a basic error result
@@ -495,7 +518,7 @@ export default function ThreatModelingPage() {
         setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
     };
 
-    const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setSaveErr(""); setNameErr(""); };
+    const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setSaveErr(""); setNameErr(""); setShowWarning(false); };
 
     const handleSave = async () => {
         if (!result || !token) return;
@@ -506,19 +529,19 @@ export default function ThreatModelingPage() {
             await api.post(
                 "/api/v1/threat-modeling/analyses",
                 {
-                    project_name:          form.projectName,
-                    app_type:              form.appType,
-                    uses_auth:             form.usesAuth,
-                    uses_database:         form.usesDatabase,
-                    has_admin_panel:       form.hasAdminPanel,
-                    uses_external_apis:    form.usesExternalAPIs,
+                    project_name: form.projectName,
+                    app_type: form.appType,
+                    uses_auth: form.usesAuth,
+                    uses_database: form.usesDatabase,
+                    has_admin_panel: form.hasAdminPanel,
+                    uses_external_apis: form.usesExternalAPIs,
                     stores_sensitive_data: form.storesSensitiveData,
-                    frameworks:            form.frameworks,
-                    languages:             form.languages,
-                    deploy_envs:           form.deployEnvs,
-                    deploy_types:          form.deployTypes,
-                    databases:             form.databases,
-                    protocols:             form.protocols,
+                    frameworks: form.frameworks,
+                    languages: form.languages,
+                    deploy_envs: form.deployEnvs,
+                    deploy_types: form.deployTypes,
+                    databases: form.databases,
+                    protocols: form.protocols,
                 },
                 token,
             );
@@ -542,8 +565,8 @@ export default function ThreatModelingPage() {
         downloadAsJSON(form, result);
     };
 
-    const riskLabel  = result ? getRiskLabel(result.riskScore) : "";
-    const barColor   = SCORE_COLOR[riskLabel]       ?? "bg-slate-600";
+    const riskLabel = result ? getRiskLabel(result.riskScore) : "";
+    const barColor = SCORE_COLOR[riskLabel] ?? "bg-slate-600";
     const labelStyle = SCORE_LABEL_STYLE[riskLabel] ?? "";
 
     // Compact summary of selected options for the report header
@@ -603,11 +626,10 @@ export default function ThreatModelingPage() {
                                     {APP_TYPES.map(type => (
                                         <button key={type} type="button"
                                             onClick={() => setForm(p => ({ ...p, appType: type }))}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-                                                form.appType === type
-                                                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                                                    : "bg-white/[0.04] text-slate-400 border-white/[0.08] hover:border-blue-400/50 hover:text-blue-400"
-                                            }`}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.appType === type
+                                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                                : "bg-white/[0.04] text-slate-400 border-white/[0.08] hover:border-blue-400/50 hover:text-blue-400"
+                                                }`}
                                         >{type}</button>
                                     ))}
                                 </div>
@@ -703,7 +725,7 @@ export default function ThreatModelingPage() {
                         </div>
                     </Card>
 
-                        {!isAuthenticated && !isLoading && (
+                    {!isAuthenticated && !isLoading && (
                         <div className="rounded-lg border border-yellow-400 bg-yellow-500/10 text-yellow-800 px-4 py-3 mb-4">
                             You must be signed in to generate and save threat models.
                         </div>
@@ -730,189 +752,236 @@ export default function ThreatModelingPage() {
             {result && (
                 <div className="space-y-5">
 
-                    {/* ── Report header + action buttons ── */}
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
-                        <div>
-                            <h2 className="text-xl font-bold text-white">
-                                Threat Report —{" "}
-                                <span className="text-blue-400">{form.projectName}</span>
-                            </h2>
-                            <p className="text-sm text-slate-400 mt-0.5">
-                                {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 flex-shrink-0">
-                            <Button variant="secondary" size="sm" onClick={handleDownloadPDF}>
-                                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Download PDF
-                            </Button>
-                            <Button variant="secondary" size="sm" onClick={handleDownloadJSON}>
-                                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                Download JSON
-                            </Button>
-                            <Button variant="secondary" size="sm" onClick={handleSave} disabled={!canSave}>
-                                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                                </svg>
-                                {isSaving ? "Saving…" : "Save Report"}
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={handleReset}>
-                                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Run Another Analysis
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Save confirmation */}
-                    {saveMsg && (
-                        <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg print:hidden">
-                            {saveMsg}
-                        </div>
-                    )}
-                    {saveErr && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg print:hidden">
-                            {saveErr}
-                        </div>
-                    )}
-
-                    {/* ── Stack summary tags ── */}
-                    {stackTags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 print:hidden">
-                            <span className="text-xs font-medium text-slate-500 self-center mr-1">Stack:</span>
-                            {stackTags.map(tag => (
-                                <span key={tag} className="text-xs bg-white/[0.06] text-slate-400 border border-white/[0.08] px-2.5 py-1 rounded-full font-medium">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* ── Risk Score Card ── */}
-                    <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
-                        <div className="flex items-center gap-6 mt-2">
-                            <div className="flex-shrink-0 text-center w-20">
-                                <div className="text-5xl font-bold text-white leading-none">{result.riskScore}</div>
-                                <div className="text-sm text-slate-500 mt-1">/ 100</div>
+                    {/* No-stack Warning Banner */}
+                    {result.blocked === true ? (
+                        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm px-5 py-4 rounded-lg print:hidden relative mb-2 space-y-3">
+                            <div className="pr-6">
+                                <strong>⚠️ No technology stack selected.</strong><br />
+                                Select your stack for accurate threat modeling. Generic results may not apply to your system.
                             </div>
-                            <div className="flex-1">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-slate-400">Risk Level</span>
-                                    <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
-                                        {riskLabel}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-white/[0.06] rounded-full h-3 overflow-hidden">
-                                    <div
-                                        className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
-                                        style={{ width: `${result.riskScore}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-xs text-slate-500 mt-1.5">
-                                    <span>0 — Safe</span>
-                                    <span>100 — Critical</span>
-                                </div>
+                            <div>
+                                <Button variant="secondary" size="sm" onClick={handleReset} className="bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30">
+                                    <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Go Back & Select Stack
+                                </Button>
                             </div>
                         </div>
-                    </Card>
-
-                    {/* ── Uploaded files in report ── */}
-
-                    {/* ── Threats list ── */}
-                    <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-base font-semibold text-slate-200">
-                                Identified Threats
-                            </h3>
-                            <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> Medium
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Low
-                                </span>
+                    ) : (
+                        result.genericWarning && showWarning && (
+                            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm px-4 py-3 rounded-lg print:hidden relative mb-2">
+                                <div className="pr-6">
+                                    <strong>⚠️ No technology stack selected.</strong><br />
+                                    Select your stack for accurate threat modeling. Generic results may not apply to your system.
+                                </div>
+                                <button onClick={() => setShowWarning(false)} className="absolute top-3 right-3 text-amber-500 hover:text-amber-400">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                        </div>
+                        )
+                    )}
 
-                        <div className="space-y-3">
-                            {result.threats.map(threat => (
-                                <div key={threat.id}
-                                    className="bg-[#263554] border border-white/[0.08] rounded-xl shadow-lg shadow-black/25 overflow-hidden">
-                                    {/* Threat header */}
-                                    <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]}`} />
-                                            <div className="min-w-0">
-                                                <h4 className="font-semibold text-white text-sm leading-tight truncate">
-                                                    {threat.title}
-                                                </h4>
-                                                <span className="text-xs text-slate-500">{threat.category}</span>
+                    {result.blocked ? (
+                        // show nothing — warning banner already handles this
+                        null
+                    ) : (
+                        <>
+                            {/* ── Report header + action buttons ── */}
+                            {result.blocked !== true && (
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">
+                                            Threat Report —{" "}
+                                            <span className="text-blue-400">{form.projectName}</span>
+                                        </h2>
+                                        <p className="text-sm text-slate-400 mt-0.5">
+                                            {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 flex-shrink-0">
+                                        <Button variant="secondary" size="sm" onClick={handleDownloadPDF}>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Download PDF
+                                        </Button>
+                                        <Button variant="secondary" size="sm" onClick={handleDownloadJSON}>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Download JSON
+                                        </Button>
+                                        <Button variant="secondary" size="sm" onClick={handleSave} disabled={!canSave}>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                            </svg>
+                                            {isSaving ? "Saving…" : "Save Report"}
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={handleReset}>
+                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            Run Another Analysis
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Save confirmation */}
+                            {result.blocked !== true && saveMsg && (
+                                <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg print:hidden">
+                                    {saveMsg}
+                                </div>
+                            )}
+                            {result.blocked !== true && saveErr && (
+                                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg print:hidden">
+                                    {saveErr}
+                                </div>
+                            )}
+
+                            {/* ── Stack summary tags ── */}
+                            {result.blocked !== true && stackTags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 print:hidden">
+                                    <span className="text-xs font-medium text-slate-500 self-center mr-1">Stack:</span>
+                                    {stackTags.map(tag => (
+                                        <span key={tag} className="text-xs bg-white/[0.06] text-slate-400 border border-white/[0.08] px-2.5 py-1 rounded-full font-medium">
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* ── Risk Score Card ── */}
+                            {result.blocked !== true && (
+                                <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
+                                    <div className="flex items-center gap-6 mt-2">
+                                        <div className="flex-shrink-0 text-center w-20">
+                                            <div className="text-5xl font-bold text-white leading-none">{result.riskScore ?? 0}</div>
+                                            <div className="text-sm text-slate-500 mt-1">/ 100</div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm font-medium text-slate-400">Risk Level</span>
+                                                <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
+                                                    {riskLabel}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-white/[0.06] rounded-full h-3 overflow-hidden">
+                                                <div
+                                                    className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
+                                                    style={{ width: `${result.riskScore ?? 0}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between text-xs text-slate-500 mt-1.5">
+                                                <span>0 — Safe</span>
+                                                <span>100 — Critical</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                            {threat.stride_category && (
-                                                <span className="text-xs font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                                    {threat.stride_category}
-                                                </span>
-                                            )}
-                                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
-                                                {threat.risk} Risk
+                                    </div>
+                                </Card>
+                            )}
+
+                            {/* ── Uploaded files in report ── */}
+
+                            {/* ── Threats list ── */}
+                            {result.threats.length > 0 && (
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-base font-semibold text-slate-200">
+                                            Identified Threats
+                                        </h3>
+                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> Medium
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Low
                                             </span>
                                         </div>
                                     </div>
-                                    {/* Threat body */}
-                                    <div className="px-5 py-4 space-y-4">
-                                        <div>
-                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                                                Description
-                                            </p>
-                                            <p className="text-sm text-slate-300 leading-relaxed">
-                                                {threat.description}
-                                            </p>
-                                        </div>
-                                        <div className="border-t border-white/[0.06] pt-4">
-                                            <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
-                                                ✓ Mitigation
-                                            </p>
-                                            <p className="text-sm text-slate-300 leading-relaxed">
-                                                {threat.mitigation}
-                                            </p>
-                                        </div>
-                                        {threat.priority && (
-                                            <div className="flex items-center gap-2 text-xs">
-                                                <span className="font-semibold text-slate-500">Priority Score:</span>
-                                                <div className="flex-1 bg-white/[0.06] rounded-full h-2">
-                                                    <div
-                                                        className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
-                                                        style={{ width: `${Math.min(threat.priority, 100)}%` }}
-                                                    />
+
+                                    <div className="space-y-3">
+                                        {result.threats.map(threat => (
+                                            <div key={threat.id}
+                                                className="bg-[#263554] border border-white/[0.08] rounded-xl shadow-lg shadow-black/25 overflow-hidden">
+                                                {/* Threat header */}
+                                                <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between gap-4">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]}`} />
+                                                        <div className="min-w-0">
+                                                            <h4 className="font-semibold text-white text-sm leading-tight truncate">
+                                                                {threat.title}
+                                                            </h4>
+                                                            <span className="text-xs text-slate-500">{threat.category}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        {threat.stride_category && (
+                                                            <span className="text-xs font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                                {threat.stride_category}
+                                                            </span>
+                                                        )}
+                                                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
+                                                            {threat.risk} Risk
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <span className="text-slate-400">{threat.priority}</span>
+                                                {/* Threat body */}
+                                                <div className="px-5 py-4 space-y-4">
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                                                            Description
+                                                        </p>
+                                                        <p className="text-sm text-slate-300 leading-relaxed">
+                                                            {threat.description}
+                                                        </p>
+                                                    </div>
+                                                    <div className="border-t border-white/[0.06] pt-4">
+                                                        <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
+                                                            ✓ Mitigation
+                                                        </p>
+                                                        <p className="text-sm text-slate-300 leading-relaxed">
+                                                            {threat.mitigation}
+                                                        </p>
+                                                    </div>
+                                                    {threat.priority && (
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <span className="font-semibold text-slate-500">Priority Score:</span>
+                                                            <div className="flex-1 bg-white/[0.06] rounded-full h-2">
+                                                                <div
+                                                                    className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
+                                                                    style={{ width: `${Math.min(threat.priority, 100)}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-slate-400">{threat.priority}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            )}
 
-                    {/* ── Print-only header/footer ── */}
-                    <div className="hidden print:block border-t pt-4 mt-8">
-                        <p className="text-xs text-slate-500">
-                            TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                            Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore}/100 ({riskLabel})
-                        </p>
-                    </div>
+                            {/* ── Print-only header/footer ── */}
+                            {result.blocked !== true && (
+                                <div className="hidden print:block border-t pt-4 mt-8">
+                                    <p className="text-xs text-slate-500">
+                                        TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
+                                    </p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore ?? 0}/100 ({riskLabel})
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
 

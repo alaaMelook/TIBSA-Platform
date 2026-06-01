@@ -1,3 +1,4 @@
+# MODIFIED: FIX 4 | Called get_stack_aware_threats() after _build_threats and merged/deduplicated stack-aware threats before enrichment; updated _risk_label thresholds to match FIX 3 spec (0-39=Low,40-64=Medium,65-84=High,85-100=Critical); risk_score now uses weighted-average compute_overall_risk_score
 """
 Threat Modeling – Enhanced threat generation engine.
 
@@ -26,16 +27,22 @@ from app.models.threat_modeling import (
     ThreatModelAnalyzeResponse,
     ThreatModelAnalysis,
     Mitigation,
+    MitigationPriority,
     HeatmapData,
     STRIDECategory,
     ThreatStatus,
 )
 from app.services.normalized_schema import NormalizedThreatModel, ThreatModelNormalizer
-from app.services.stride_rules import STRIDEEngine
-from app.services.capec_enrichment import CAPECEnrichmentService
-from app.services.asvs_mapping import ASVSControlDatabase
+from app.services.stride_rules import (
+    STRIDEEngine,
+    CATEGORY_TO_STRIDE,
+    STRIDE_DEFAULTS,
+    RISK_ADJUSTMENTS,
+)
+from app.services.capec_enrichment import CAPECEnrichmentService, THREAT_TITLE_TO_CAPEC
+from app.services.asvs_mapping import ASVSControlDatabase, STRIDE_TO_ASVS_IDS
 from app.services.llm_summarization import LLMSummarizationService
-from app.services.heatmap_generator import HeatmapGenerator
+from app.services.heatmap_generator import HeatmapGenerator, compute_overall_risk_score, risk_label_from_score
 from app.services.export_service import ExportService
 
 
@@ -60,42 +67,16 @@ class EnhancedThreatModelingEngine:
         """
         Perform comprehensive threat modeling analysis.
 
-        This method integrates all services to provide a complete threat model
-        with enriched threats, mitigations, heatmaps, and summaries.
+        Delegates to the module-level analyze_stride() so that the enrichment
+        pipeline (STRIDE, CAPEC, ASVS, priority_score, LLM) is applied consistently
+        regardless of which entry-point is called.
         """
-        # Step 1: Normalize the input data
-        normalized_model = self.normalized_schema.normalize_request(request)
+        result = analyze_stride(request, generate_heatmap=generate_heatmap)
 
-        # Step 2: Generate base threats using STRIDE rules
-        base_threats = self.stride_engine.generate_threats(normalized_model)
-
-        # Step 3: Enrich threats with CAPEC information
-        enriched_threats = []
-        for threat in base_threats:
-            enriched_threat = self.capec_service.enrich_threat(threat)
-            enriched_threat = self.asvs_database.enrich_threat(enriched_threat)
-            enriched_threats.append(enriched_threat)
-
-        # Step 4: Generate mitigations (placeholder - would be expanded)
-        mitigations = self._generate_mitigations(enriched_threats)
-
-        # Step 5: Generate heatmap if requested
-        heatmap_data = None
-        if generate_heatmap:
-            heatmap_data = self.heatmap_generator.generate_heatmap_data(enriched_threats)
-
-        # Step 6: Add LLM summaries if requested
-        if include_summaries:
-            for threat in enriched_threats:
-                summary = self.llm_service.generate_threat_summary(threat)
-                # Store summary in threat's extended fields (would need model update)
-                threat.description += f"\n\nLLM Summary: {summary.threat_description}"
-
-        # Step 7: Create comprehensive analysis response
-        analysis = ThreatModelAnalysis(
+        return ThreatModelAnalysis(
             id=f"analysis_{datetime.utcnow().timestamp()}",
-            title=request.title or "Threat Model Analysis",
-            description=request.description,
+            title=request.project_name,
+            description=None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             system_metadata=request.system_metadata,
@@ -103,167 +84,91 @@ class EnhancedThreatModelingEngine:
             assets=request.assets,
             entry_points=request.entry_points,
             trust_boundaries=request.trust_boundaries,
-            auth_questions=getattr(request, 'auth_questions', None),
-            data_questions=getattr(request, 'data_questions', None),
-            control_questions=getattr(request, 'control_questions', None),
-            threats=enriched_threats,
-            mitigations=mitigations,
-            heatmap_data=heatmap_data
-        )
-
-        return analysis
-
-    def analyze_compatibility(
-        self,
-        request: ThreatModelCreateRequest
-    ) -> ThreatModelAnalyzeResponse:
-        """
-        Maintain backward compatibility with the original analyze function.
-
-        This provides the same interface as the original rule-based engine
-        for existing integrations.
-        """
-        # Use the original rule-based approach for compatibility
-        threats, raw_score = self._build_threats_legacy(request)
-        capped = min(raw_score, 100)
-
-        # Convert legacy threats to new format
-        converted_threats = []
-        for threat in threats:
-            converted_threat = ThreatItem(
-                id=threat.id,
-                title=threat.title,
-                description=threat.description,
-                stride_category=self._map_legacy_category(threat.category),
-                severity=self._map_legacy_risk(threat.risk),
-                likelihood="Medium",  # Default
-                impact=self._map_legacy_risk(threat.risk),
-                status=ThreatStatus.OPEN,
-                mitigation=threat.mitigation,
-                affected_assets=[],  # Would need to be inferred
-                entry_points=[],
-                trust_boundaries=[],
-                capec_id=None,
-                capec_description=None,
-                asvs_controls=[]
-            )
-            converted_threats.append(converted_threat)
-
-        return ThreatModelAnalyzeResponse(
-            threats=converted_threats,
-            risk_score=capped,
-            risk_label=self._risk_label(capped)
+            auth_questions=request.auth_questions,
+            data_questions=request.data_questions,
+            control_questions=request.control_questions,
+            threats=result.threats,
+            mitigations=result.mitigations,
+            heatmap_data=result.heatmap_data[0] if result.heatmap_data else None,
         )
 
     def _generate_mitigations(self, threats: List[ThreatItem]) -> List[Mitigation]:
-        """Generate mitigation strategies based on threats."""
-        mitigations = []
+        """Generate one mitigation strategy per distinct STRIDE category found in threats."""
+        mitigations: List[Mitigation] = []
         mitigation_counter = 1
+        seen_categories: set = set()
 
-        # Group threats by STRIDE category for mitigation planning
-        stride_groups = {}
+        # Per-STRIDE mitigation templates using correct Mitigation field names
+        STRIDE_MITIGATIONS: Dict[str, Dict] = {
+            STRIDECategory.SPOOFING.value: {
+                "title": "Implement Multi-Factor Authentication",
+                "description": "Deploy MFA across all authentication points to prevent credential-based spoofing attacks.",
+                "priority": MitigationPriority.HIGH,
+                "estimated_effort": "Medium",
+                "estimated_cost": "Medium",
+            },
+            STRIDECategory.TAMPERING.value: {
+                "title": "Implement Input Validation and Integrity Controls",
+                "description": "Add comprehensive input validation and integrity checking to prevent data tampering.",
+                "priority": MitigationPriority.HIGH,
+                "estimated_effort": "Medium",
+                "estimated_cost": "Low",
+            },
+            STRIDECategory.REPUDIATION.value: {
+                "title": "Implement Centralised Audit Logging",
+                "description": "Log all security-relevant events with tamper-proof, immutable storage.",
+                "priority": MitigationPriority.MEDIUM,
+                "estimated_effort": "Low",
+                "estimated_cost": "Low",
+            },
+            STRIDECategory.INFORMATION_DISCLOSURE.value: {
+                "title": "Encrypt Data at Rest and in Transit",
+                "description": "Implement encryption for data at rest (AES-256) and in transit (TLS 1.3).",
+                "priority": MitigationPriority.CRITICAL,
+                "estimated_effort": "High",
+                "estimated_cost": "High",
+            },
+            STRIDECategory.DENIAL_OF_SERVICE.value: {
+                "title": "Implement Rate Limiting and DDoS Protection",
+                "description": "Add rate limiting, DDoS protection, and resource quotas to maintain availability.",
+                "priority": MitigationPriority.HIGH,
+                "estimated_effort": "Medium",
+                "estimated_cost": "Medium",
+            },
+            STRIDECategory.ELEVATION_OF_PRIVILEGE.value: {
+                "title": "Implement Principle of Least Privilege",
+                "description": "Apply strict RBAC and least-privilege access controls to prevent privilege escalation.",
+                "priority": MitigationPriority.HIGH,
+                "estimated_effort": "Medium",
+                "estimated_cost": "Low",
+            },
+        }
+
         for threat in threats:
-            category = threat.stride_category.value if threat.stride_category else "Unknown"
-            if category not in stride_groups:
-                stride_groups[category] = []
-            stride_groups[category].append(threat)
+            # Null-safe: skip threats without a STRIDE category
+            if not threat.stride_category:
+                continue
+            category_val = threat.stride_category.value
+            if category_val in seen_categories:
+                continue
+            seen_categories.add(category_val)
 
-        # Generate category-specific mitigations
-        for category, category_threats in stride_groups.items():
-            if category == "SPOOFING":
-                mitigation = Mitigation(
-                    id=f"mit_{mitigation_counter}",
-                    title="Implement Multi-Factor Authentication",
-                    description="Deploy MFA across all authentication points to prevent credential-based spoofing attacks.",
-                    implementation_steps=[
-                        "Configure MFA for all user accounts",
-                        "Implement backup codes for MFA recovery",
-                        "Set up MFA for administrative accounts",
-                        "Monitor for MFA bypass attempts"
-                    ],
-                    cost="Medium",
-                    effectiveness="High",
-                    priority=8,
-                    related_threats=[t.id for t in category_threats]
-                )
-                mitigations.append(mitigation)
-                mitigation_counter += 1
+            template = STRIDE_MITIGATIONS.get(category_val)
+            if not template:
+                continue
 
-            elif category == "TAMPERING":
-                mitigation = Mitigation(
-                    id=f"mit_{mitigation_counter}",
-                    title="Implement Input Validation and Integrity Controls",
-                    description="Add comprehensive input validation and integrity checking to prevent data tampering.",
-                    implementation_steps=[
-                        "Implement server-side input validation",
-                        "Add integrity checks for critical data",
-                        "Use parameterized queries to prevent injection",
-                        "Implement digital signatures for data integrity"
-                    ],
-                    cost="Medium",
-                    effectiveness="High",
-                    priority=9,
-                    related_threats=[t.id for t in category_threats]
-                )
-                mitigations.append(mitigation)
-                mitigation_counter += 1
-
-            elif category == "INFORMATION_DISCLOSURE":
-                mitigation = Mitigation(
-                    id=f"mit_{mitigation_counter}",
-                    title="Encrypt Data and Secure Communications",
-                    description="Implement encryption for data at rest and in transit to prevent information disclosure.",
-                    implementation_steps=[
-                        "Enable TLS 1.3 for all communications",
-                        "Encrypt sensitive data at rest",
-                        "Implement proper access controls",
-                        "Regular security audits and monitoring"
-                    ],
-                    cost="High",
-                    effectiveness="High",
-                    priority=9,
-                    related_threats=[t.id for t in category_threats]
-                )
-                mitigations.append(mitigation)
-                mitigation_counter += 1
-
-            elif category == "DENIAL_OF_SERVICE":
-                mitigation = Mitigation(
-                    id=f"mit_{mitigation_counter}",
-                    title="Implement Rate Limiting and DDoS Protection",
-                    description="Add rate limiting and DDoS protection to maintain service availability.",
-                    implementation_steps=[
-                        "Implement rate limiting on APIs",
-                        "Deploy DDoS protection service",
-                        "Set up monitoring and alerting",
-                        "Design for horizontal scaling"
-                    ],
-                    cost="Medium",
-                    effectiveness="Medium",
-                    priority=7,
-                    related_threats=[t.id for t in category_threats]
-                )
-                mitigations.append(mitigation)
-                mitigation_counter += 1
-
-            elif category == "ELEVATION_OF_PRIVILEGE":
-                mitigation = Mitigation(
-                    id=f"mit_{mitigation_counter}",
-                    title="Implement Principle of Least Privilege",
-                    description="Apply least privilege access controls to prevent privilege escalation.",
-                    implementation_steps=[
-                        "Implement role-based access control",
-                        "Regular access reviews and audits",
-                        "Just-in-time access for administrative tasks",
-                        "Monitor for privilege escalation attempts"
-                    ],
-                    cost="Medium",
-                    effectiveness="High",
-                    priority=8,
-                    related_threats=[t.id for t in category_threats]
-                )
-                mitigations.append(mitigation)
-                mitigation_counter += 1
+            mitigation = Mitigation(
+                id=f"mit_{mitigation_counter}",
+                threat_id=threat.id,
+                title=template["title"],
+                description=template["description"],
+                priority=template["priority"],
+                estimated_effort=template["estimated_effort"],
+                estimated_cost=template["estimated_cost"],
+                implementation_status="Not Started",
+            )
+            mitigations.append(mitigation)
+            mitigation_counter += 1
 
         return mitigations
 
@@ -388,13 +293,74 @@ def _make_id(title: str) -> str:
     return title.lower().replace(" ", "-").replace("(", "").replace(")", "").replace("/", "").replace(".", "")
 
 
+def _enrich_threat(threat: ThreatItem) -> ThreatItem:
+    """
+    Deterministically enrich a ThreatItem with:
+      - stride_category  : from CATEGORY_TO_STRIDE lookup
+      - capec_id         : from THREAT_TITLE_TO_CAPEC lookup (+ CWE annotation)
+      - asvs_controls    : ASVS control IDs from STRIDE_TO_ASVS_IDS
+      - priority_score   : Likelihood × Impact (0–100)
+      - llm_summary      : rule-based plain-text summary
+
+    All lookups are O(1) dict accesses – no fuzzy matching, no false positives.
+    """
+    # 1. STRIDE category – deterministic category-string lookup
+    stride_cat = CATEGORY_TO_STRIDE.get(threat.category)
+    if stride_cat:
+        threat.stride_category = stride_cat
+
+    # 2. CAPEC ID – direct title lookup (always set the ID string)
+    capec_id_str = THREAT_TITLE_TO_CAPEC.get(threat.title)
+    if capec_id_str:
+        threat.capec_id = capec_id_str
+        # Try to annotate with CWE references if the pattern is in local DB
+        try:
+            pattern = _engine.capec_service.get_capec_for_threat(threat.title)
+            if pattern and pattern.related_weaknesses and "[CWE:" not in threat.description:
+                cwe_refs = ", ".join(pattern.related_weaknesses[:3])
+                threat.description = f"{threat.description} [CWE: {cwe_refs}]"
+        except Exception:
+            pass  # CWE annotation is non-critical
+
+    # 3. ASVS control IDs – direct STRIDE → ASVS lookup
+    if stride_cat:
+        asvs_ids = STRIDE_TO_ASVS_IDS.get(stride_cat, [])
+        existing = set(threat.asvs_controls)
+        for cid in asvs_ids:
+            if cid not in existing:
+                threat.asvs_controls.append(cid)
+
+    # 4. Priority score = Likelihood × Impact (normalised to 0–100)
+    if stride_cat:
+        defaults = STRIDE_DEFAULTS.get(stride_cat, {"likelihood": 3, "impact": 3})
+        adj = RISK_ADJUSTMENTS.get(threat.risk or "Medium", 0)
+        L = max(1, min(5, defaults["likelihood"] + adj))
+        I = max(1, min(5, defaults["impact"] + adj))
+        threat.priority_score = round((L * I) / 25 * 100)
+
+    # 5. LLM summary (rule-based for now; swap in a real LLM call later)
+    try:
+        threat.llm_summary = _engine.llm_service.generate_llm_summary_text(threat)
+    except Exception:
+        pass  # Non-critical
+
+    return threat
+
+
 def _risk_label(score: int) -> str:
-    """Convert risk score to label."""
-    if score >= 80:
+    """
+    Convert risk score to label (FIX 3 thresholds).
+
+      0–39   → Low
+      40–64  → Medium
+      65–84  → High
+      85–100 → Critical
+    """
+    if score >= 85:
         return "Critical"
-    if score >= 60:
+    if score >= 65:
         return "High"
-    if score >= 35:
+    if score >= 40:
         return "Medium"
     return "Low"
 
@@ -427,43 +393,166 @@ def analyze(req: ThreatModelCreateRequest) -> ThreatModelAnalyzeResponse:
     return analyze_stride(req)
 
 
+def _apply_stack_context(threats: List[ThreatItem], req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], bool]:
+    """
+    Apply stack-specific context to the generated threats.
+    Returns (modified_threats, generic_warning_flag)
+    """
+    if not req.frameworks and not req.languages:
+        return threats, True
+
+    # 1. Suppress mitigated threats
+    suppressions = {
+        "Django": {"Cross-Site Request Forgery (CSRF)": "Mitigated by Django's built-in CSRF middleware."},
+        "Rails": {"Cross-Site Request Forgery (CSRF)": "Mitigated by Rails protect_from_forgery."},
+        "Laravel": {"Cross-Site Request Forgery (CSRF)": "Mitigated by Laravel VerifyCsrfToken middleware."},
+        "ASP.NET": {"Cross-Site Request Forgery (CSRF)": "Mitigated by ASP.NET AntiForgeryToken."},
+        "FastAPI": {"Missing HTTP Security Headers (Node)": "Not applicable to FastAPI."},
+        "React": {"Cross-Site Scripting (XSS)": "Mitigated by React's JSX auto-escaping."},
+        "Next.js": {"Cross-Site Scripting (XSS)": "Mitigated by React's JSX auto-escaping."},
+        "Angular": {"Cross-Site Scripting (XSS)": "Mitigated by Angular's template sanitizer."},
+        "Svelte": {"Cross-Site Scripting (XSS)": "Mitigated by Svelte's compiler auto-escaping."},
+    }
+
+    frameworks_lower = {fw.lower(): fw for fw in req.frameworks}
+    
+    final_threats = []
+    for threat in threats:
+        suppressed = False
+        for fw_key, fw_name in frameworks_lower.items():
+            # Check exact match in suppressions table
+            if fw_name in suppressions and threat.title in suppressions[fw_name]:
+                threat.mitigation = suppressions[fw_name][threat.title]
+                threat.status = ThreatStatus.MITIGATED
+                threat.risk = "Low"
+                # Keep it in the list so the user sees it's handled
+                break
+        final_threats.append(threat)
+
+    # 2. Inject stack-specific threats
+    injections = []
+    existing_titles = {t.title for t in final_threats}
+
+    def add_injection(title, risk, category, description, mitigation):
+        if title not in existing_titles:
+            injections.append(ThreatItem(
+                id=_make_id(title),
+                title=title,
+                risk=risk,
+                category=category,
+                description=description,
+                mitigation=mitigation,
+            ))
+            existing_titles.add(title)
+
+    if "django" in frameworks_lower:
+        add_injection("Django SECRET_KEY Exposure", "High", "Framework Risk", "Exposure of Django's SECRET_KEY can allow attackers to forge session cookies and reset passwords.", "Use environment variables for SECRET_KEY and ensure it is not committed to source control.")
+        add_injection("Django DEBUG=True in Production", "High", "Framework Risk", "Running Django with DEBUG=True in production exposes detailed traceback pages with sensitive settings.", "Ensure DEBUG=False in production settings.")
+    
+    if "flask" in frameworks_lower:
+        add_injection("Flask Debug Mode in Production", "High", "Framework Risk", "Running Flask with app.debug=True exposes an interactive debugger.", "Ensure FLASK_DEBUG=0 and app.debug=False in production.")
+        
+    if "react" in frameworks_lower or "next.js" in frameworks_lower:
+        add_injection("Insecure localStorage Token Storage", "High", "Web Security", "Storing JWTs or sensitive tokens in localStorage makes them vulnerable to XSS theft.", "Store tokens in secure, HttpOnly cookies instead of localStorage.")
+        add_injection("Missing Content Security Policy (CSP)", "Medium", "Web Security", "Modern frontend applications should restrict resource loading origins to prevent XSS.", "Implement a strict Content Security Policy (CSP) header.")
+        
+    if "spring boot" in frameworks_lower:
+        add_injection("Spring Actuator Endpoint Exposure", "High", "Framework Risk", "Exposed Spring Actuator endpoints can leak environment variables, heap dumps, and system state.", "Secure /actuator endpoints with authentication and disable unnecessary endpoints.")
+        
+    if "fastapi" in frameworks_lower:
+        add_injection("FastAPI Docs Exposure", "Medium", "Framework Risk", "Leaving /docs and /redoc enabled in production can expose API surface area to attackers.", "Disable Swagger/ReDoc in production or protect them with authentication.")
+
+    final_threats.extend(injections)
+
+    return final_threats, False
+
+
 def analyze_stride(
     req: ThreatModelCreateRequest,
     generate_heatmap: bool = False,
 ) -> ThreatModelAnalyzeResponse:
     """
-    Stateless STRIDE-based threat modeling analysis.
-    Uses user input data (frameworks, databases, protocols, etc.) to generate relevant threats.
+    Stateless STRIDE-based threat modeling analysis (primary public entry-point).
+
+    Pipeline:
+      1. _build_threats(req)          – rule-based threat generation (unchanged)
+      2. _apply_stack_context(t, req) - stack-specific context logic
+      3. _enrich_threat(t)            – STRIDE / CAPEC / ASVS / priority / LLM
+      4. _generate_mitigations(...)   – one mitigation per STRIDE category
+      5. generate_per_threat_heatmap  – optional, correct List[HeatmapData] schema
     """
-    # Use the rule-based threat generation with user's actual input
+    has_frameworks = bool(getattr(req, 'frameworks', None))
+    has_languages = bool(getattr(req, 'languages', None))
+
+    if not has_frameworks and not has_languages:
+        return ThreatModelAnalyzeResponse(
+            threats=[],
+            mitigations=[],
+            heatmap_data=[],
+            risk_score=None,
+            risk_label=None,
+            generic_warning=True,
+            blocked=True,
+            reason="No technology stack selected."
+        )
+
+    # Step 1: Generate base threats + raw additive score (backward-compatible)
     threats, raw_score = _build_threats(req)
 
-    # Cap score at 100
-    capped_score = min(raw_score, 100)
+    # Step 1b FIX 4: Generate stack-aware threats from STRIDE engine and merge
+    # Build tech_context from the request fields
+    characteristics: List[str] = []
+    if getattr(req, 'stores_sensitive_data', False):
+        characteristics.append('Stores Sensitive Data')
+    if getattr(req, 'has_admin_panel', False):
+        characteristics.append('Has Admin Panel')
 
-    # Enrich threats with additional metadata
-    enriched_threats = []
-    for threat in threats:
-        # Map threat category to STRIDE if not already mapped
-        if not threat.stride_category:
-            threat.stride_category = _map_threat_to_stride(threat.category)
-        enriched_threats.append(threat)
+    tech_context: Dict[str, Any] = {
+        "frameworks":      req.frameworks or [],
+        "databases":       req.databases or [],
+        "protocols":       req.protocols or [],
+        "characteristics": characteristics,
+        "system_metadata": getattr(req, 'system_metadata', {}) or {},
+    }
 
-    # Generate mitigations based on threat severity
+    stack_aware_threats = _engine.stride_engine.get_stack_aware_threats(
+        normalized_arch=None,
+        tech_context=tech_context,
+    )
+
+    # Merge: prefer existing title-keyed threats; append new stack-aware ones
+    existing_ids = {t.id for t in threats}
+    existing_titles = {t.title for t in threats}
+    for sat in stack_aware_threats:
+        if sat.id not in existing_ids and sat.title not in existing_titles:
+            threats.append(sat)
+            existing_ids.add(sat.id)
+            existing_titles.add(sat.title)
+
+    # Step 2: Apply stack-specific context (suppressions & injections)
+    context_threats, generic_warning = _apply_stack_context(threats, req)
+
+    # Step 3: Deterministic enrichment for every threat
+    enriched_threats = [_enrich_threat(t) for t in context_threats]
+
+    # Step 4: One mitigation per distinct STRIDE category
     mitigations = _engine._generate_mitigations(enriched_threats)
 
-    # Generate heatmap if requested
-    heatmap_data = []
+    # Step 5: Per-threat heatmap (uses correct List[HeatmapData] schema)
+    heatmap_data: List[HeatmapData] = []
     if generate_heatmap:
-        heatmap_obj = _engine.heatmap_generator.generate_heatmap_data(enriched_threats)
-        heatmap_data = [heatmap_obj]
+        heatmap_data = _engine.heatmap_generator.generate_per_threat_heatmap(enriched_threats)
+
+    # FIX 3: Use weighted-average risk score instead of raw additive accumulation
+    final_score = compute_overall_risk_score(enriched_threats)
 
     return ThreatModelAnalyzeResponse(
         threats=enriched_threats,
         mitigations=mitigations,
         heatmap_data=heatmap_data,
-        risk_score=capped_score,
-        risk_label=_risk_label(capped_score),
+        risk_score=final_score,
+        risk_label=_risk_label(final_score),
+        generic_warning=generic_warning,
     )
 
 
@@ -474,6 +563,7 @@ def analyze_comprehensive(
 ) -> ThreatModelAnalysis:
     """
     Comprehensive threat modeling analysis with all enhanced features.
+    Delegates to the engine instance which in turn calls analyze_stride().
     """
     return _engine.analyze_comprehensive(request, generate_heatmap, include_summaries)
 
