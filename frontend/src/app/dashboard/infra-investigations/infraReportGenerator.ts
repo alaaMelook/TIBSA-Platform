@@ -1,7 +1,7 @@
 /**
  * Premium SOC-Style PDF report generator for Threat Infrastructure Intelligence investigations.
  * Uses jsPDF to compile complex threat intelligence data into an elegant, high-impact PDF layout.
- * Optimized with larger, highly clear, and legible font sizes for premium professional readability.
+ * Optimized with high-contrast Slate-900 typography and conditional section rendering (hiding empty sections).
  */
 import jsPDF from "jspdf";
 import { InfraInvestigation, InfraInvestigationResults, ThreatIndicatorCheck } from "@/types/infra_investigation";
@@ -22,7 +22,7 @@ function getIndicatorColor(severity: string): [number, number, number] {
     case "low":
       return [37, 99, 235]; // Blue
     default:
-      return [100, 116, 139]; // Slate
+      return [15, 23, 42]; // Slate 900
   }
 }
 
@@ -55,6 +55,7 @@ export function generateInfraPDFReport(
   const margin = 20;
   const contentW = pageW - margin * 2;
   let y = 20;
+  let currentSectionIndex = 1;
 
   const addPage = () => {
     doc.addPage();
@@ -82,7 +83,7 @@ export function generateInfraPDFReport(
   doc.setFillColor(6, 182, 212); // Cyan 500
   doc.rect(0, 95, pageW, 4, "F");
 
-  // Logo / Branding text (Enlarged)
+  // Logo / Branding text (High-contrast white)
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(32);
@@ -93,21 +94,21 @@ export function generateInfraPDFReport(
   doc.setTextColor(103, 114, 229); // Cyber Indigo
   doc.text("THREAT INTELLIGENCE PORTAL", margin, 46);
 
-  // Document Title (Enlarged)
+  // Document Title (High-contrast bold white)
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(23);
   const titleLines = doc.splitTextToSize("THREAT INFRASTRUCTURE INVESTIGATION REPORT", contentW - 20);
   doc.text(titleLines, margin, 62);
 
-  // Target Information Highlight Card (Enlarged & Padded)
+  // Target Information Highlight Card
   y = 110;
   doc.setFillColor(248, 250, 252); // Slate 50
   doc.setDrawColor(226, 232, 240); // Slate 200
   doc.setLineWidth(0.6);
   doc.roundedRect(margin, y, contentW, 48, 2, 2, "FD");
 
-  // Risk Rating badge inside metadata card (Larger)
+  // Risk Rating badge inside metadata card
   doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
   doc.roundedRect(pageW - margin - 44, y + 10, 36, 12, 1.5, 1.5, "F");
   doc.setTextColor(255, 255, 255);
@@ -116,24 +117,24 @@ export function generateInfraPDFReport(
   doc.text(riskLabel.toUpperCase(), pageW - margin - 26, y + 18, { align: "center" });
 
   doc.setFontSize(8.5);
-  doc.setTextColor(148, 163, 184);
+  doc.setTextColor(100, 116, 139); // Slate 500 for low importance labels
   doc.text("SECURITY CLASSIFICATION", pageW - margin - 26, y + 28, { align: "center" });
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(15, 23, 42);
+  doc.setTextColor(15, 23, 42); // Slate 900
   doc.text("TLP:AMBER", pageW - margin - 26, y + 33, { align: "center" });
 
-  // Metadata items (Enlarged text size to 11)
+  // Metadata items (High-contrast Slate-900)
   doc.setTextColor(15, 23, 42);
-  doc.setFontSize(11);
+  doc.setFontSize(11.5);
   
   doc.setFont("helvetica", "bold");
   doc.text("Target IOC:", margin + 8, y + 11);
   doc.setFont("courier", "bold");
-  doc.setFontSize(11.5);
+  doc.setFontSize(12);
   doc.text(sanitize(investigation.target), margin + 38, y + 11);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(11.5);
   doc.text("IOC Type:", margin + 8, y + 20);
   doc.setFont("helvetica", "normal");
   doc.text(investigation.target_type.toUpperCase(), margin + 38, y + 20);
@@ -141,32 +142,32 @@ export function generateInfraPDFReport(
   doc.setFont("helvetica", "bold");
   doc.text("Record ID:", margin + 8, y + 29);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(10.5);
   doc.text(sanitize(investigation.id), margin + 38, y + 29);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(11.5);
   doc.text("Generated:", margin + 8, y + 38);
   doc.setFont("helvetica", "normal");
   doc.text(new Date().toUTCString(), margin + 38, y + 38);
 
-  // Premium Section divider line
+  // Section divider line
   y = 175;
   doc.setDrawColor(203, 213, 225); // Slate 300
   doc.setLineWidth(0.4);
   doc.line(margin, y, pageW - margin, y);
 
-  // Subtitle / Abstract (Enlarged)
+  // Subtitle / Abstract (High-contrast text)
   y = 188;
-  doc.setTextColor(51, 65, 85); // Slate 700
+  doc.setTextColor(15, 23, 42); // Slate 900
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(13.5);
   doc.text("REPORT ABSTRACT & OBJECTIVE", margin, y);
   
   y += 7;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(71, 85, 105);
+  doc.setFontSize(11.5);
+  doc.setTextColor(30, 41, 59); // Slate 800 for high-contrast paragraph
   const abstractText = 
     "This automated forensic dossier compiles domain, IP, WHOIS, reputation metrics, SSL credentials, DNS layouts, " +
     "and correlation matrices for the requested indicator. The findings represent a composite security posture built from live " +
@@ -174,7 +175,7 @@ export function generateInfraPDFReport(
   const abstractLines = doc.splitTextToSize(abstractText, contentW);
   doc.text(abstractLines, margin, y);
 
-  // Forensic stamps / Bottom visual blocks (Enlarged)
+  // Forensic stamps / Bottom visual blocks
   y = 240;
   doc.setFillColor(241, 245, 249);
   doc.rect(margin, y, contentW, 28, "F");
@@ -184,71 +185,70 @@ export function generateInfraPDFReport(
   doc.setTextColor(15, 23, 42);
   doc.text("TIBSA CYBER INTELLIGENCE SUITE", margin + 6, y + 8);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(71, 85, 105);
+  doc.setFontSize(10);
+  doc.setTextColor(30, 41, 59);
   doc.text("Analyst Operator: System Orchestrated AI Pipeline", margin + 6, y + 14);
   doc.text("Platform Version: TIBSA v1.8.4 (Active Threat Intel Mode)", margin + 6, y + 20);
 
-  // Draw cyber square decorations
+  // Cyber decorations
   doc.setFillColor(6, 182, 212);
   doc.rect(pageW - margin - 15, y + 6, 8, 8, "F");
   doc.setFillColor(15, 23, 42);
   doc.rect(pageW - margin - 25, y + 12, 8, 8, "F");
 
-  // Save Cover Page, add page for next sections
   addPage();
 
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 2: EXECUTIVE SUMMARY (AI GENERATED)
   // ───────────────────────────────────────────────────────────────────────────
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("1. EXECUTIVE AI THREAT BRIEFING", margin, y);
-  
-  // Custom Visual Bar Accent
-  doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
-  doc.rect(margin, y + 3, 30, 1.2, "F");
-  y += 9;
+  const aiSummary = results.ai_summary?.executive_summary;
+  if (aiSummary && !results.ai_summary?.error) {
+    doc.setTextColor(15, 23, 42); // Slate 900
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text(`${currentSectionIndex++}. EXECUTIVE AI THREAT BRIEFING`, margin, y);
+    
+    doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
+    doc.rect(margin, y + 3, 30, 1.2, "F");
+    y += 9;
 
-  // AI Summary card box (Enlarged text size to 10.5)
-  const aiSummary = results.ai_summary?.executive_summary || "No executive AI briefing is currently available for this investigation.";
-  const summaryLines = doc.splitTextToSize(sanitize(aiSummary), contentW - 14);
-  
-  doc.setFillColor(250, 250, 250);
-  doc.setDrawColor(241, 245, 249);
-  const cardH = summaryLines.length * 5.5 + 10;
-  doc.roundedRect(margin, y, contentW, cardH, 1, 1, "FD");
+    const summaryLines = doc.splitTextToSize(sanitize(aiSummary), contentW - 14);
+    
+    doc.setFillColor(250, 250, 250);
+    doc.setDrawColor(226, 232, 240);
+    const cardH = summaryLines.length * 5.5 + 10;
+    doc.roundedRect(margin, y, contentW, cardH, 1, 1, "FD");
 
-  // Left solid visual accent band
-  doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
-  doc.rect(margin, y, 2.5, cardH, "F");
+    // Left solid visual accent band
+    doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
+    doc.rect(margin, y, 2.5, cardH, "F");
 
-  doc.setTextColor(51, 65, 85);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.text(summaryLines, margin + 8, y + 7);
-  y += cardH + 12;
+    doc.setTextColor(15, 23, 42); // High-contrast Slate 900 text
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(summaryLines, margin + 8, y + 7);
+    y += cardH + 12;
+  }
 
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 3: INVESTIGATION OVERVIEW
   // ───────────────────────────────────────────────────────────────────────────
+  // We always have target information, so we always show the overview
   checkPage(50);
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text("2. INVESTIGATION OVERVIEW", margin, y);
+  doc.text(`${currentSectionIndex++}. INVESTIGATION OVERVIEW`, margin, y);
   
   doc.setFillColor(15, 23, 42);
   doc.rect(margin, y + 3, 30, 1.2, "F");
   y += 9;
 
-  // Overview Table (Enlarged size to 11)
   doc.setFillColor(248, 250, 252);
   doc.rect(margin, y, contentW, 30, "F");
   
-  doc.setFontSize(10.5);
-  doc.setTextColor(100, 116, 139);
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42); // Strong Slate 900 contrast
   doc.setFont("helvetica", "bold");
   doc.text("PARAMETER", margin + 6, y + 7);
   doc.text("DETAILS / OBSERVATION", margin + 70, y + 7);
@@ -257,7 +257,7 @@ export function generateInfraPDFReport(
   doc.line(margin, y + 11, pageW - margin, y + 11);
 
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(51, 65, 85);
+  doc.setTextColor(15, 23, 42);
   doc.text("Target Identifier", margin + 6, y + 17);
   doc.setFont("courier", "bold");
   doc.text(sanitize(investigation.target), margin + 70, y + 17);
@@ -271,58 +271,58 @@ export function generateInfraPDFReport(
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 4: RISK SCORE & SEVERITY
   // ───────────────────────────────────────────────────────────────────────────
-  checkPage(75);
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("3. RISK SCORE & COMPOSITE SEVERITY", margin, y);
-  doc.setFillColor(15, 23, 42);
-  doc.rect(margin, y + 3, 30, 1.2, "F");
-  y += 9;
-
-  // Risk Gauge Block
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(margin, y, contentW, 40, 2, 2, "FD");
-
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text(`Composite Score: ${Math.round(investigation.risk_score)} / 100`, margin + 8, y + 10);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.setTextColor(71, 85, 105);
-  doc.text(`Verdict Classification: ${riskLabel.toUpperCase()} SEVERITY THREAT`, margin + 8, y + 16);
-
-  // Draw Horizontal Risk Progress Bar (Enlarged)
-  const barX = margin + 8;
-  const barY = y + 22;
-  const barW = contentW - 16;
-  const barH = 6;
-
-  doc.setFillColor(226, 232, 240);
-  doc.roundedRect(barX, barY, barW, barH, 1, 1, "F");
-
-  // Colored progress fill
-  doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
-  doc.roundedRect(barX, barY, (investigation.risk_score / 100) * barW, barH, 1, 1, "F");
-
-  // Tick labels
-  doc.setFontSize(9);
-  doc.setTextColor(148, 163, 184);
-  doc.text("0 (CLEAN)", barX, barY + 11);
-  doc.text("40 (MEDIUM)", barX + barW * 0.4, barY + 11, { align: "center" });
-  doc.text("75 (HIGH)", barX + barW * 0.75, barY + 11, { align: "center" });
-  doc.text("100 (CRITICAL)", barX + barW, barY + 11, { align: "right" });
-
-  y += 48;
-
-  // Sub-metrics Progress Bars side-by-side (Enlarged)
   if (results.risk) {
+    checkPage(75);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text(`${currentSectionIndex++}. RISK SCORE & COMPOSITE SEVERITY`, margin, y);
+    doc.setFillColor(15, 23, 42);
+    doc.rect(margin, y + 3, 30, 1.2, "F");
+    y += 9;
+
+    // Risk Gauge Block
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, y, contentW, 40, 2, 2, "FD");
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`Composite Score: ${Math.round(investigation.risk_score)} / 100`, margin + 8, y + 10);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Verdict Classification: ${riskLabel.toUpperCase()} SEVERITY THREAT`, margin + 8, y + 16);
+
+    // Draw Horizontal Risk Progress Bar
+    const barX = margin + 8;
+    const barY = y + 22;
+    const barW = contentW - 16;
+    const barH = 6;
+
+    doc.setFillColor(226, 232, 240);
+    doc.roundedRect(barX, barY, barW, barH, 1, 1, "F");
+
+    // Colored progress fill
+    doc.setFillColor(riskColor[0], riskColor[1], riskColor[2]);
+    doc.roundedRect(barX, barY, (investigation.risk_score / 100) * barW, barH, 1, 1, "F");
+
+    // Tick labels
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42); // Black ticks
+    doc.text("0 (CLEAN)", barX, barY + 11);
+    doc.text("40 (MEDIUM)", barX + barW * 0.4, barY + 11, { align: "center" });
+    doc.text("75 (HIGH)", barX + barW * 0.75, barY + 11, { align: "center" });
+    doc.text("100 (CRITICAL)", barX + barW, barY + 11, { align: "right" });
+
+    y += 48;
+
+    // Sub-metrics Progress Bars side-by-side
     checkPage(35);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(11.5);
+    doc.setTextColor(15, 23, 42);
     doc.text("Composite Risk Breakdown Weights:", margin, y);
     y += 7;
 
@@ -338,9 +338,9 @@ export function generateInfraPDFReport(
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(bx, y, subW, 20, 1.5, 1.5, "F");
 
-      doc.setFontSize(9.5);
+      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(51, 65, 85);
+      doc.setTextColor(15, 23, 42);
       doc.text(sb.name, bx + 5, y + 6);
       doc.text(String(Math.round(sb.val)), bx + subW - 5, y + 6, { align: "right" });
 
@@ -351,59 +351,64 @@ export function generateInfraPDFReport(
       doc.rect(bx + 5, y + 10, (sb.val / 100) * (subW - 10), 3.5, "F");
     });
     y += 28;
-  }
 
-  // Contributing Factors (Enlarged)
-  if (results.risk?.contributing_factors && results.risk.contributing_factors.length > 0) {
-    checkPage(30);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(51, 65, 85);
-    doc.text("Identified Threat Contributing Indicators:", margin, y);
-    y += 6;
+    // Contributing Factors
+    if (results.risk.contributing_factors && results.risk.contributing_factors.length > 0) {
+      checkPage(30);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text("Identified Threat Contributing Indicators:", margin, y);
+      y += 6;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(71, 85, 105);
-    results.risk.contributing_factors.forEach((factor) => {
-      checkPage(6);
-      doc.setFillColor(217, 119, 6);
-      doc.circle(margin + 3, y - 1.2, 1.2, "F");
-      doc.text(sanitize(factor), margin + 8, y);
-      y += 5.5;
-    });
-    y += 6;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      results.risk.contributing_factors.forEach((factor) => {
+        checkPage(6);
+        doc.setFillColor(217, 119, 6);
+        doc.circle(margin + 3, y - 1.2, 1.2, "F");
+        doc.text(sanitize(factor), margin + 8, y);
+        y += 5.5;
+      });
+      y += 6;
+    }
   }
 
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 5: REPUTATION INTELLIGENCE
   // ───────────────────────────────────────────────────────────────────────────
-  checkPage(50);
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("4. THREAT REPUTATION FEED INTELLIGENCE", margin, y);
-  doc.setFillColor(15, 23, 42);
-  doc.rect(margin, y + 3, 30, 1.2, "F");
-  y += 9;
-
   const rep = results.reputation;
-  if (rep) {
-    // ABUSEIPDB CARD (Enlarged card heights and text size to 10)
-    if (rep.abuseipdb && !rep.abuseipdb.error) {
+  const hasAbuseIPDB = rep?.abuseipdb && !rep.abuseipdb.error;
+  const hasURLhaus = rep?.urlhaus && !rep.urlhaus.error;
+  const hasThreatFox = rep?.threatfox && !rep.threatfox.error;
+  const hasOTX = rep?.otx && !rep.otx.error;
+
+  if (rep && (hasAbuseIPDB || hasURLhaus || hasThreatFox || hasOTX)) {
+    checkPage(50);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text(`${currentSectionIndex++}. THREAT REPUTATION FEED INTELLIGENCE`, margin, y);
+    doc.setFillColor(15, 23, 42);
+    doc.rect(margin, y + 3, 30, 1.2, "F");
+    y += 9;
+
+    // ABUSEIPDB CARD
+    if (hasAbuseIPDB && rep.abuseipdb) {
       checkPage(30);
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, contentW, 25, 1.5, 1.5, "FD");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
       doc.text("AbuseIPDB Database Audit", margin + 6, y + 6);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
       doc.text(`ISP: ${sanitize(rep.abuseipdb.isp)}`, margin + 6, y + 13);
       doc.text(`Confidence Rating: ${rep.abuseipdb.abuse_confidence_score}%`, margin + 6, y + 19);
       doc.text(`Total Reports: ${rep.abuseipdb.total_reports}`, margin + 90, y + 13);
@@ -412,20 +417,20 @@ export function generateInfraPDFReport(
     }
 
     // URLHAUS CARD
-    if (rep.urlhaus && !rep.urlhaus.error) {
+    if (hasURLhaus && rep.urlhaus) {
       checkPage(30);
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, contentW, 25, 1.5, 1.5, "FD");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
       doc.text("URLhaus Malicious Payload Audit", margin + 6, y + 6);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
       doc.text(`Listing Status: ${rep.urlhaus.query_status === "is_listed" ? "SUSPICIOUS (Listed)" : "Unlisted"}`, margin + 6, y + 13);
       doc.text(`URLs on Host: ${rep.urlhaus.urls_on_this_host?.length || 0}`, margin + 6, y + 19);
       doc.text(`Reference Link: ${sanitize(rep.urlhaus.urlhaus_reference || "None")}`, margin + 90, y + 13);
@@ -433,20 +438,20 @@ export function generateInfraPDFReport(
     }
 
     // THREATFOX CARD
-    if (rep.threatfox && !rep.threatfox.error) {
+    if (hasThreatFox && rep.threatfox) {
       checkPage(30);
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, contentW, 25, 1.5, 1.5, "FD");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
       doc.text("ThreatFox IOC Database Audit", margin + 6, y + 6);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
       const isListed = rep.threatfox.query_status === "ok";
       doc.text(`Listing Status: ${isListed ? "ACTIVE SUSPECTED IOC" : "No results"}`, margin + 6, y + 13);
       const firstIoc = rep.threatfox.iocs?.[0];
@@ -456,20 +461,20 @@ export function generateInfraPDFReport(
     }
 
     // ALIENVAULT OTX CARD
-    if (rep.otx && !rep.otx.error) {
+    if (hasOTX && rep.otx) {
       checkPage(30);
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, contentW, 25, 1.5, 1.5, "FD");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
       doc.text("AlienVault OTX Threat Pulses", margin + 6, y + 6);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
       doc.text(`Total Correlated Pulses: ${rep.otx.pulse_count}`, margin + 6, y + 13);
       const mainPulse = rep.otx.pulses?.[0];
       doc.text(`Primary Associated Pulse: ${sanitize(mainPulse?.name || "None")}`, margin + 6, y + 19);
@@ -480,39 +485,42 @@ export function generateInfraPDFReport(
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 6: DNS / WHOIS / SSL ANALYSIS
   // ───────────────────────────────────────────────────────────────────────────
-  addPage();
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("5. DNS, WHOIS & SSL INFRASTRUCTURE DETAILS", margin, y);
-  doc.setFillColor(15, 23, 42);
-  doc.rect(margin, y + 3, 30, 1.2, "F");
-  y += 9;
-
   const enr = results.enrichment;
-  if (enr) {
+  const hasDNS = enr?.dns?.records && enr.dns.records.length > 0;
+  const hasWHOIS = enr?.whois && !enr.whois.error;
+  const hasSSL = enr?.ssl && !enr.ssl.error;
+
+  if (enr && (hasDNS || hasWHOIS || hasSSL)) {
+    addPage();
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text(`${currentSectionIndex++}. DNS, WHOIS & SSL INFRASTRUCTURE DETAILS`, margin, y);
+    doc.setFillColor(15, 23, 42);
+    doc.rect(margin, y + 3, 30, 1.2, "F");
+    y += 9;
+
     // DNS RECORDS TABLE
-    if (enr.dns?.records && enr.dns.records.length > 0) {
+    if (hasDNS && enr.dns) {
       checkPage(50);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(11.5);
+      doc.setTextColor(15, 23, 42);
       doc.text("Active DNS Record Layout:", margin, y);
       y += 6;
 
-      // Header row (Enlarged)
       doc.setFillColor(241, 245, 249);
       doc.rect(margin, y, contentW, 9, "F");
       doc.setFontSize(10);
-      doc.setTextColor(51, 65, 85);
+      doc.setTextColor(15, 23, 42);
       doc.text("RECORD TYPE", margin + 6, y + 6.5);
       doc.text("VALUE / VALUE MAPPING", margin + 45, y + 6.5);
       doc.text("TTL", margin + contentW - 15, y + 6.5, { align: "right" });
       y += 9.5;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
 
       enr.dns.records.slice(0, 8).forEach((record, index) => {
         checkPage(8);
@@ -523,22 +531,22 @@ export function generateInfraPDFReport(
         doc.setFont("helvetica", "bold");
         doc.text(record.type, margin + 6, y + 5);
         doc.setFont("courier", "bold");
-        doc.setFontSize(9);
+        doc.setFontSize(9.5);
         doc.text(sanitize(record.value), margin + 45, y + 5);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
+        doc.setFontSize(10);
         doc.text(String(record.ttl || 3600), margin + contentW - 15, y + 5, { align: "right" });
         y += 7;
       });
       y += 6;
     }
 
-    // WHOIS DETAILS CARD (Enlarged sizes)
-    if (enr.whois && !enr.whois.error) {
+    // WHOIS DETAILS CARD
+    if (hasWHOIS && enr.whois) {
       checkPage(50);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(11.5);
+      doc.setTextColor(15, 23, 42);
       doc.text("WHOIS Domain Registration Audit:", margin, y);
       y += 6;
 
@@ -546,8 +554,8 @@ export function generateInfraPDFReport(
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, contentW, 32, 1.5, 1.5, "FD");
 
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
       doc.setFont("helvetica", "bold");
       doc.text("Registrar Org:", margin + 6, y + 8);
       doc.setFont("helvetica", "normal");
@@ -581,12 +589,12 @@ export function generateInfraPDFReport(
       y += 38;
     }
 
-    // SSL CERTIFICATE DETAILS (Enlarged sizes)
-    if (enr.ssl && !enr.ssl.error) {
+    // SSL CERTIFICATE DETAILS
+    if (hasSSL && enr.ssl) {
       checkPage(50);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(11.5);
+      doc.setTextColor(15, 23, 42);
       doc.text("SSL / TLS Certificate Authentication Details:", margin, y);
       y += 6;
 
@@ -594,8 +602,8 @@ export function generateInfraPDFReport(
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, contentW, 32, 1.5, 1.5, "FD");
 
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 23, 42);
       
       doc.setFont("helvetica", "bold");
       doc.text("Subject CN:", margin + 6, y + 8);
@@ -624,7 +632,7 @@ export function generateInfraPDFReport(
       }
 
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(71, 85, 105);
+      doc.setTextColor(15, 23, 42);
       doc.text("Is Expired:", margin + 115, y + 16);
       doc.setFont("helvetica", "bold");
       if (enr.ssl.is_expired) {
@@ -647,16 +655,15 @@ export function generateInfraPDFReport(
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
-    doc.text("6. HISTORICAL PASSIVE DNS RESOLUTIONS", margin, y);
+    doc.text(`${currentSectionIndex++}. HISTORICAL PASSIVE DNS RESOLUTIONS`, margin, y);
     doc.setFillColor(15, 23, 42);
     doc.rect(margin, y + 3, 30, 1.2, "F");
     y += 9;
 
-    // Header (Enlarged)
     doc.setFillColor(241, 245, 249);
     doc.rect(margin, y, contentW, 9, "F");
-    doc.setFontSize(9.5);
-    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
     doc.text("IP RESOLVED IP", margin + 6, y + 6.5);
     doc.text("MAPPED HOSTNAME", margin + 50, y + 6.5);
     doc.text("FIRST SEEN", margin + 115, y + 6.5);
@@ -664,8 +671,8 @@ export function generateInfraPDFReport(
     y += 9.5;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
 
     pdns.passive_dns.slice(0, 12).forEach((entry, index) => {
       checkPage(8);
@@ -693,14 +700,14 @@ export function generateInfraPDFReport(
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
-    doc.text("7. HEURISTIC THREAT SIGNAL CHECKS", margin, y);
+    doc.text(`${currentSectionIndex++}. HEURISTIC THREAT SIGNAL CHECKS`, margin, y);
     doc.setFillColor(15, 23, 42);
     doc.rect(margin, y + 3, 30, 1.2, "F");
     y += 9;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
     doc.text(`Evaluated Indicators: ${indicators.checks.length} Checks  |  Triggered Threat Indicators: ${indicators.total_triggered}`, margin, y);
     y += 7;
 
@@ -714,7 +721,6 @@ export function generateInfraPDFReport(
       doc.setFillColor(bgC[0], bgC[1], bgC[2]);
       doc.setDrawColor(borderC[0], borderC[1], borderC[2]);
       doc.setLineWidth(0.4);
-      // Increased Box height from 11 to 15
       doc.roundedRect(margin, y, contentW, 15, 0.5, 0.5, "FD");
 
       // Custom bullet indicator
@@ -722,23 +728,23 @@ export function generateInfraPDFReport(
       doc.rect(margin + 5, y + 5.5, 4, 4, "F");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
+      doc.setFontSize(10.5);
       doc.setTextColor(15, 23, 42);
       doc.text(sanitize(chk.name), margin + 14, y + 6);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
       doc.text(sanitize(chk.description), margin + 14, y + 11);
 
       // Trigger Badge State right
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
+      doc.setFontSize(10);
       if (isTriggered) {
         doc.setTextColor(220, 38, 38);
         doc.text(`TRIGGERED (${chk.severity.toUpperCase()})`, pageW - margin - 6, y + 9, { align: "right" });
       } else {
-        doc.setTextColor(148, 163, 184);
+        doc.setTextColor(100, 116, 139);
         doc.text("CLEAN", pageW - margin - 6, y + 9, { align: "right" });
       }
 
@@ -756,14 +762,14 @@ export function generateInfraPDFReport(
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
-    doc.text("8. INFRASTRUCTURE CORRELATION ANALYSIS", margin, y);
+    doc.text(`${currentSectionIndex++}. INFRASTRUCTURE CORRELATION ANALYSIS`, margin, y);
     doc.setFillColor(15, 23, 42);
     doc.rect(margin, y + 3, 30, 1.2, "F");
     y += 9;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
     doc.text(`Correlations Evaluated: ${corr.rules_evaluated} Rules  |  Triggered Relational Clusters: ${corr.rules_triggered}`, margin, y);
     y += 7;
 
@@ -773,16 +779,15 @@ export function generateInfraPDFReport(
       doc.setFillColor(254, 243, 199); // Amber 100
       doc.setDrawColor(245, 158, 11);   // Amber 500
       doc.setLineWidth(0.5);
-      // Increased Card height from 16 to 22
       doc.roundedRect(margin, y, contentW, 22, 0.5, 0.5, "FD");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       doc.setTextColor(146, 64, 14); // Dark Amber
       doc.text(`RULE: ${sanitize(rule.rule_name)}`, margin + 6, y + 6);
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
+      doc.setFontSize(10);
       doc.setTextColor(120, 53, 4);
       doc.text(`Relationship: ${sanitize(rule.relationship_type)}  |  Correlation Confidence: ${rule.confidence.toUpperCase()}`, margin + 6, y + 12);
       
@@ -804,22 +809,20 @@ export function generateInfraPDFReport(
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
-    doc.text("9. IOC STRUCTURAL CORRELATION GRAPH TREE", margin, y);
+    doc.text(`${currentSectionIndex++}. IOC STRUCTURAL CORRELATION GRAPH TREE`, margin, y);
     doc.setFillColor(15, 23, 42);
     doc.rect(margin, y + 3, 30, 1.2, "F");
     y += 9;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
     doc.text("Mapping structural links, resolved hosts, ASNs, and registrar nodes:", margin, y);
     y += 7;
 
-    // Draw tree output inside a console block
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     
-    // Construct structural mapping logs from nodes & edges
     const logLines: string[] = [];
     const targetNode = graph.nodes.find(n => n.type === "target") || graph.nodes[0];
     
@@ -835,7 +838,6 @@ export function generateInfraPDFReport(
         if (childNode) {
           logLines.push(`${branch}${edge.relationship.toUpperCase()} -> ${childNode.label} [Node: ${childNode.type.toUpperCase()}]`);
           
-          // Grandchildren nodes mapping
           const gEdges = graph.edges.filter(ge => ge.source === childNode.id);
           gEdges.forEach((ge, gIdx) => {
             const gIsLast = gIdx === gEdges.length - 1;
@@ -850,14 +852,13 @@ export function generateInfraPDFReport(
       });
     }
 
-    // Increased monospace spacing to 5.5
     const consoleBoxH = logLines.length * 5.5 + 10;
     checkPage(consoleBoxH + 12);
     doc.roundedRect(margin, y, contentW, consoleBoxH, 1, 1, "FD");
 
     doc.setFont("courier", "bold");
-    doc.setFontSize(9.5); // Enlarged raw text
-    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(10); // Very clear high-contrast monospace text
+    doc.setTextColor(15, 23, 42); // Black text
     
     logLines.forEach((line, index) => {
       doc.text(sanitize(line), margin + 6, y + 7 + index * 5.5);
@@ -869,62 +870,56 @@ export function generateInfraPDFReport(
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 11: RECOMMENDATIONS & MITIGATIONS
   // ───────────────────────────────────────────────────────────────────────────
-  checkPage(60);
-  doc.setTextColor(15, 23, 42);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("10. REMEDIATION & PREVENTIVE MITIGATIONS", margin, y);
-  doc.setFillColor(15, 23, 42);
-  doc.rect(margin, y + 3, 30, 1.2, "F");
-  y += 9;
-
   const actions = results.ai_summary?.recommended_actions || [];
-  const defaultActions = [
-    "Verify domain registration timeline. Monitor newly registered status parameters.",
-    "Restrict ingress/egress firewall mappings referencing identified malicious IP subnets.",
-    "Alert security response teams to trigger active phishing defense awareness metrics.",
-    "Ensure standard network perimeter defense systems block DNS query resolution for target."
-  ];
-  const finalActions = actions.length > 0 ? actions : defaultActions;
+  const hasActions = actions.length > 0;
 
-  finalActions.forEach((action, i) => {
-    checkPage(18);
-    
-    doc.setFillColor(241, 245, 249);
-    // Box height from 11 to 14
-    doc.roundedRect(margin, y, contentW, 14, 0.5, 0.5, "F");
-
-    // Draw square counter
-    doc.setFillColor(15, 23, 42);
-    doc.rect(margin + 4, y + 4, 6, 6, "F");
-    doc.setTextColor(255, 255, 255);
+  if (hasActions) {
+    checkPage(60);
+    doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(`${i + 1}`, margin + 7, y + 8.5, { align: "center" });
+    doc.setFontSize(15);
+    doc.text(`${currentSectionIndex++}. REMEDIATION & PREVENTIVE MITIGATIONS`, margin, y);
+    doc.setFillColor(15, 23, 42);
+    doc.rect(margin, y + 3, 30, 1.2, "F");
+    y += 9;
 
-    doc.setTextColor(51, 65, 85);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10); // Enlarged mitigation steps text
-    const actLines = doc.splitTextToSize(sanitize(action), contentW - 20);
-    doc.text(actLines, margin + 14, y + 8.2);
+    actions.forEach((action, i) => {
+      checkPage(18);
+      
+      doc.setFillColor(241, 245, 249);
+      doc.roundedRect(margin, y, contentW, 14, 0.5, 0.5, "F");
 
-    y += 18;
-  });
-  y += 6;
+      doc.setFillColor(15, 23, 42);
+      doc.rect(margin + 4, y + 4, 6, 6, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.text(`${i + 1}`, margin + 7, y + 8.5, { align: "center" });
+
+      doc.setTextColor(15, 23, 42); // High-contrast black
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      const actLines = doc.splitTextToSize(sanitize(action), contentW - 20);
+      doc.text(actLines, margin + 14, y + 8.2);
+
+      y += 18;
+    });
+    y += 6;
+  }
 
   // ───────────────────────────────────────────────────────────────────────────
   // SECTION 12: APPENDIX (RAW TECHNICAL DATA)
   // ───────────────────────────────────────────────────────────────────────────
+  // Appendix raw data block is always drawn at the end
   checkPage(45);
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text("11. APPENDIX: RAW CORRELATED DATA STAMPS", margin, y);
+  doc.text(`${currentSectionIndex++}. APPENDIX: RAW CORRELATED DATA STAMPS`, margin, y);
   doc.setFillColor(15, 23, 42);
   doc.rect(margin, y + 3, 30, 1.2, "F");
   y += 9;
 
-  // Build raw metadata console logs
   const appData = [
     `CRITICALITY LEVEL   : ${riskLabel.toUpperCase()}`,
     `SCAN TIME DURATION  : DISPATCHED SYSTEM PIPELINE`,
@@ -941,8 +936,8 @@ export function generateInfraPDFReport(
   doc.roundedRect(margin, y, contentW, appBoxH, 1, 1, "FD");
 
   doc.setFont("courier", "bold");
-  doc.setFontSize(9.5); // Enlarged monospace text
-  doc.setTextColor(100, 116, 139);
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42); // High-contrast black raw logs
   
   appData.forEach((line, index) => {
     doc.text(sanitize(line), margin + 6, y + 7 + index * 5.5);
@@ -957,28 +952,24 @@ export function generateInfraPDFReport(
     
     // Header & Footer only on Subsequent Pages
     if (i > 1) {
-      // Line separator header
       doc.setDrawColor(241, 245, 249);
       doc.setLineWidth(0.25);
       doc.line(margin, 14, pageW - margin, 14);
 
-      // Running top header text (Enlarged)
       doc.setFontSize(9.5);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(148, 163, 184);
+      doc.setTextColor(100, 116, 139);
       doc.text("TIBSA CYBER INTELLIGENCE PORTAL", margin, 10);
       
       const headerTarget = `Target: ${investigation.target.toUpperCase()}`;
       doc.text(sanitize(headerTarget), pageW - margin, 10, { align: "right" });
 
-      // Bottom Footer text (Enlarged)
       doc.text("CLASSIFICATION: TLP:AMBER | TIBSA HIGH-POSTURE INTEL", margin, 287);
       doc.text(`Page ${i} of ${pageCount}`, pageW - margin, 287, { align: "right" });
     } else {
-      // Cover page footer
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(148, 163, 184);
+      doc.setTextColor(100, 116, 139);
       doc.text("RESTRICTED REPORT - CLASSIFICATION: TLP:AMBER", pageW / 2, 285, { align: "center" });
     }
   }
