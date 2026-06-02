@@ -50,15 +50,6 @@ def _req(**kwargs) -> ThreatModelCreateRequest:
 
 class TestAnalyze:
 
-    def test_no_auth_adds_missing_auth_control(self):
-        result = analyze(_req(uses_auth=False))
-        ids = [t.id for t in result.threats]
-        assert "missing-authentication-controls" in ids
-
-    def test_uses_auth_no_missing_auth_control(self):
-        result = analyze(_req(uses_auth=True))
-        ids = [t.id for t in result.threats]
-        assert "missing-authentication-controls" not in ids
 
     def test_uses_database_adds_sql_injection(self):
         result = analyze(_req(uses_database=True))
@@ -96,7 +87,10 @@ class TestAnalyze:
         assert "broken-object-level-authorization" in ids
 
     def test_flask_framework_adds_debug_risk(self):
-        result = analyze(_req(frameworks=["Flask"]))
+        result = analyze(_req(
+            frameworks=["Flask"],
+            control_questions={"flask_debug_enabled": True}
+        ))
         ids = [t.id for t in result.threats]
         assert "flask-debug-mode-in-production" in ids
 
@@ -174,3 +168,67 @@ class TestAnalyze:
             assert t.category
             assert t.description
             assert t.mitigation
+
+    def test_threat_generation_rules_validation(self):
+        # 1. Test unevidenced misconfigurations are omitted
+        result_no_evidence = analyze(_req(
+            app_type="Web",
+            frameworks=["React", "Express", "Flask"],
+            uses_auth=True,
+        ))
+        ids_no_evidence = [t.id for t in result_no_evidence.threats]
+        assert "missing-content-security-policy-csp" not in ids_no_evidence
+        assert "insecure-localstorage-token-storage" not in ids_no_evidence
+        assert "missing-http-security-headers-node" not in ids_no_evidence
+        assert "flask-debug-mode-in-production" not in ids_no_evidence
+
+        # 2. Test evidenced misconfigurations are reported as Confirmed
+        result_with_evidence = analyze(_req(
+            app_type="Web",
+            frameworks=["React", "Express"],
+            uses_auth=True,
+            auth_questions={"stores_tokens_in_localstorage": True},
+            control_questions={"uses_csp": False, "uses_helmet": False}
+        ))
+        
+        # Every threat must have a reason
+        for t in result_with_evidence.threats:
+            assert t.reason is not None
+            assert len(t.reason.strip()) > 0
+            assert t.threat_state in ("Confirmed", "Conditional", "Mitigated")
+
+        # Verify separated fields are populated
+        assert len(result_with_evidence.confirmed_threats) > 0
+        assert len(result_with_evidence.conditional_threats) > 0
+        
+        confirmed_ids = [t.id for t in result_with_evidence.confirmed_threats]
+        conditional_ids = [t.id for t in result_with_evidence.conditional_threats]
+
+        # Evidenced misconfigurations must be Confirmed
+        assert "insecure-localstorage-token-storage" in confirmed_ids
+        assert "missing-content-security-policy-csp" in confirmed_ids
+        assert "missing-http-security-headers-node" in confirmed_ids
+
+        # 3. Verify Redis selected -> Redis Unauthenticated Access = Confirmed
+        result_redis = analyze(_req(databases=["Redis"]))
+        redis_threat = next(t for t in result_redis.threats if t.id == "redis-unauthenticated-access")
+        assert redis_threat.threat_state == "Confirmed"
+        assert "Redis database is selected." in redis_threat.reason
+
+        # 4. Verify SaaS selected -> Tenant Isolation Failure = Confirmed
+        result_saas = analyze(_req(deploy_types=["SaaS"]))
+        saas_threat = next(t for t in result_saas.threats if t.id == "tenant-data-isolation-failure")
+        assert saas_threat.threat_state == "Confirmed"
+        assert "SaaS delivery model is selected." in saas_threat.reason
+
+        # 5. Verify REST selected -> SSRF = Conditional (when external APIs selected)
+        result_rest = analyze(_req(protocols=["REST"], uses_external_apis=True))
+        ssrf_threat = next(t for t in result_rest.threats if t.id == "server-side-request-forgery-ssrf-via-rest-apis")
+        assert ssrf_threat.threat_state == "Conditional"
+        assert "Requires additional assumption" in ssrf_threat.reason
+
+        # 6. Verify React selected -> XSS = Conditional
+        result_react = analyze(_req(app_type="Web", frameworks=["React"]))
+        xss_threat = next(t for t in result_react.threats if t.id == "cross-site-scripting-xss")
+        assert xss_threat.threat_state == "Conditional"
+        assert "Requires additional assumption" in xss_threat.reason

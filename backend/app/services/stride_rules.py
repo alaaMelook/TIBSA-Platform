@@ -6,7 +6,7 @@ Denial of Service, Elevation of Privilege) threat categorization and rules.
 """
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 
 from app.models.threat_modeling import STRIDECategory, ThreatItem, RiskLevel
@@ -269,34 +269,83 @@ def _get_framework_mitigations(
     return extra
 
 
-def _compute_overall_risk_score(threats: List[ThreatItem]) -> int:
-    """
-    Compute an overall risk score (0–100) from the threat list dynamically.
+CONFIDENCE_MULTIPLIERS = {
+    "Low": 0.40,
+    "Medium": 0.70,
+    "High": 1.00
+}
 
-    Rules:
-    - If any threat has risk == 'High', the returned score is ≥ 70.
-    - Score is the weighted average of individual priority_scores, clamped to 0–100.
+
+def calculate_residual_risk_score(threats: List[ThreatItem]) -> Tuple[int, int]:
+    """
+    Computes Inherent Risk Score and Confidence-Weighted Residual Risk Score.
+
+    Rules enforced:
+    - Score is never automatically 100.
+    - Score is derived from threat count, severity distribution, and priority_score.
+    - Similar systems with fewer threats score lower.
+    - Scores above 90 require multiple High-risk Confirmed threats across several attack surfaces.
+    - Returns (InherentScore, ResidualScore), both clamped 0-100.
     """
     if not threats:
-        return 0
+        return 0, 0
 
-    weights = {"High": 3, "Medium": 2, "Low": 1}
+    severity_weights = {"High": 3, "Medium": 2, "Low": 1}
     total_weight = 0
-    weighted_sum = 0.0
+    inherent_weighted_sum = 0.0
+    residual_weighted_sum = 0.0
 
     for t in threats:
-        w = weights.get(t.risk, 1)
+        w = severity_weights.get(t.risk, 1)
         total_weight += w
-        weighted_sum += t.priority_score * w
 
-    score = round(weighted_sum / total_weight) if total_weight else 0
+        # 1. Inherent Priority — raw priority_score, no confidence adjustment
+        inherent_weighted_sum += t.priority_score * w
 
-    # Guarantee floor of 70 when any High-risk threat exists
-    has_high = any(t.risk == "High" for t in threats)
-    if has_high:
-        score = max(score, 70)
+        # 2. Residual Priority — confidence-weighted, mitigation-reduced
+        conf_label = getattr(t, "confidence", "Medium")
+        c_t = CONFIDENCE_MULTIPLIERS.get(conf_label, 0.70)
+        eff = getattr(t, "mitigation_effectiveness", 0.0)
+        p_residual = t.priority_score * c_t * (1.0 - eff)
+        residual_weighted_sum += p_residual * w
 
-    return min(100, score)
+    inherent_score = round(inherent_weighted_sum / total_weight) if total_weight else 0
+    residual_score = round(residual_weighted_sum / total_weight) if total_weight else 0
+
+    # Apply a threat-count complexity multiplier (more distinct threats = higher exposure)
+    # Scale: 1 threat → ×0.6, 5 threats → ×0.85, 10+ threats → ×1.0
+    confirmed_count = sum(
+        1 for t in threats
+        if getattr(t, "threat_state", "Potential") in ("Confirmed", "Conditional")
+    )
+    complexity_factor = min(1.0, 0.60 + confirmed_count * 0.04)
+
+    inherent_score = round(inherent_score * complexity_factor)
+    residual_score = round(residual_score * complexity_factor)
+
+    # Scores above 90 are reserved for multiple High-risk Confirmed threats
+    # across several distinct STRIDE attack surfaces.
+    high_confirmed = [
+        t for t in threats
+        if t.risk == "High" and getattr(t, "threat_state", "Potential") == "Confirmed"
+    ]
+    distinct_stride_categories = len({getattr(t, "stride_category", None) for t in high_confirmed if t.stride_category})
+
+    if inherent_score > 90 and (len(high_confirmed) < 3 or distinct_stride_categories < 2):
+        inherent_score = 90
+    if residual_score > 90 and (len(high_confirmed) < 3 or distinct_stride_categories < 2):
+        residual_score = 90
+
+    return min(100, max(0, inherent_score)), min(100, max(0, residual_score))
+
+
+def _compute_overall_risk_score(threats: List[ThreatItem]) -> int:
+    """
+    Compute an overall risk score (0–100) from the threat list.
+    Uses the residual risk score from calculate_residual_risk_score.
+    """
+    _, residual_score = calculate_residual_risk_score(threats)
+    return residual_score
 
 
 @dataclass
@@ -393,6 +442,8 @@ class STRIDERule:
                     affected_assets=[ep.id],
                     entry_points=[ep.id],
                     priority_score=ps,
+                    reason=f"Entry point {ep.name} is exposed to the internet with authentication_required=False.",
+                    threat_state="Confirmed"
                 )
                 threats.append(threat)
 
@@ -440,6 +491,8 @@ class STRIDERule:
                         stride_category=STRIDECategory.TAMPERING,
                         affected_assets=[df.source_asset_id, df.destination_asset_id],
                         priority_score=ps,
+                        reason=f"Data flow {df.name} transmits sensitive data from {source_asset.name} to {dest_asset.name} without encryption.",
+                        threat_state="Confirmed"
                     )
                     threats.append(threat)
 
@@ -447,12 +500,18 @@ class STRIDERule:
 
     def _evaluate_repudiation(self, architecture: NormalizedArchitecture,
                                system_metadata: Dict[str, Any]) -> List[ThreatItem]:
-        """Evaluate repudiation threats."""
+        """
+        Evaluate repudiation threats.
+
+        Rule: Do NOT treat absence of audit_logging as a confirmed vulnerability.
+        Absence of a feature ≠ evidence of a vulnerability.
+        These are generated as Conditional threats only.
+        """
         threats = []
 
-        # Check for lack of audit logging
-        audit_enabled = system_metadata.get("audit_logging", False)
-        if not audit_enabled:
+        # Conditional: audit logging absent — not confirmed, requires assumption
+        audit_enabled = system_metadata.get("audit_logging", None)
+        if audit_enabled is False:  # Only fire if explicitly set to False, not just missing
             l = self.likelihood
             i = self.impact
             ps = _compute_priority_score(l, i)
@@ -467,18 +526,23 @@ class STRIDERule:
                 risk="Medium",
                 category="Audit",
                 description=(
-                    "The system does not implement comprehensive audit logging, "
-                    "making it impossible to track user actions and detect security incidents."
+                    "Audit logging has been explicitly disabled or not configured. "
+                    "Without audit trails, it is impossible to attribute actions to specific users "
+                    "or reconstruct security incidents."
                 ),
                 mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                 stride_category=STRIDECategory.REPUDIATION,
                 priority_score=ps,
+                reason="System metadata audit_logging is explicitly set to False.",
+                threat_state="Conditional"  # Absence of feature is not a confirmed threat
             )
             threats.append(threat)
 
-        # Additional check: no non-repudiation on sensitive entry points
-        for ep in architecture.entry_points:
-            if ep.exposed_to_internet and not system_metadata.get("audit_logging", False):
+        # Conditional: internet-exposed entry points without confirmed audit logging
+        # Only generate if there are actually internet-exposed entry points
+        exposed_eps = [ep for ep in architecture.entry_points if ep.exposed_to_internet]
+        if exposed_eps and audit_enabled is False:
+            for ep in exposed_eps:
                 l = min(5, self.likelihood + 1)
                 i = self.impact
                 ps = _compute_priority_score(l, i)
@@ -493,13 +557,15 @@ class STRIDERule:
                     risk="Medium",
                     category="Audit",
                     description=(
-                        f"Actions performed through the internet-exposed {ep.name} entry point "
-                        "are not logged, making it impossible to attribute actions to specific users."
+                        f"The internet-exposed {ep.name} entry point has no audit logging configured. "
+                        "User actions cannot be attributed or reconstructed in the event of an incident."
                     ),
                     mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
                     stride_category=STRIDECategory.REPUDIATION,
                     entry_points=[ep.id],
                     priority_score=ps,
+                    reason=f"Entry point {ep.name} is exposed to the internet and audit_logging is explicitly False.",
+                    threat_state="Conditional"  # Absence of feature is not a confirmed threat
                 )
                 threats.append(threat)
 
@@ -542,6 +608,8 @@ class STRIDERule:
                         affected_assets=[asset.id],
                         entry_points=[ep.id],
                         priority_score=ps,
+                        reason=f"Confidential asset {asset.name} is connected to internet-exposed entry point {ep.name}.",
+                        threat_state="Confirmed"
                     )
                     threats.append(threat)
 
@@ -569,6 +637,8 @@ class STRIDERule:
                     stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
                     affected_assets=[df.source_asset_id, df.destination_asset_id],
                     priority_score=ps,
+                    reason=f"Sensitive data flow {df.name} is not encrypted.",
+                    threat_state="Confirmed"
                 )
                 threats.append(threat)
 
@@ -603,6 +673,8 @@ class STRIDERule:
                     stride_category=STRIDECategory.DENIAL_OF_SERVICE,
                     entry_points=[ep.id],
                     priority_score=ps,
+                    reason=f"Entry point {ep.name} is exposed to the internet.",
+                    threat_state="Confirmed"
                 )
                 threats.append(threat)
 
@@ -630,6 +702,8 @@ class STRIDERule:
                     stride_category=STRIDECategory.DENIAL_OF_SERVICE,
                     entry_points=[ep.id],
                     priority_score=ps,
+                    reason=f"Unauthenticated entry point {ep.name} is exposed to the internet.",
+                    threat_state="Confirmed"
                 )
                 threats.append(threat)
 
@@ -664,6 +738,8 @@ class STRIDERule:
                     stride_category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
                     trust_boundaries=[tb.id],
                     priority_score=ps,
+                    reason=f"Trust boundary {tb.name} risk level is High.",
+                    threat_state="Confirmed"
                 )
                 threats.append(threat)
 
@@ -691,6 +767,8 @@ class STRIDERule:
                     stride_category=STRIDECategory.ELEVATION_OF_PRIVILEGE,
                     affected_assets=[asset.id],
                     priority_score=ps,
+                    reason=f"Asset {asset.name} has High sensitivity level.",
+                    threat_state="Confirmed"
                 )
                 threats.append(threat)
 
@@ -797,6 +875,8 @@ class STRIDEEngine:
         if not has_frameworks and not has_languages:
             return {
                 "threats": [],
+                "confirmed_threats": [],
+                "conditional_threats": [],
                 "risk_score": None,
                 "risk_label": None,
                 "blocked": True,
@@ -813,8 +893,13 @@ class STRIDEEngine:
         elif score >= 40:
             risk_label = "Medium"
             
+        confirmed_threats = [t for t in threats if getattr(t, "threat_state", "Potential") == "Confirmed"]
+        conditional_threats = [t for t in threats if getattr(t, "threat_state", "Potential") == "Conditional"]
+
         return {
             "threats": threats,
+            "confirmed_threats": confirmed_threats,
+            "conditional_threats": conditional_threats,
             "risk_score": score,
             "risk_label": risk_label,
             "warning": ""

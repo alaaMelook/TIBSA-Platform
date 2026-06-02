@@ -92,6 +92,10 @@ class ThreatItem(BaseModel):
     priority_score: int = Field(default=0, ge=0, le=100)
     status: ThreatStatus = ThreatStatus.OPEN
     llm_summary: Optional[str] = None
+    threat_state: Literal["Potential", "Confirmed", "Mitigated", "Conditional"] = "Potential"
+    confidence: Literal["Low", "Medium", "High"] = "Medium"
+    mitigation_effectiveness: float = Field(default=0.0, ge=0.0, le=1.0)
+    reason: Optional[str] = None
 
 
 class Asset(BaseModel):
@@ -265,8 +269,12 @@ class ThreatModelAnalysisResponse(BaseModel):
     risk_score: int
     risk_label: RiskLabel
     threats: List[ThreatItem] = Field(default_factory=list)
+    confirmed_threats: List[ThreatItem] = Field(default_factory=list)
+    conditional_threats: List[ThreatItem] = Field(default_factory=list)
     mitigations: List[Mitigation] = Field(default_factory=list)
     heatmap_data: List[HeatmapData] = Field(default_factory=list)
+    inherent_risk_score: int = 0
+    residual_risk_score: int = 0
 
     # timestamps
     created_at: Optional[datetime] = None
@@ -288,8 +296,12 @@ class ThreatModelAnalysis(BaseModel):
     data_questions: Optional[Dict[str, Any]] = None
     control_questions: Optional[Dict[str, Any]] = None
     threats: Optional[List[ThreatItem]] = None
+    confirmed_threats: Optional[List[ThreatItem]] = None
+    conditional_threats: Optional[List[ThreatItem]] = None
     mitigations: Optional[List[Mitigation]] = None
     heatmap_data: Optional[HeatmapData] = None
+    inherent_risk_score: Optional[int] = None
+    residual_risk_score: Optional[int] = None
 
 
 
@@ -311,6 +323,8 @@ class ThreatModelAnalyzeResponse(BaseModel):
     Identical shape to AnalysisResult on the frontend.
     """
     threats:    List[ThreatItem]
+    confirmed_threats: List[ThreatItem] = Field(default_factory=list)
+    conditional_threats: List[ThreatItem] = Field(default_factory=list)
     risk_score: Optional[int] = None
     risk_label: Optional[RiskLabel] = None
     mitigations: List[Mitigation]
@@ -318,6 +332,8 @@ class ThreatModelAnalyzeResponse(BaseModel):
     generic_warning: bool = False
     blocked: Optional[bool] = False
     reason: Optional[str] = None
+    inherent_risk_score: Optional[int] = None
+    residual_risk_score: Optional[int] = None
 
 
 
