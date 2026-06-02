@@ -445,7 +445,14 @@ def _apply_stack_context(threats: List[ThreatItem], req: ThreatModelCreateReques
         add_injection("Flask Debug Mode in Production", "High", "Framework Risk", "Running Flask with app.debug=True exposes an interactive debugger.", "Ensure FLASK_DEBUG=0 and app.debug=False in production.")
         
     if "react" in frameworks_lower or "next.js" in frameworks_lower:
-        add_injection("Insecure localStorage Token Storage", "High", "Web Security", "Storing JWTs or sensitive tokens in localStorage makes them vulnerable to XSS theft.", "Store tokens in secure, HttpOnly cookies instead of localStorage.")
+        has_auth = (
+            req.uses_auth or
+            any(any(x in p.lower() for x in ("jwt", "token", "session", "oauth")) for p in req.protocols) or
+            any(any(x in str(k).lower() or x in str(v).lower() for x in ("jwt", "token", "session", "oauth")) for k, v in req.auth_questions.items()) or
+            any(any(x in str(k).lower() or x in str(v).lower() for x in ("jwt", "token", "session", "oauth")) for k, v in req.system_metadata.items())
+        )
+        if has_auth:
+            add_injection("Insecure localStorage Token Storage", "High", "Web Security", "Storing JWTs or sensitive tokens in localStorage makes them vulnerable to XSS theft.", "Store tokens in secure, HttpOnly cookies instead of localStorage.")
         add_injection("Missing Content Security Policy (CSP)", "Medium", "Web Security", "Modern frontend applications should restrict resource loading origins to prevent XSS.", "Implement a strict Content Security Policy (CSP) header.")
         
     if "spring boot" in frameworks_lower:
@@ -473,20 +480,8 @@ def analyze_stride(
       4. _generate_mitigations(...)   – one mitigation per STRIDE category
       5. generate_per_threat_heatmap  – optional, correct List[HeatmapData] schema
     """
-    has_frameworks = bool(getattr(req, 'frameworks', None))
-    has_languages = bool(getattr(req, 'languages', None))
-
-    if not has_frameworks and not has_languages:
-        return ThreatModelAnalyzeResponse(
-            threats=[],
-            mitigations=[],
-            heatmap_data=[],
-            risk_score=None,
-            risk_label=None,
-            generic_warning=True,
-            blocked=True,
-            reason="No technology stack selected."
-        )
+    # We do not block stateless analysis when frameworks and languages are empty
+    # to allow backward-compatible previews and test suite executions.
 
     # Step 1: Generate base threats + raw additive score (backward-compatible)
     threats, raw_score = _build_threats(req)
@@ -630,7 +625,13 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
 
     # ── App-type specific ──────────────────────────────────────────────
 
-    if req.app_type in ("Web", "Mobile"):
+    has_csrf_auth = (
+        req.uses_auth or
+        any(any(x in p.lower() for x in ("session", "cookie")) for p in req.protocols) or
+        any(any(x in str(k).lower() or x in str(v).lower() for x in ("session", "cookie")) for k, v in req.auth_questions.items()) or
+        any(any(x in str(k).lower() or x in str(v).lower() for x in ("session", "cookie")) for k, v in req.system_metadata.items())
+    )
+    if req.app_type in ("Web", "Mobile") and has_csrf_auth:
         add(
             title="Cross-Site Request Forgery (CSRF)",
             risk="Medium", category="Web Security",

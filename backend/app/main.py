@@ -23,7 +23,7 @@ if sys.platform == "win32":
 
 
 from app.config import settings
-from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis, ai_chatbot, admin, infra_investigations
+from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis, ai_chatbot, admin, infra_investigations, diagnostics
 from app.api import investigations as api_investigations
 from app.api import scans as api_scans
 from app.api import health as api_health
