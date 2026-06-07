@@ -697,6 +697,24 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
             threat_state="Confirmed"
         )
 
+    # Insufficient Audit Logging (Repudiation)
+    if req.has_admin_panel or req.stores_sensitive_data:
+        add(
+            title="Insufficient Audit Logging for Administrative Actions",
+            risk="Medium", category="Audit",
+            description=(
+                "Lack of immutable, centralized audit logging makes it impossible to attribute "
+                "administrative actions to specific users or investigate security incidents."
+            ),
+            mitigation=(
+                "Implement centralized, tamper-proof audit logging for all sensitive actions, "
+                "capturing user identity, IP, and timestamp."
+            ),
+            pts=15,
+            reason="System has admin panel or stores sensitive data. Requires assumption that audit logging is absent.",
+            threat_state="Conditional"
+        )
+
     # Sensitive Data Exposure
     if req.stores_sensitive_data:
         add(
@@ -776,6 +794,21 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
             reason="Cloud application type or deployment environment is selected. Requires additional assumption that cloud resources or IAM roles are misconfigured.",
             threat_state="Conditional"
         )
+        add(
+            title="Cloud Storage Misconfiguration Exposing Sensitive Data",
+            risk="High", category="Data Security",
+            description=(
+                "Cloud storage buckets or snapshots may be misconfigured with public access, "
+                "leading to unauthorized disclosure of sensitive data."
+            ),
+            mitigation=(
+                "Enforce 'Block Public Access' at the cloud account level and use strict IAM policies "
+                "for data access."
+            ),
+            pts=18,
+            reason="Cloud deployment environment is selected.",
+            threat_state="Conditional"
+        )
 
     # Broken Object-Level Authorization
     has_api_protocol = any(p in req.protocols for p in ("REST", "gRPC", "GraphQL"))
@@ -850,6 +883,19 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
             pts=10,
             reason="WebSocket / WSS protocol is selected. Requires additional assumption that the Origin header is not validated on connection upgrades.",
             threat_state="Conditional"
+        )
+        add(
+            title="WebSocket Connection Exhaustion",
+            risk="Medium", category="Availability",
+            description=(
+                "Attackers can exhaust server resources by opening thousands of concurrent WebSocket connections."
+            ),
+            mitigation=(
+                "Implement strict concurrent connection limits per user/IP and enforce idle timeouts."
+            ),
+            pts=12,
+            reason="WebSocket / WSS protocol is selected.",
+            threat_state="Confirmed"
         )
 
     # MQTT Broker Unauthorized Access
@@ -940,6 +986,19 @@ def _build_threats(req: ThreatModelCreateRequest) -> Tuple[List[ThreatItem], int
                 "Never expose Redis ports directly to the internet."
             ),
             pts=16,
+            reason="Redis database is selected.",
+            threat_state="Confirmed"
+        )
+        add(
+            title="Redis Resource Exhaustion",
+            risk="Medium", category="Availability",
+            description=(
+                "An attacker exploiting caching mechanisms or session storage could flood Redis with keys, causing an OOM condition."
+            ),
+            mitigation=(
+                "Set a maxmemory policy and restrict external network access to Redis."
+            ),
+            pts=12,
             reason="Redis database is selected.",
             threat_state="Confirmed"
         )

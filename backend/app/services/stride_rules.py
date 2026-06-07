@@ -509,9 +509,12 @@ class STRIDERule:
         """
         threats = []
 
-        # Conditional: audit logging absent — not confirmed, requires assumption
+        # Conditional: audit logging absent or not specified, but system has admin panel or sensitive data
         audit_enabled = system_metadata.get("audit_logging", None)
-        if audit_enabled is False:  # Only fire if explicitly set to False, not just missing
+        has_admin_panel = system_metadata.get("has_admin_panel", False)
+        stores_sensitive_data = system_metadata.get("stores_sensitive_data", False)
+        
+        if audit_enabled is False or (audit_enabled is None and (has_admin_panel or stores_sensitive_data)):
             l = self.likelihood
             i = self.impact
             ps = _compute_priority_score(l, i)
@@ -642,6 +645,34 @@ class STRIDERule:
                 )
                 threats.append(threat)
 
+        # Check for Cloud environments causing potential info disclosure
+        deploy_envs = system_metadata.get("deploy_envs", [])
+        if "Cloud (AWS / GCP / Azure)" in deploy_envs:
+            l = min(5, self.likelihood + 1)
+            i = min(5, self.impact + 1)
+            ps = _compute_priority_score(l, i)
+
+            base_mitigation = (
+                "Enforce 'Block Public Access' at the cloud account level, use strict IAM policies "
+                "for data access, and continuously monitor bucket/storage permissions."
+            )
+            threat = ThreatItem(
+                id="disclosure-cloud-misconfig",
+                title="Cloud Storage Misconfiguration Exposing Sensitive Data",
+                risk="High",
+                category="Infrastructure",
+                description=(
+                    "Cloud storage buckets or snapshots may be misconfigured with public access, "
+                    "leading to unauthorized disclosure of sensitive data."
+                ),
+                mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                stride_category=STRIDECategory.INFORMATION_DISCLOSURE,
+                priority_score=ps,
+                reason="Application is deployed in Cloud (AWS / GCP / Azure).",
+                threat_state="Confirmed"
+            )
+            threats.append(threat)
+
         return threats
 
     def _evaluate_denial_of_service(self, architecture: NormalizedArchitecture,
@@ -706,6 +737,64 @@ class STRIDERule:
                     threat_state="Confirmed"
                 )
                 threats.append(threat)
+                threats.append(threat)
+
+        protocols = system_metadata.get("protocols", [])
+        databases = system_metadata.get("databases", [])
+
+        # WebSocket Exhaustion
+        if "WebSocket / WSS" in protocols:
+            l = self.likelihood
+            i = min(5, self.impact + 1)
+            ps = _compute_priority_score(l, i)
+
+            base_mitigation = (
+                "Implement concurrent connection limits per user/IP, enforce idle timeouts, "
+                "and monitor active WebSocket connections to drop unresponsive clients."
+            )
+            threat = ThreatItem(
+                id="dos-websocket-exhaustion",
+                title="WebSocket Connection Exhaustion",
+                risk="Medium",
+                category="Availability",
+                description=(
+                    "The system uses WebSocket/WSS protocols, which keep long-lived connections open. "
+                    "An attacker could open many connections to exhaust server resources (socket limits/memory)."
+                ),
+                mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                stride_category=STRIDECategory.DENIAL_OF_SERVICE,
+                priority_score=ps,
+                reason="System uses WebSocket / WSS protocol.",
+                threat_state="Confirmed"
+            )
+            threats.append(threat)
+
+        # Redis Flood
+        if "Redis" in databases:
+            l = self.likelihood
+            i = self.impact
+            ps = _compute_priority_score(l, i)
+
+            base_mitigation = (
+                "Ensure Redis is not exposed to the internet, require authentication (requirepass), "
+                "and set a maxmemory policy to prevent OOM (Out of Memory) crashes."
+            )
+            threat = ThreatItem(
+                id="dos-redis-flood",
+                title="Redis Resource Exhaustion",
+                risk="Medium",
+                category="Availability",
+                description=(
+                    "The system relies on Redis. An attacker exploiting caching mechanisms "
+                    "or session storage could flood Redis with keys, causing an Out of Memory (OOM) condition."
+                ),
+                mitigation=self._append_framework_mitigations(base_mitigation, system_metadata),
+                stride_category=STRIDECategory.DENIAL_OF_SERVICE,
+                priority_score=ps,
+                reason="System uses Redis database.",
+                threat_state="Confirmed"
+            )
+            threats.append(threat)
 
         return threats
 
