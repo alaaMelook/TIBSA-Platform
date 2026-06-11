@@ -55,6 +55,18 @@ async def lifespan(app: FastAPI):
         print("WARNING: VIRUSTOTAL_API_KEY is not set — URL/file scans will fail!")
     else:
         print("VirusTotal API key loaded")
+        
+    # from app.services.ai.gemini_client import call_gemini
+    # try:
+    #     print("Validating Gemini connectivity...")
+    #     test_response = await call_gemini(
+    #         system_prompt="You are a helpful assistant.",
+    #         user_prompt="Say 'TIBSA AI System Online'",
+    #         model="gemini-2.5-flash"
+    #     )
+    #     print(f"Gemini connection successful: {test_response.strip()}")
+    # except Exception as e:
+    #     print(f"ERROR: Gemini connection failed during startup: {e}")
     
     yield
     print("TIBSA Backend shutting down...")

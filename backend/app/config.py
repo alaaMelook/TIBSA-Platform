@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     openrouter_model: str = "openrouter/auto"
     openrouter_max_tokens: int = 500
 
+    # ─── Gemini AI ────────────────────────────────────────────
+    gemini_api_key: str = ""
+
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"
     debug: bool = False
