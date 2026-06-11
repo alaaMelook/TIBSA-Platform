@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     openrouter_model: str = "moonshotai/kimi-k2.6:free"
     openrouter_max_tokens: int = 800
 
+    # ─── Gemini AI ────────────────────────────────────────────
+    gemini_api_key: str = ""
+
     # ─── App ──────────────────────────────────────────────────
     app_name: str = "TIBSA API"
     debug: bool = False

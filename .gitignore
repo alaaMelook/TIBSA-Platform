@@ -50,3 +50,18 @@ import_log.txt
 
 # Exports
 backend/exports/
+# Malware investigation runtime uploads
+backend/app/services/ai/malware_investigation/uploads/*
+!backend/app/services/ai/malware_investigation/uploads/.gitkeep
+
+# Local / large runtime files
+*.exe
+*.msi
+*.zip
+*.rar
+*.7z
+__pycache__/
+node_modules/
+venv/
+.env
+

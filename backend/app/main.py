@@ -23,7 +23,7 @@ if sys.platform == "win32":
 
 
 from app.config import settings
-from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis, ai_chatbot, admin, infra_investigations
+from app.routers import auth, users, scans, threats, notifications, website_scanner, threat_modeling, ai_analysis, ai_chatbot, admin, infra_investigations ,  ai_malware_analysis
 from app.api import investigations as api_investigations
 from app.api import scans as api_scans
 from app.api import health as api_health
@@ -55,6 +55,18 @@ async def lifespan(app: FastAPI):
         print("WARNING: VIRUSTOTAL_API_KEY is not set — URL/file scans will fail!")
     else:
         print("VirusTotal API key loaded")
+        
+    # from app.services.ai.gemini_client import call_gemini
+    # try:
+    #     print("Validating Gemini connectivity...")
+    #     test_response = await call_gemini(
+    #         system_prompt="You are a helpful assistant.",
+    #         user_prompt="Say 'TIBSA AI System Online'",
+    #         model="gemini-2.5-flash"
+    #     )
+    #     print(f"Gemini connection successful: {test_response.strip()}")
+    # except Exception as e:
+    #     print(f"ERROR: Gemini connection failed during startup: {e}")
     
     yield
     print("TIBSA Backend shutting down...")
@@ -112,6 +124,11 @@ app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["
 app.include_router(website_scanner.router, prefix="/api/v1/website-scanner", tags=["Website Scanner"])
 app.include_router(threat_modeling.router, prefix="/api/v1/threat-modeling", tags=["Threat Modeling"])
 app.include_router(ai_analysis.router, prefix="/api/v1/ai-analysis", tags=["AI Analysis"])
+app.include_router(
+    ai_malware_analysis.router,
+    prefix="/api/v1/ai-malware-analysis",
+    tags=["AI Malware Analysis"],
+)
 app.include_router(ai_chatbot.router, prefix="/api/v1/ai-chatbot", tags=["AI Chatbot"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 
