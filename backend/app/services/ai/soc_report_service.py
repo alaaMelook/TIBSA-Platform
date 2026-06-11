@@ -516,6 +516,12 @@ def generate_pdf_report(report_id: str) -> str:
     # ── PAGE 2+: REPORT SECTIONS ──────────────────────────────────────
     pdf.add_page()
 
+    def _clean_pdf_text(t_str: str) -> str:
+        import re
+        t = re.sub(r'(?i)AI Malware Investigation Report', '', t_str)
+        t = re.sub(r'(?m)^\s*(?:\d+\.?(?:\d+\.)*|\*|-)\s+', '', t)
+        return _safe_text(t.strip())
+
     def section_card(title: str, text: str, highlight: bool = False):
         if pdf.get_y() > 240:
             pdf.add_page()
@@ -524,7 +530,10 @@ def generate_pdf_report(report_id: str) -> str:
         pdf.set_font("Helvetica", "B", 11)
         pdf.cell(0, 8, _safe_text(title.upper()), new_x="LMARGIN", new_y="NEXT")
         
-        clean_text = _safe_text(text)
+        clean_text = _clean_pdf_text(text)
+        if not clean_text:
+            clean_text = "Unavailable."
+            
         # Approximate height
         lines = clean_text.split("\n")
         num_lines = sum((len(line) // 85) + 1 for line in lines)
