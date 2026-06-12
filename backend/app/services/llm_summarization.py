@@ -46,24 +46,21 @@ class LLMSummarizationService:
         return summary
 
     def _build_threat_context(self, threat: ThreatItem) -> Dict[str, Any]:
-        """Build context information for the threat."""
+        """Build context information for the threat using actual ThreatItem fields."""
         context = {
-            "threat_id": threat.id,
-            "title": threat.title,
-            "description": threat.description,
+            "threat_id":      threat.id,
+            "title":          threat.title,
+            "description":    threat.description,
             "stride_category": threat.stride_category.value if threat.stride_category else None,
-            "severity": threat.severity,
-            "likelihood": threat.likelihood,
-            "impact": threat.impact,
-            "status": threat.status.value if threat.status else None,
-            "capec_id": threat.capec_id,
-            "capec_description": threat.capec_description,
-            "asvs_controls": threat.asvs_controls or [],
+            "risk":           threat.risk,           # the actual field (High / Medium / Low)
+            "status":         threat.status.value if threat.status else None,
+            "capec_id":       threat.capec_id,
+            "asvs_controls":  threat.asvs_controls or [],
             "affected_assets": threat.affected_assets or [],
-            "entry_points": threat.entry_points or [],
+            "entry_points":   threat.entry_points or [],
             "trust_boundaries": threat.trust_boundaries or [],
+            "priority_score": threat.priority_score,
         }
-
         return context
 
     def _generate_rule_based_summary(self, threat: ThreatItem, context: Dict[str, Any]) -> LLMSummary:
@@ -108,9 +105,11 @@ class LLMSummarizationService:
             base_desc += "involves disrupting service availability, preventing legitimate users from accessing resources."
         elif threat.stride_category == STRIDECategory.ELEVATION_OF_PRIVILEGE:
             base_desc += "involves gaining higher access privileges than authorized, potentially leading to system compromise."
+        else:
+            base_desc += "poses a security risk that requires investigation and appropriate controls."
 
-        if threat.capec_description:
-            base_desc += f" This threat follows the attack pattern described as: {threat.capec_description[:200]}..."
+        if threat.capec_id:
+            base_desc += f" This threat is classified as {threat.capec_id}."
 
         if threat.affected_assets:
             assets_str = ", ".join(threat.affected_assets[:3])
@@ -122,15 +121,15 @@ class LLMSummarizationService:
         """Generate an explanation of the threat's potential impact."""
         impact_parts = []
 
-        if threat.impact:
-            impact_parts.append(f"The impact is rated as {threat.impact}, indicating ")
+        risk = threat.risk or "Medium"
+        impact_parts.append(f"The risk is rated as {risk}, indicating ")
 
-            if threat.impact.lower() in ["high", "critical"]:
-                impact_parts.append("severe consequences for the organization including financial loss, reputational damage, and operational disruption.")
-            elif threat.impact.lower() == "medium":
-                impact_parts.append("moderate consequences that could affect business operations and require remediation efforts.")
-            elif threat.impact.lower() in ["low", "info"]:
-                impact_parts.append("limited consequences with minimal impact on operations.")
+        if risk.lower() in ["high", "critical"]:
+            impact_parts.append("severe consequences for the organization including financial loss, reputational damage, and operational disruption.")
+        elif risk.lower() == "medium":
+            impact_parts.append("moderate consequences that could affect business operations and require remediation efforts.")
+        else:
+            impact_parts.append("limited consequences with minimal impact on operations.")
 
         if threat.affected_assets:
             impact_parts.append(f"This threat could compromise {len(threat.affected_assets)} asset(s), potentially affecting confidentiality, integrity, and availability of critical systems.")
@@ -148,17 +147,18 @@ class LLMSummarizationService:
         """Generate specific mitigation recommendations."""
         recommendations = []
 
-        # Add ASVS-based recommendations
+        # Add ASVS-based recommendations (use control IDs, e.g. 'V2.1.1')
         if threat.asvs_controls:
             recommendations.extend([
-                f"Implement ASVS control: {control}" for control in threat.asvs_controls[:2]
+                f"Implement ASVS control {control}"
+                for control in threat.asvs_controls[:2]
             ])
 
         # Add STRIDE-specific recommendations
         stride_recs = self._get_stride_recommendations(threat.stride_category)
         recommendations.extend(stride_recs)
 
-        # Add general recommendations based on threat characteristics
+        # Add entry-point and trust-boundary recommendations
         if threat.entry_points:
             recommendations.append(f"Secure entry points: {', '.join(threat.entry_points[:2])}")
 
@@ -166,11 +166,8 @@ class LLMSummarizationService:
             recommendations.append(f"Strengthen trust boundaries: {', '.join(threat.trust_boundaries[:2])}")
 
         # Add risk-based recommendations
-        if threat.likelihood and threat.likelihood.lower() in ["high", "critical"]:
-            recommendations.append("Implement immediate monitoring and alerting for this high-likelihood threat.")
-
-        if threat.severity and threat.severity.lower() in ["high", "critical"]:
-            recommendations.append("Consider implementing compensating controls and regular security assessments.")
+        if threat.risk and threat.risk.lower() == "high":
+            recommendations.append("Implement immediate monitoring and alerting for this high-risk threat.")
 
         return recommendations[:5]  # Limit to 5 recommendations
 
@@ -215,38 +212,21 @@ class LLMSummarizationService:
         return recommendations.get(stride_category, [])
 
     def _generate_risk_assessment(self, threat: ThreatItem, context: Dict[str, Any]) -> str:
-        """Generate a risk assessment summary."""
-        risk_factors = []
+        """Generate a risk assessment summary using available ThreatItem fields."""
+        risk = threat.risk or "Medium"
+        priority = threat.priority_score or 0
 
-        if threat.likelihood:
-            risk_factors.append(f"likelihood: {threat.likelihood}")
+        # Map risk label to level descriptor
+        level_desc = {
+            "High":   "High – immediate action recommended",
+            "Medium": "Medium – schedule for near-term remediation",
+            "Low":    "Low – monitor and review periodically",
+        }.get(risk, "Unknown")
 
-        if threat.impact:
-            risk_factors.append(f"impact: {threat.impact}")
+        assessment = f"Overall risk level: {level_desc}."
 
-        if threat.severity:
-            risk_factors.append(f"severity: {threat.severity}")
-
-        risk_level = "Unknown"
-        if threat.likelihood and threat.impact:
-            # Simple risk calculation
-            likelihood_score = self._score_level(threat.likelihood)
-            impact_score = self._score_level(threat.impact)
-            overall_score = (likelihood_score + impact_score) / 2
-
-            if overall_score >= 4:
-                risk_level = "Critical"
-            elif overall_score >= 3:
-                risk_level = "High"
-            elif overall_score >= 2:
-                risk_level = "Medium"
-            else:
-                risk_level = "Low"
-
-        assessment = f"Overall risk level: {risk_level}."
-
-        if risk_factors:
-            assessment += f" Based on {', '.join(risk_factors)}."
+        if priority:
+            assessment += f" Priority score: {priority}/100 (Likelihood × Impact)."
 
         if threat.stride_category:
             assessment += f" This is a {threat.stride_category.value} threat, which typically requires specific security controls."
@@ -286,6 +266,15 @@ class LLMSummarizationService:
 
         return min(score, 1.0)
 
+    def generate_llm_summary_text(self, threat: ThreatItem) -> str:
+        """
+        Generate a compact plain-text summary suitable for storage in
+        threat.llm_summary.  Uses the rule-based summariser.
+        """
+        context = self._build_threat_context(threat)
+        summary = self._generate_rule_based_summary(threat, context)
+        return f"{summary.threat_description} {summary.risk_assessment}"
+
     def generate_mitigation_summary(self, mitigation: Mitigation) -> str:
         """Generate a summary for a mitigation strategy."""
         summary_parts = []
@@ -296,15 +285,14 @@ class LLMSummarizationService:
         if mitigation.description:
             summary_parts.append(mitigation.description)
 
-        if mitigation.implementation_steps:
-            steps = mitigation.implementation_steps[:3]  # Limit to first 3 steps
-            summary_parts.append(f"Implementation steps: {'; '.join(steps)}")
+        if mitigation.estimated_effort:
+            summary_parts.append(f"Estimated effort: {mitigation.estimated_effort}")
 
-        if mitigation.cost:
-            summary_parts.append(f"Estimated cost: {mitigation.cost}")
+        if mitigation.estimated_cost:
+            summary_parts.append(f"Estimated cost: {mitigation.estimated_cost}")
 
-        if mitigation.effectiveness:
-            summary_parts.append(f"Expected effectiveness: {mitigation.effectiveness}")
+        if mitigation.implementation_status:
+            summary_parts.append(f"Status: {mitigation.implementation_status}")
 
         return ". ".join(summary_parts)
 
@@ -314,22 +302,20 @@ class LLMSummarizationService:
             return "No threats identified in the current threat model."
 
         total_threats = len(threats)
-        high_severity = sum(1 for t in threats if t.severity and t.severity.lower() in ["high", "critical"])
-        high_likelihood = sum(1 for t in threats if t.likelihood and t.likelihood.lower() in ["high", "critical"])
+        high_risk = sum(1 for t in threats if t.risk and t.risk.lower() == "high")
 
         assessment = f"Threat model contains {total_threats} identified threats. "
 
-        if high_severity > 0:
-            assessment += f"{high_severity} threats are rated as high or critical severity. "
+        if high_risk > 0:
+            assessment += f"{high_risk} threats are rated as high risk. "
 
-        if high_likelihood > 0:
-            assessment += f"{high_likelihood} threats have high or critical likelihood. "
-
-        # Analyze STRIDE distribution
-        stride_counts = {}
+        # Analyse STRIDE distribution
+        stride_counts: Dict[str, int] = {}
         for threat in threats:
             if threat.stride_category:
-                stride_counts[threat.stride_category.value] = stride_counts.get(threat.stride_category.value, 0) + 1
+                stride_counts[threat.stride_category.value] = (
+                    stride_counts.get(threat.stride_category.value, 0) + 1
+                )
 
         if stride_counts:
             top_stride = max(stride_counts.items(), key=lambda x: x[1])

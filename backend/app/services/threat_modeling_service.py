@@ -43,7 +43,27 @@ class ThreatModelingService:
         Returns the full stored analysis.
         Automatically records the scan in the history.
         """
-        result = analyze(req)
+        if not req.frameworks and not req.languages:
+            return {
+                "threats": [],
+                "risk_score": None,
+                "risk_label": None,
+                "blocked": True,
+                "reason": "No technology stack selected."
+            }
+
+        try:
+            result = analyze(req)
+        except ValueError as e:
+            if str(e) == "STACK_REQUIRED":
+                return {
+                    "threats": [],
+                    "risk_score": None,
+                    "risk_label": None,
+                    "blocked": True,
+                    "reason": "Select a technology stack to generate threats."
+                }
+            raise
 
         row = {
             "user_id":              user_id,
@@ -109,8 +129,28 @@ class ThreatModelingService:
         Persists the comprehensive analysis to Supabase.
         Automatically records the scan in the history.
         """
+        if not req.frameworks and not req.languages:
+            return {
+                "threats": [],
+                "risk_score": None,
+                "risk_label": None,
+                "blocked": True,
+                "reason": "No technology stack selected."
+            }
+
         # Generate comprehensive analysis
-        analysis = analyze_comprehensive(req, generate_heatmap, include_summaries)
+        try:
+            analysis = analyze_comprehensive(req, generate_heatmap, include_summaries)
+        except ValueError as e:
+            if str(e) == "STACK_REQUIRED":
+                return {
+                    "threats": [],
+                    "risk_score": None,
+                    "risk_label": None,
+                    "blocked": True,
+                    "reason": "Select a technology stack to generate threats."
+                }
+            raise
 
         # Prepare data for storage
         row = {

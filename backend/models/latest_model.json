@@ -1,0 +1,7 @@
+{
+  "version_number": 4,
+  "model_version": "phishing_pipeline_v4",
+  "pipeline_path": "C:\\TIBSA SCAN\\TIBSA-Platform\\backend\\app\\services\\..\\..\\models\\versions\\phishing_pipeline_v4.joblib",
+  "meta_path": "C:\\TIBSA SCAN\\TIBSA-Platform\\backend\\app\\services\\..\\..\\models\\versions\\phishing_pipeline_v4_meta.joblib",
+  "updated_at": "2026-06-01T14:56:23Z"
+}

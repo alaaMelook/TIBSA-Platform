@@ -371,3 +371,62 @@ class HeatmapGenerator:
         svg_parts.append('</svg>')
 
         return '\n'.join(svg_parts)
+
+    def generate_per_threat_heatmap(self, threats: List[ThreatItem]) -> List[HeatmapData]:
+        """
+        Generate a list of HeatmapData points – one per threat – using the
+        schema defined by the HeatmapData Pydantic model:
+            threat_id, x_coordinate (0.0-1.0), y_coordinate (0.0-1.0),
+            risk_score (0-100), category.
+
+        x-axis = normalised Likelihood, y-axis = normalised Impact.
+        Both are derived from the threat's risk level since ThreatItem has no
+        explicit likelihood/impact fields.
+        """
+        heatmap_points: List[HeatmapData] = []
+
+        for threat in threats:
+            likelihood_score = self._normalize_risk_to_score(threat.risk)
+            impact_score = self._normalize_impact_for_threat(threat)
+
+            # Scale to 0.0–1.0 range for heatmap canvas coordinates
+            x = round(likelihood_score / self.max_likelihood, 2)
+            y = round(impact_score / self.max_impact, 2)
+
+            heatmap_points.append(HeatmapData(
+                threat_id=threat.id,
+                x_coordinate=x,
+                y_coordinate=y,
+                risk_score=threat.priority_score if threat.priority_score else round(likelihood_score * impact_score / self.max_impact * 20),
+                category=(
+                    threat.stride_category.value
+                    if threat.stride_category
+                    else threat.category
+                ),
+            ))
+
+        return heatmap_points
+
+    def _normalize_risk_to_score(self, risk: Optional[str]) -> int:
+        """
+        Convert a ThreatItem risk label (High / Medium / Low) to a
+        Likelihood score on the 1–5 scale used by the heatmap matrix.
+        """
+        mapping = {"High": 4, "Medium": 3, "Low": 2}
+        return mapping.get(risk or "", 3)
+
+    def _normalize_impact_for_threat(self, threat: ThreatItem) -> int:
+        """
+        Derive an Impact score from the threat's risk level and STRIDE category.
+        Information Disclosure and Elevation of Privilege have higher impact.
+        """
+        base_mapping = {"High": 4, "Medium": 3, "Low": 2}
+        base = base_mapping.get(threat.risk or "", 3)
+
+        # Boost impact for high-consequence STRIDE categories
+        if threat.stride_category and threat.stride_category.value in (
+            "Information Disclosure", "Elevation of Privilege"
+        ):
+            base = min(5, base + 1)
+
+        return base

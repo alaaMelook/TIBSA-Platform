@@ -12,6 +12,20 @@ from dataclasses import dataclass
 from app.models.threat_modeling import STRIDECategory, ThreatItem
 
 
+# ─── STRIDE → ASVS Control ID Mapping ────────────────────────────────────────
+# Maps each STRIDE category to its 3 highest-priority ASVS control IDs.
+# The IDs are stored directly on ThreatItem.asvs_controls so the frontend
+# can render them as clickable ASVS references (e.g. "V2.1.1").
+STRIDE_TO_ASVS_IDS: Dict[STRIDECategory, List[str]] = {
+    STRIDECategory.SPOOFING:               ["V2.1.1", "V2.2.4", "V3.2.2"],
+    STRIDECategory.TAMPERING:              ["V5.1.3", "V4.1.2", "V6.1.2"],
+    STRIDECategory.REPUDIATION:            ["V8.1.2", "V8.1.3", "V4.1.1"],
+    STRIDECategory.INFORMATION_DISCLOSURE: ["V9.1.3", "V7.1.1", "V10.1.1"],
+    STRIDECategory.DENIAL_OF_SERVICE:      ["V13.1.2", "V10.1.2", "V4.1.5"],
+    STRIDECategory.ELEVATION_OF_PRIVILEGE: ["V4.1.3", "V4.1.4", "V2.3.1"],
+}
+
+
 @dataclass
 class ASVSControl:
     """Represents an ASVS control."""
@@ -544,6 +558,13 @@ class ASVSControlDatabase:
             ),
         }
 
+    def get_asvs_ids_for_stride(self, stride_category: STRIDECategory) -> List[str]:
+        """
+        Return the canonical ASVS control IDs for a STRIDE category.
+        Uses the deterministic STRIDE_TO_ASVS_IDS lookup table.
+        """
+        return STRIDE_TO_ASVS_IDS.get(stride_category, [])
+
     def get_controls_for_threat(self, threat: ThreatItem) -> List[ASVSControl]:
         """Get ASVS controls that match the given threat."""
         matching_controls = []
@@ -554,18 +575,34 @@ class ASVSControlDatabase:
         return matching_controls
 
     def enrich_threat(self, threat: ThreatItem) -> ThreatItem:
-        """Enrich a threat with ASVS control information."""
-        matching_controls = self.get_controls_for_threat(threat)
+        """
+        Enrich a threat with ASVS control IDs.
 
+        Uses the STRIDE category to look up the canonical ASVS control IDs
+        (e.g. 'V2.1.1') and appends them to threat.asvs_controls.
+        Falls back to STRIDE-matched controls from the full database if the
+        category is unknown.
+        """
+        if threat.stride_category:
+            # Deterministic path: direct STRIDE → ASVS ID lookup
+            ids = self.get_asvs_ids_for_stride(threat.stride_category)
+            if ids:
+                # Merge with any existing controls (avoid duplicates)
+                existing = set(threat.asvs_controls or [])
+                for cid in ids:
+                    if cid not in existing:
+                        threat.asvs_controls.append(cid)
+                return threat
+
+        # Fallback: match by STRIDE category across full controls database
+        matching_controls = self.get_controls_for_threat(threat)
         if not matching_controls:
             return threat
 
-        # Add control descriptions to the threat's ASVS controls
-        control_descriptions = [control.description for control in matching_controls[:3]]  # Limit to 3
-
-        if threat.asvs_controls:
-            threat.asvs_controls.extend(control_descriptions)
-        else:
-            threat.asvs_controls = control_descriptions
+        # Store control IDs (not descriptions)
+        existing = set(threat.asvs_controls or [])
+        for control in matching_controls[:3]:
+            if control.id not in existing:
+                threat.asvs_controls.append(control.id)
 
         return threat

@@ -1,0 +1,473 @@
+--- REQUEST PAYLOAD ---
+{
+  "project_name": "Banking Portal With Strong Controls",
+  "app_type": "Web",
+  "uses_auth": true,
+  "uses_database": true,
+  "has_admin_panel": true,
+  "uses_external_apis": true,
+  "stores_sensitive_data": true,
+  "frameworks": [
+    "React",
+    "Express"
+  ],
+  "languages": [
+    "JavaScript"
+  ],
+  "deploy_envs": [
+    "Containerized (Docker / K8s)",
+    "Cloud (AWS / GCP / Azure)"
+  ],
+  "deploy_types": [
+    "SaaS"
+  ],
+  "databases": [
+    "PostgreSQL"
+  ],
+  "protocols": [
+    "HTTPS",
+    "REST"
+  ],
+  "system_metadata": {},
+  "architecture_diagram": null,
+  "assets": [],
+  "entry_points": [],
+  "trust_boundaries": [],
+  "auth_questions": {
+    "uses_mfa": true,
+    "stores_tokens_in_localstorage": false
+  },
+  "data_questions": {},
+  "control_questions": {
+    "uses_helmet": true,
+    "uses_waf": true,
+    "uses_orm": true,
+    "uses_csp": true,
+    "uses_rls": true,
+    "outbound_whitelisting": true
+  }
+}
+
+--- FULL RESPONSE PAYLOAD ---
+{
+  "threats": [
+    {
+      "id": "sql--query-injection",
+      "title": "SQL / Query Injection",
+      "risk": "High",
+      "category": "Injection",
+      "description": "Malicious query statements injected through unsanitized user inputs can manipulate or destroy your database, leading to unauthorized access or data leakage. [CWE: CWE-89]",
+      "mitigation": "Use parameterized queries, prepared statements, or a trusted ORM. Validate all inputs server-side and apply least-privilege DB accounts.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-7",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 80,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'SQL / Query Injection' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-7. Overall risk level: High – immediate action recommended. Priority score: 80/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 1.0
+    },
+    {
+      "id": "identity-spoofing",
+      "title": "Identity Spoofing",
+      "risk": "High",
+      "category": "Authentication",
+      "description": "Attackers may impersonate legitimate users by stealing or forging authentication credentials via phishing, credential stuffing, or session hijacking. [CWE: CWE-20]",
+      "mitigation": "Enforce MFA, use short-lived JWTs with rotation, implement account-lockout policies, and adopt a zero-trust session model.",
+      "stride_category": "Spoofing",
+      "capec_id": "CAPEC-194",
+      "asvs_controls": [
+        "V2.1.1",
+        "V2.2.4",
+        "V3.2.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 80,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Identity Spoofing' involves an attacker impersonating a legitimate user, system, or service to gain unauthorized access. This threat is classified as CAPEC-194. Overall risk level: High – immediate action recommended. Priority score: 80/100 (Likelihood × Impact). This is a Spoofing threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 0.75
+    },
+    {
+      "id": "privilege-escalation",
+      "title": "Privilege Escalation",
+      "risk": "High",
+      "category": "Authorization",
+      "description": "An attacker with low-privilege access may exploit misconfigured logic to gain admin-level control over the application. [CWE: CWE-284, CWE-285, CWE-287]",
+      "mitigation": "Implement strict RBAC, audit all elevated-privilege actions, enforce least privilege everywhere, and pen-test your admin surface.",
+      "stride_category": "Elevation of Privilege",
+      "capec_id": "CAPEC-1",
+      "asvs_controls": [
+        "V4.1.3",
+        "V4.1.4",
+        "V2.3.1"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 60,
+      "status": "Open",
+      "llm_summary": "The threat 'Privilege Escalation' involves gaining higher access privileges than authorized, potentially leading to system compromise. This threat is classified as CAPEC-1. Overall risk level: High – immediate action recommended. Priority score: 60/100 (Likelihood × Impact). This is a Elevation of Privilege threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "sensitive-data-exposure",
+      "title": "Sensitive Data Exposure",
+      "risk": "High",
+      "category": "Data Security",
+      "description": "PII, credentials, or financial records may be exposed through insecure storage, unencrypted transmission, or access-control misconfigurations. [CWE: CWE-451]",
+      "mitigation": "Encrypt data at rest (AES-256) and in transit (TLS 1.3+). Mask sensitive fields in logs. Apply data minimization and run regular access audits.",
+      "stride_category": "Information Disclosure",
+      "capec_id": "CAPEC-150",
+      "asvs_controls": [
+        "V9.1.3",
+        "V7.1.1",
+        "V10.1.1"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 80,
+      "status": "Open",
+      "llm_summary": "The threat 'Sensitive Data Exposure' involves unauthorized access to sensitive information, potentially leading to privacy breaches. This threat is classified as CAPEC-150. Overall risk level: High – immediate action recommended. Priority score: 80/100 (Likelihood × Impact). This is a Information Disclosure threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "cross-site-request-forgery-csrf",
+      "title": "Cross-Site Request Forgery (CSRF)",
+      "risk": "Medium",
+      "category": "Web Security",
+      "description": "An attacker tricks an authenticated user's browser into sending unwanted state-changing requests without the user's knowledge. [CWE: CWE-352]",
+      "mitigation": "Use CSRF tokens on all state-changing endpoints. Set SameSite=Strict cookies and validate Origin / Referer headers server-side.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-62",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 48,
+      "status": "Open",
+      "llm_summary": "The threat 'Cross-Site Request Forgery (CSRF)' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-62. Overall risk level: Medium – schedule for near-term remediation. Priority score: 48/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "cross-site-scripting-xss",
+      "title": "Cross-Site Scripting (XSS)",
+      "risk": "Low",
+      "category": "Web Security",
+      "description": "Injected malicious scripts execute in victims' browsers, enabling session theft, credential harvesting, and DOM manipulation. [CWE: CWE-79]",
+      "mitigation": "Mitigated by React's JSX auto-escaping.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-86",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 24,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Cross-Site Scripting (XSS)' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-86. Overall risk level: Low – monitor and review periodically. Priority score: 24/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "third-party-api-compromise",
+      "title": "Third-Party API Compromise",
+      "risk": "Medium",
+      "category": "Supply Chain",
+      "description": "Compromised or misconfigured third-party integrations expose your system to supply-chain attacks, data leakage, and unauthorized actions. [CWE: CWE-434]",
+      "mitigation": "Audit every third-party API. Store keys in a secrets manager. Apply minimal API scopes and monitor for anomalous usage in real time.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-17",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 48,
+      "status": "Open",
+      "llm_summary": "The threat 'Third-Party API Compromise' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-17. Overall risk level: Medium – schedule for near-term remediation. Priority score: 48/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "container-escape",
+      "title": "Container Escape",
+      "risk": "High",
+      "category": "Infrastructure",
+      "description": "A compromised container can escape its sandbox via privilege escalation, exploiting the container runtime or misconfigured host mounts. [CWE: CWE-284, CWE-285, CWE-287]",
+      "mitigation": "Run containers as non-root. Enable seccomp/AppArmor profiles, disable privileged mode, avoid host-path mounts, and keep runtimes patched.",
+      "stride_category": "Elevation of Privilege",
+      "capec_id": "CAPEC-1",
+      "asvs_controls": [
+        "V4.1.3",
+        "V4.1.4",
+        "V2.3.1"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 60,
+      "status": "Open",
+      "llm_summary": "The threat 'Container Escape' involves gaining higher access privileges than authorized, potentially leading to system compromise. This threat is classified as CAPEC-1. Overall risk level: High – immediate action recommended. Priority score: 60/100 (Likelihood × Impact). This is a Elevation of Privilege threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "missing-http-security-headers-node",
+      "title": "Missing HTTP Security Headers (Node)",
+      "risk": "Low",
+      "category": "Web Security",
+      "description": "Node.js web servers don't set secure HTTP headers by default, leaving apps exposed to clickjacking, MIME sniffing, and other browser-based attacks. [CWE: CWE-79]",
+      "mitigation": "Add Helmet.js to your Express / NestJS app to automatically set X-Frame-Options, CSP, X-Content-Type-Options, and other protective headers.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-86",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 24,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Missing HTTP Security Headers (Node)' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-86. Overall risk level: Low – monitor and review periodically. Priority score: 24/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 1.0
+    },
+    {
+      "id": "tenant-data-isolation-failure",
+      "title": "Tenant Data Isolation Failure",
+      "risk": "High",
+      "category": "Multi-tenancy",
+      "description": "In SaaS applications, missing or incorrect tenant scoping in queries can allow one customer to access another customer's data. [CWE: CWE-284, CWE-285, CWE-287]",
+      "mitigation": "Enforce tenant_id checks on every data query. Use Row-Level Security in the DB. Audit cross-tenant queries and add integration tests for isolation.",
+      "stride_category": "Elevation of Privilege",
+      "capec_id": "CAPEC-1",
+      "asvs_controls": [
+        "V4.1.3",
+        "V4.1.4",
+        "V2.3.1"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 60,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Tenant Data Isolation Failure' involves gaining higher access privileges than authorized, potentially leading to system compromise. This threat is classified as CAPEC-1. Overall risk level: High – immediate action recommended. Priority score: 60/100 (Likelihood × Impact). This is a Elevation of Privilege threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 1.0
+    },
+    {
+      "id": "database-poisoning-via-third-party-integration",
+      "title": "Database Poisoning via Third-Party Integration",
+      "risk": "High",
+      "category": "Supply Chain",
+      "description": "If external APIs are trusted to directly populate your database without validation, a compromised third-party service could inject malicious data into your core database. [CWE: CWE-89]",
+      "mitigation": "Validate all data from external APIs before inserting into the database. Implement schema validation, rate limiting, and anomaly detection for API responses.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-7",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 80,
+      "status": "Open",
+      "llm_summary": "The threat 'Database Poisoning via Third-Party Integration' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-7. Overall risk level: High – immediate action recommended. Priority score: 80/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "sensitive-data-leakage-through-third-party-apis",
+      "title": "Sensitive Data Leakage through Third-Party APIs",
+      "risk": "High",
+      "category": "Data Security",
+      "description": "When sending sensitive data to external APIs (e.g. for processing, analytics), that data could be logged, cached, or misused if the third-party service is compromised. [CWE: CWE-451]",
+      "mitigation": "Minimize PII sent to third parties. Use data anonymization/pseudonymization. Implement data retention policies and audit third-party data handling practices.",
+      "stride_category": "Information Disclosure",
+      "capec_id": "CAPEC-150",
+      "asvs_controls": [
+        "V9.1.3",
+        "V7.1.1",
+        "V10.1.1"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 80,
+      "status": "Open",
+      "llm_summary": "The threat 'Sensitive Data Leakage through Third-Party APIs' involves unauthorized access to sensitive information, potentially leading to privacy breaches. This threat is classified as CAPEC-150. Overall risk level: High – immediate action recommended. Priority score: 80/100 (Likelihood × Impact). This is a Information Disclosure threat, which typically requires specific security controls.",
+      "threat_state": "Potential",
+      "confidence": "Low",
+      "mitigation_effectiveness": 0.0
+    },
+    {
+      "id": "server-side-request-forgery-ssrf-via-rest-apis",
+      "title": "Server-Side Request Forgery (SSRF) via REST APIs",
+      "risk": "High",
+      "category": "API Security",
+      "description": "If your application fetches resources from URLs provided in user input or external APIs, an attacker can trick it into making requests to internal systems or sensitive endpoints.",
+      "mitigation": "Validate and whitelist all URLs before making requests. Disable access to private IP ranges. Use DNS rebinding protection and implement request timeouts.",
+      "stride_category": "Elevation of Privilege",
+      "capec_id": "CAPEC-664",
+      "asvs_controls": [
+        "V4.1.3",
+        "V4.1.4",
+        "V2.3.1"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 60,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Server-Side Request Forgery (SSRF) via REST APIs' involves gaining higher access privileges than authorized, potentially leading to system compromise. This threat is classified as CAPEC-664. Overall risk level: High – immediate action recommended. Priority score: 60/100 (Likelihood × Impact). This is a Elevation of Privilege threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 1.0
+    },
+    {
+      "id": "insecure-localstorage-token-storage",
+      "title": "Insecure localStorage Token Storage",
+      "risk": "High",
+      "category": "Web Security",
+      "description": "Storing JWTs or sensitive tokens in localStorage makes them vulnerable to XSS theft. [CWE: CWE-451]",
+      "mitigation": "Store tokens in secure, HttpOnly cookies instead of localStorage.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-150",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 80,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Insecure localStorage Token Storage' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-150. Overall risk level: High – immediate action recommended. Priority score: 80/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 1.0
+    },
+    {
+      "id": "missing-content-security-policy-csp",
+      "title": "Missing Content Security Policy (CSP)",
+      "risk": "Medium",
+      "category": "Web Security",
+      "description": "Modern frontend applications should restrict resource loading origins to prevent XSS. [CWE: CWE-79]",
+      "mitigation": "Implement a strict Content Security Policy (CSP) header.",
+      "stride_category": "Tampering",
+      "capec_id": "CAPEC-86",
+      "asvs_controls": [
+        "V5.1.3",
+        "V4.1.2",
+        "V6.1.2"
+      ],
+      "affected_assets": [],
+      "entry_points": [],
+      "trust_boundaries": [],
+      "priority_score": 48,
+      "status": "Mitigated",
+      "llm_summary": "The threat 'Missing Content Security Policy (CSP)' involves unauthorized modification of data or systems, potentially compromising integrity. This threat is classified as CAPEC-86. Overall risk level: Medium – schedule for near-term remediation. Priority score: 48/100 (Likelihood × Impact). This is a Tampering threat, which typically requires specific security controls.",
+      "threat_state": "Mitigated",
+      "confidence": "High",
+      "mitigation_effectiveness": 1.0
+    }
+  ],
+  "risk_score": 15,
+  "risk_label": "Low",
+  "mitigations": [
+    {
+      "id": "mit_1",
+      "threat_id": "sql--query-injection",
+      "title": "Implement Input Validation and Integrity Controls",
+      "description": "Add comprehensive input validation and integrity checking to prevent data tampering.",
+      "priority": "High",
+      "estimated_effort": "Medium",
+      "estimated_cost": "Low",
+      "implementation_status": "Not Started",
+      "assigned_to": null,
+      "due_date": null
+    },
+    {
+      "id": "mit_2",
+      "threat_id": "identity-spoofing",
+      "title": "Implement Multi-Factor Authentication",
+      "description": "Deploy MFA across all authentication points to prevent credential-based spoofing attacks.",
+      "priority": "High",
+      "estimated_effort": "Medium",
+      "estimated_cost": "Medium",
+      "implementation_status": "Not Started",
+      "assigned_to": null,
+      "due_date": null
+    },
+    {
+      "id": "mit_3",
+      "threat_id": "privilege-escalation",
+      "title": "Implement Principle of Least Privilege",
+      "description": "Apply strict RBAC and least-privilege access controls to prevent privilege escalation.",
+      "priority": "High",
+      "estimated_effort": "Medium",
+      "estimated_cost": "Low",
+      "implementation_status": "Not Started",
+      "assigned_to": null,
+      "due_date": null
+    },
+    {
+      "id": "mit_4",
+      "threat_id": "sensitive-data-exposure",
+      "title": "Encrypt Data at Rest and in Transit",
+      "description": "Implement encryption for data at rest (AES-256) and in transit (TLS 1.3).",
+      "priority": "Critical",
+      "estimated_effort": "High",
+      "estimated_cost": "High",
+      "implementation_status": "Not Started",
+      "assigned_to": null,
+      "due_date": null
+    }
+  ],
+  "heatmap_data": [],
+  "generic_warning": false,
+  "blocked": false,
+  "reason": null,
+  "inherent_risk_score": 66,
+  "residual_risk_score": 15
+}
