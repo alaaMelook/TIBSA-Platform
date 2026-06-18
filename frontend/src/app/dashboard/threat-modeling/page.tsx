@@ -267,24 +267,63 @@ function buildPdfHtml(form: FormState, result: AnalysisResult): string {
     const riskColor: Record<string, string> = {
         High: "#ef4444", Medium: "#f97316", Low: "#eab308", Critical: "#dc2626",
     };
+    
+    // Ivory emerald colors
+    const emeraldPrimary = "#0f9d76";
+    const emeraldSoft = "#edf8f3";
+    const emeraldHover = "#0b7d5d";
+    const bgMain = "#f6f0e7";
+    const bgCard = "#fffaf4";
+    const bgElevated = "#ffffff";
+    const borderSoft = "#e7ddd1";
+    const textPrimary = "#1d1d1d";
+    const textSecondary = "#4f4a45";
+    const textMuted = "#8a8178";
+
     const label = getRiskLabel(result.riskScore);
     const now = new Date().toLocaleString();
     const stackTags = [...form.frameworks, ...form.languages, ...form.deployEnvs, ...form.deployTypes, ...form.databases, ...form.protocols];
 
-    const threatsHtml = result.threats.map(t => `
-        <div style="margin-bottom:16px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;border-left:4px solid ${riskColor[t.risk] || "#94a3b8"}">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <span style="font-weight:700;font-size:15px;color:#1e293b">${t.title}</span>
-                <span style="font-size:12px;font-weight:600;color:${riskColor[t.risk]};background:${riskColor[t.risk]}22;padding:2px 10px;border-radius:999px;border:1px solid ${riskColor[t.risk]}44">${t.risk}</span>
+    const threatsHtml = result.threats.map(t => {
+        const rColor = riskColor[t.risk] || "#94a3b8";
+        const rBgColor = t.risk === "High" ? "#fef2f2" : t.risk === "Medium" ? "#fff7ed" : t.risk === "Low" ? "#fefce8" : "#f8fafc";
+        const rBorder = t.risk === "High" ? "#fecaca" : t.risk === "Medium" ? "#fed7aa" : t.risk === "Low" ? "#fde68a" : "#e2e8f0";
+        const rTextColor = t.risk === "High" ? "#dc2626" : t.risk === "Medium" ? "#d97706" : t.risk === "Low" ? "#d97706" : "#475569";
+        
+        return `
+        <div style="margin-bottom:24px;background:#ffffff;border:1px solid #e7ddd1;border-radius:16px;border-left:5px solid ${rColor};box-shadow:0 4px 14px rgba(0,0,0,0.03);overflow:hidden;page-break-inside:avoid">
+            <div style="padding:20px 24px;border-bottom:1px solid #f6f0e7;background:#fffaf4;display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div style="width:8px;height:8px;border-radius:50%;background:${rColor}"></div>
+                    <div>
+                        <div style="font-weight:800;font-size:16px;color:#1d1d1d;margin-bottom:2px">${t.title}</div>
+                        <div style="font-size:11px;font-weight:700;color:#8a8178;text-transform:uppercase;letter-spacing:0.06em">${t.category}</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    ${t.stride_category ? `<span style="font-size:11px;font-weight:700;color:#0f9d76;background:#edf8f3;padding:4px 12px;border-radius:999px;border:1px solid rgba(15,157,118,0.3)">${t.stride_category}</span>` : ""}
+                    <span style="font-size:12px;font-weight:700;color:${rTextColor};background:${rBgColor};padding:4px 14px;border-radius:999px;border:1px solid ${rBorder}">${t.risk} Risk</span>
+                </div>
             </div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">${t.category}</div>
-            <p style="font-size:13px;color:#475569;margin:0 0 8px 0;line-height:1.6"><strong>Risk:</strong> ${t.description}</p>
-            <p style="font-size:13px;color:#0f766e;margin:0;line-height:1.6;background:#f0fdf4;padding:8px;border-radius:6px"><strong>✅ Mitigation:</strong> ${t.mitigation}</p>
-        </div>`).join("");
+            <div style="padding:20px 24px">
+                <div style="margin-bottom:20px">
+                    <div style="font-size:11px;font-weight:800;color:#8a8178;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Description</div>
+                    <p style="font-size:14px;color:#4f4a45;margin:0;line-height:1.6">${t.description}</p>
+                </div>
+                <div style="background:#edf8f3;border-radius:12px;padding:16px;border:1px solid rgba(15,157,118,0.2)">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                        <span style="color:#0f9d76;font-size:16px">🛡️</span>
+                        <div style="font-size:11px;font-weight:800;color:#0f9d76;text-transform:uppercase;letter-spacing:0.06em">Mitigation</div>
+                    </div>
+                    <p style="font-size:14px;color:#0b7d5d;margin:0;line-height:1.6;font-weight:500">${t.mitigation}</p>
+                </div>
+            </div>
+        </div>`;
+    }).join("");
 
     const tagsHtml = stackTags.length > 0
-        ? stackTags.map(t => `<span style="display:inline-block;padding:3px 10px;margin:3px;background:#eff6ff;color:#1d4ed8;border-radius:999px;font-size:12px;border:1px solid #bfdbfe">${t}</span>`).join("")
-        : "<span style='color:#94a3b8;font-size:13px'>None selected</span>";
+        ? stackTags.map(t => `<span style="display:inline-block;padding:6px 14px;margin:4px 6px 4px 0;background:#fffaf4;color:#4f4a45;border-radius:999px;font-size:13px;font-weight:600;border:1px solid #e7ddd1;box-shadow:0 1px 2px rgba(0,0,0,0.02)">${t}</span>`).join("")
+        : "<span style='color:#8a8178;font-size:13px;font-weight:500'>None selected</span>";
 
     const highCount = result.threats.filter(t => t.risk === "High").length;
     const medCount = result.threats.filter(t => t.risk === "Medium").length;
@@ -293,34 +332,53 @@ function buildPdfHtml(form: FormState, result: AnalysisResult): string {
     return `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Threat Report — ${form.projectName}</title>
     <style>
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:32px;color:#1e293b;background:#fff}
-        @media print{body{padding:0}}
-        h1{margin:0;font-size:26px} h2{font-size:17px;margin:24px 0 12px;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:6px}
-        .badge{display:inline-block;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px}
-        table{width:100%;border-collapse:collapse;font-size:13px} td{padding:6px 10px;border-bottom:1px solid #f1f5f9} td:first-child{color:#64748b;width:160px}
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; padding: 48px; color: #1d1d1d; background: #f8f3eb; position: relative; line-height: 1.5; }
+        body::before { content: ''; position: fixed; top: -20%; left: -10%; width: 600px; height: 600px; border-radius: 50%; background: rgba(15, 157, 118, 0.05); filter: blur(80px); z-index: -1; pointer-events: none; }
+        body::after { content: ''; position: fixed; bottom: -20%; right: -10%; width: 500px; height: 500px; border-radius: 50%; background: rgba(15, 157, 118, 0.03); filter: blur(80px); z-index: -1; pointer-events: none; }
+        @media print { body { padding: 0; background: #ffffff; } body::before, body::after { display: none; } }
+        h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; color: #1d1d1d; }
+        h2 { font-size: 20px; font-weight: 800; margin: 40px 0 20px; color: #1d1d1d; letter-spacing: -0.01em; display: flex; align-items: center; gap: 12px; }
+        h2::before { content: ''; display: block; width: 6px; height: 24px; background: #0f9d76; border-radius: 4px; }
+        .badge { display: inline-block; padding: 6px 16px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e7ddd1; box-shadow: 0 4px 14px rgba(0,0,0,0.02); }
+        tr:not(:last-child) { border-bottom: 1px solid #f6f0e7; }
+        td { padding: 14px 20px; }
+        td:first-child { color: #8a8178; font-weight: 600; width: 220px; border-right: 1px solid #f6f0e7; background: #fffaf4; }
+        td:last-child { color: #1d1d1d; font-weight: 500; }
+        .stat-card { padding: 24px; background: #ffffff; border-radius: 16px; text-align: center; border: 1px solid #e7ddd1; box-shadow: 0 4px 14px rgba(0,0,0,0.03); position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
     </style></head><body>
-    <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);color:white;padding:28px 32px;border-radius:12px;margin-bottom:28px">
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;opacity:0.7;margin-bottom:6px">TIBSA · Security Analysis · TMaaS</div>
-        <h1>Threat Report — ${form.projectName}</h1>
-        <div style="opacity:0.8;margin-top:6px;font-size:14px">${form.appType} Application · Generated ${now}</div>
+    <div style="background: linear-gradient(135deg, #e6f7f0 0%, #ccf0e1 100%); border: 1px solid rgba(15, 157, 118, 0.4); padding: 40px; border-radius: 20px; margin-bottom: 40px; box-shadow: 0 10px 30px rgba(15, 157, 118, 0.1); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, rgba(15, 157, 118, 0.6), transparent);"></div>
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: #0b7d5d; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <div style="width: 24px; height: 24px; background: #0f9d76; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">🛡️</div>
+            TIBSA · Security Analysis
+        </div>
+        <h1 style="color: #1d1d1d; margin-bottom: 12px;">Threat Report — <span style="color: #0b7d5d;">${form.projectName}</span></h1>
+        <div style="font-size: 14px; font-weight: 600; color: #4f4a45;">${form.appType} Application Architecture · Generated on ${now}</div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px">
-        <div style="padding:16px;background:#fef2f2;border-radius:10px;text-align:center;border:1px solid #fecaca">
-            <div style="font-size:28px;font-weight:800;color:#ef4444">${highCount}</div>
-            <div style="font-size:12px;color:#b91c1c;font-weight:600">HIGH RISK</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 40px; page-break-inside: avoid;">
+        <div class="stat-card">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #ef4444;"></div>
+            <div style="font-size: 40px; font-weight: 900; color: #1d1d1d; line-height: 1; margin-bottom: 8px;">${highCount}</div>
+            <div style="font-size: 11px; color: #8a8178; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">HIGH RISK</div>
         </div>
-        <div style="padding:16px;background:#fff7ed;border-radius:10px;text-align:center;border:1px solid #fed7aa">
-            <div style="font-size:28px;font-weight:800;color:#f97316">${medCount}</div>
-            <div style="font-size:12px;color:#c2410c;font-weight:600">MEDIUM RISK</div>
+        <div class="stat-card">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #f97316;"></div>
+            <div style="font-size: 40px; font-weight: 900; color: #1d1d1d; line-height: 1; margin-bottom: 8px;">${medCount}</div>
+            <div style="font-size: 11px; color: #8a8178; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">MEDIUM RISK</div>
         </div>
-        <div style="padding:16px;background:#fefce8;border-radius:10px;text-align:center;border:1px solid #fde68a">
-            <div style="font-size:28px;font-weight:800;color:#eab308">${lowCount}</div>
-            <div style="font-size:12px;color:#a16207;font-weight:600">LOW RISK</div>
+        <div class="stat-card">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #eab308;"></div>
+            <div style="font-size: 40px; font-weight: 900; color: #1d1d1d; line-height: 1; margin-bottom: 8px;">${lowCount}</div>
+            <div style="font-size: 11px; color: #8a8178; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">LOW RISK</div>
         </div>
-        <div style="padding:16px;background:#f0f9ff;border-radius:10px;text-align:center;border:1px solid #bae6fd">
-            <div style="font-size:28px;font-weight:800;color:${riskColor[label] || "#0ea5e9"}">${result.riskScore}</div>
-            <div style="font-size:12px;color:#0369a1;font-weight:600">RISK SCORE</div>
+        <div class="stat-card" style="background: #fffaf4;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #0f9d76;"></div>
+            <div style="font-size: 40px; font-weight: 900; color: #0f9d76; line-height: 1; margin-bottom: 8px;">${result.riskScore}</div>
+            <div style="font-size: 11px; color: #0b7d5d; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">RISK SCORE</div>
         </div>
     </div>
 
@@ -328,38 +386,57 @@ function buildPdfHtml(form: FormState, result: AnalysisResult): string {
     <table>
         <tr><td>Project Name</td><td><strong>${form.projectName}</strong></td></tr>
         <tr><td>App Type</td><td>${form.appType}</td></tr>
-        <tr><td>Risk Label</td><td><span class="badge" style="background:${riskColor[label]}22;color:${riskColor[label]};border:1px solid ${riskColor[label]}44">${label}</span></td></tr>
-        <tr><td>Uses Auth</td><td>${form.usesAuth ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>Uses Database</td><td>${form.usesDatabase ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>Admin Panel</td><td>${form.hasAdminPanel ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>External APIs</td><td>${form.usesExternalAPIs ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>Sensitive Data</td><td>${form.storesSensitiveData ? "✅ Yes" : "❌ No"}</td></tr>
+        <tr><td>Risk Label</td><td><span class="badge" style="background:${riskColor[label] ? riskColor[label]+'15' : '#edf8f3'};color:${riskColor[label] || '#0f9d76'};border:1px solid ${riskColor[label] ? riskColor[label]+'30' : 'rgba(15,157,118,0.3)'}">${label}</span></td></tr>
+        <tr><td>Uses Auth</td><td>${form.usesAuth ? "<span style='color:#0f9d76;font-weight:700'>✓ Yes</span>" : "<span style='color:#8a8178'>— No</span>"}</td></tr>
+        <tr><td>Uses Database</td><td>${form.usesDatabase ? "<span style='color:#0f9d76;font-weight:700'>✓ Yes</span>" : "<span style='color:#8a8178'>— No</span>"}</td></tr>
+        <tr><td>Admin Panel</td><td>${form.hasAdminPanel ? "<span style='color:#0f9d76;font-weight:700'>✓ Yes</span>" : "<span style='color:#8a8178'>— No</span>"}</td></tr>
+        <tr><td>External APIs</td><td>${form.usesExternalAPIs ? "<span style='color:#0f9d76;font-weight:700'>✓ Yes</span>" : "<span style='color:#8a8178'>— No</span>"}</td></tr>
+        <tr><td>Sensitive Data</td><td>${form.storesSensitiveData ? "<span style='color:#0f9d76;font-weight:700'>✓ Yes</span>" : "<span style='color:#8a8178'>— No</span>"}</td></tr>
     </table>
 
-    <h2>Technology Stack</h2>
-    <div style="margin-bottom:8px">${tagsHtml}</div>
+    <div style="page-break-inside: avoid;">
+        <h2>Technology Stack</h2>
+        <div style="margin-bottom: 16px; padding: 24px; background: #ffffff; border: 1px solid #e7ddd1; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.02);">${tagsHtml}</div>
+    </div>
 
     <h2>Identified Threats (${result.threats.length})</h2>
     ${threatsHtml}
 
-    <div style="margin-top:32px;padding:14px;background:#f8fafc;border-radius:8px;font-size:12px;color:#94a3b8;text-align:center;border:1px solid #e2e8f0">
-        Generated by TIBSA Platform · Threat Modeling as a Service · ${now}
+    <div style="margin-top:48px;padding:24px;background:#fffaf4;border-radius:12px;font-size:12px;font-weight:600;color:#8a8178;text-align:center;border:1px solid #e7ddd1;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
+            <div style="width:16px;height:16px;background:#0f9d76;border-radius:4px;display:flex;align-items:center;justify-content:center;color:white;font-size:10px">T</div>
+            <span style="color:#1d1d1d;font-weight:800;letter-spacing:0.05em">TIBSA Platform</span>
+        </div>
+        Threat Modeling as a Service · Report Auto-Generated at ${now}
     </div>
     </body></html>`;
 }
 
-function downloadAsPDF(form: FormState, result: AnalysisResult) {
-    const html = buildPdfHtml(form, result);
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) {
-        win.addEventListener("load", () => {
-            setTimeout(() => {
-                win.print();
-                URL.revokeObjectURL(url);
-            }, 400);
-        });
+async function downloadAsPDF(form: FormState, result: AnalysisResult) {
+    try {
+        notifySuccess("Generating PDF...", "Please wait, your report is being prepared.");
+        
+        // Dynamically import html2pdf to avoid SSR issues
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const html2pdfModule = (await import("html2pdf.js" as any));
+        const html2pdf = html2pdfModule.default || html2pdfModule;
+        
+        const html = buildPdfHtml(form, result);
+        
+        const opt = {
+            margin:       0,
+            filename:     `Threat-Report-${form.projectName.replace(/[^a-zA-Z0-9]/g, "-")}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        await html2pdf().set(opt).from(html).save();
+        
+        notifySuccess("Success", "PDF report downloaded successfully.");
+    } catch (error) {
+        console.error("PDF generation error:", error);
+        notifyError("Download Failed", "Failed to generate PDF. Please try again.");
     }
 }
 

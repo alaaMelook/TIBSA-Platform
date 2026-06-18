@@ -1483,8 +1483,22 @@ export default function ScansPage() {
 
     // History state
     const [activeTab, setActiveTab] = useState<"all" | "url" | "file">("all");
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
     const [selectedScanId, setSelectedScanId] = useState<string | null>(null);
     const [modalScan, setModalScan] = useState<Scan | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsFilterOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Keep modalScan updated without unmounting if missing momentarily
     useEffect(() => {
@@ -1697,23 +1711,48 @@ export default function ScansPage() {
         return styles[level || ""] || "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]";
     };
 
-    const filteredScans = scans.filter((s) =>
-        activeTab === "all" ? true : s.scan_type === activeTab
-    );
+    const isFileScan = (type: string) => ["file", "file_upload", "uploaded_file", "file_hash", "hash", "sha256", "uploaded_file_scan"].includes(type);
+    const isUrlScan = (type: string) => ["url", "url_scan"].includes(type);
+
+    const filteredScans = scans.filter((s) => {
+        if (activeTab === "all") return true;
+        if (activeTab === "url") return isUrlScan(s.scan_type);
+        if (activeTab === "file") return isFileScan(s.scan_type);
+        return false;
+    });
+
+    const visibleScans = filteredScans.slice(0, visibleCount);
+    const hasMore = visibleCount < filteredScans.length;
+
+    const handleFilterChange = (tab: "all" | "url" | "file") => {
+        setActiveTab(tab);
+        setVisibleCount(10);
+        setIsFilterOpen(false);
+    };
 
     // ─── Aggregate stats for chart ────────────────────────────
 
-    const urlScans = scans.filter((s) => s.scan_type === "url");
-    const fileScans = scans.filter((s) => s.scan_type === "file" || s.scan_type === "file_upload");
+    const urlScans = scans.filter((s) => isUrlScan(s.scan_type));
+    const fileScans = scans.filter((s) => isFileScan(s.scan_type));
 
     // ─── Render ───────────────────────────────────────────────
 
     return (
         <div className="space-y-6">
             {/* Page header */}
-            <div>
-                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Security Scans</h1>
-                <p className="text-[var(--text-muted)] mt-1">
+            <div 
+              style={{
+                background: "linear-gradient(90deg, rgba(230,226,220,0.95) 0%, rgba(156,158,160,0.75) 55%, #0f172a 100%)"
+              }}
+              className="border border-[var(--border-soft)] p-[32px] rounded-[20px] shadow-xl relative overflow-hidden animate-[cardFadeIn_300ms_ease-out_forwards] motion-reduce:animate-none"
+            >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold text-[#0f9d76] uppercase tracking-widest">
+                    SECURITY SCAN CENTER
+                  </span>
+                </div>
+                <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Security Scans</h1>
+                <p className="text-[#4f4a45] mt-1 max-w-xl text-sm leading-relaxed font-medium">
                     Scan URLs and files for threats using multiple antivirus engines
                 </p>
             </div>
@@ -2003,19 +2042,48 @@ export default function ScansPage() {
                         </p>
                     </div>
                     {/* Filter tabs */}
-                    <div className="flex bg-[#f8f3eb] rounded-lg p-1 gap-1 self-start sm:self-auto">
-                        {(["all", "url", "file"] as const).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-3 py-1.5 text-xs rounded-md shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] capitalize motion-reduce:transition-colors motion-reduce:hover:transform-none ${activeTab === tab
-                                    ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold"
-                                    : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
-                                    }`}
-                            >
-                                {tab === "all" ? "All" : tab === "url" ? "URLs" : "Files"}
-                            </button>
-                        ))}
+                    {/* Filter Dropdown */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className="flex items-center justify-between gap-2 px-4 py-2 bg-[#ffffff] border border-[#e7ddd1] rounded-lg text-sm font-semibold text-[#1d1d1d] shadow-sm hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] transition-all focus:outline-none focus:ring-2 focus:ring-[rgba(15,157,118,0.35)] min-w-[140px]"
+                        >
+                            <span className="capitalize">{activeTab === "all" ? "All Scans" : activeTab === "url" ? "URL Scans" : "File Scans"}</span>
+                            <svg className={`w-4 h-4 transition-transform duration-200 ${isFilterOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        {isFilterOpen && (
+                            <div className="absolute right-0 mt-2 w-40 bg-[#ffffff] border border-[#e7ddd1] rounded-xl shadow-[0_10px_24px_rgba(0,0,0,0.06)] overflow-hidden z-20 animate-[dropdown-fade-in_200ms_ease-out]">
+                                <style>{`
+                                    @keyframes dropdown-fade-in {
+                                        from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+                                        to { opacity: 1; transform: translateY(0) scale(1); }
+                                    }
+                                `}</style>
+                                <div className="py-1">
+                                    <button
+                                        onClick={() => handleFilterChange("all")}
+                                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === "all" ? "bg-[#edf8f3] text-[#0f9d76]" : "text-[#4f4a45] hover:bg-[#f8f3eb] hover:text-[#1d1d1d]"}`}
+                                    >
+                                        All Scans
+                                    </button>
+                                    <button
+                                        onClick={() => handleFilterChange("url")}
+                                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === "url" ? "bg-[#edf8f3] text-[#0f9d76]" : "text-[#4f4a45] hover:bg-[#f8f3eb] hover:text-[#1d1d1d]"}`}
+                                    >
+                                        URL Scans
+                                    </button>
+                                    <button
+                                        onClick={() => handleFilterChange("file")}
+                                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === "file" ? "bg-[#edf8f3] text-[#0f9d76]" : "text-[#4f4a45] hover:bg-[#f8f3eb] hover:text-[#1d1d1d]"}`}
+                                    >
+                                        File Scans
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -2067,7 +2135,7 @@ export default function ScansPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.06]">
-                                {filteredScans.map((scan) => {
+                                {visibleScans.map((scan) => {
                                     const isActive = ["pending", "in_progress", "running"].includes(scan.status);
                                     return (
                                         <tr
@@ -2177,6 +2245,16 @@ export default function ScansPage() {
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                )}
+                {hasMore && (
+                    <div className="px-6 py-4 border-t border-[var(--border-strong)] flex justify-center bg-[var(--bg-card)]">
+                        <button
+                            onClick={() => setVisibleCount(prev => prev + 10)}
+                            className="btn-animated px-6 py-2.5 bg-[#edf8f3] text-[#0f9d76] hover:bg-[#0f9d76] hover:text-[#ffffff] border border-[#0f9d76] rounded-xl text-sm font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 transition-colors"
+                        >
+                            View more
+                        </button>
                     </div>
                 )}
             </div>

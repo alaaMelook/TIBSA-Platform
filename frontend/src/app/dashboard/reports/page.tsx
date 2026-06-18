@@ -403,15 +403,20 @@ export default function ReportsHistoryPage() {
   return (
     <div className="space-y-6">
       {/* Title & Service Selector Header */}
-      <div className="bg-gradient-to-r from-blue-900/10 via-[#1c2942]/20 to-[#0f172a] border border-[var(--border-soft)] p-6 rounded-xl shadow-md">
+      <div 
+        style={{
+          background: "linear-gradient(90deg, rgba(230,226,220,0.95) 0%, rgba(156,158,160,0.75) 55%, #0f172a 100%)"
+        }}
+        className="border border-[var(--border-soft)] p-[32px] rounded-[20px] shadow-xl relative overflow-hidden animate-[cardFadeIn_300ms_ease-out_forwards] motion-reduce:animate-none"
+      >
         <div className="flex items-center gap-2 mb-2">
-          <Clock className="w-4 h-4 text-[var(--primary)]" />
-          <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">
+          <Clock className="w-4 h-4 text-[#0f9d76]" />
+          <span className="text-[10px] font-bold text-[#0f9d76] uppercase tracking-widest">
             Platform History Logs
           </span>
         </div>
-        <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Reports History</h1>
-        <p className="text-[var(--text-muted)] mt-1 max-w-xl text-sm leading-relaxed">
+        <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Reports History</h1>
+        <p className="text-[#4f4a45] mt-1 max-w-xl text-sm leading-relaxed font-medium">
           Unified audit logs and security posture records compiled across all standalone services and ingestion pipelines.
         </p>
 

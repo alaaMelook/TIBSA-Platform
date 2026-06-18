@@ -9,9 +9,19 @@ export default function ProfilePage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Profile</h1>
-                <p className="text-[var(--text-muted)] mt-1">Your account information</p>
+            <div 
+              style={{
+                background: "linear-gradient(90deg, rgba(230,226,220,0.95) 0%, rgba(156,158,160,0.75) 55%, #0f172a 100%)"
+              }}
+              className="border border-[var(--border-soft)] p-[32px] rounded-[20px] shadow-xl relative overflow-hidden animate-[cardFadeIn_300ms_ease-out_forwards] motion-reduce:animate-none"
+            >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold text-[#0f9d76] uppercase tracking-widest">
+                    ACCOUNT SETTINGS
+                  </span>
+                </div>
+                <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Profile</h1>
+                <p className="text-[#4f4a45] mt-1 max-w-xl text-sm leading-relaxed font-medium">Your account information</p>
             </div>
 
             <div className="max-w-2xl space-y-6">

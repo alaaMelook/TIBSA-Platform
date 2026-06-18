@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  ShieldAlert, ShieldCheck, Activity, Search, AlertTriangle, 
+  ShieldAlert, ShieldCheck, Activity, Search, AlertTriangle,
   Terminal, Server, Globe, FileKey, Layers, Radar, CheckCircle2,
   XCircle, Copy, Code, ArrowRight, Zap, Target, ChevronDown, ChevronUp, ExternalLink,
   Eye, EyeOff, Lock, Unlock, Command
@@ -123,7 +123,7 @@ const CollapsibleSection = ({ title, content, icon: Icon, defaultOpen = false, m
 
   return (
     <div className="border border-[var(--border-soft)] rounded-xl overflow-hidden bg-[var(--bg-page)]/20 mb-3">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--bg-elevated)] transition-all group"
       >
@@ -137,7 +137,7 @@ const CollapsibleSection = ({ title, content, icon: Icon, defaultOpen = false, m
         <div className="px-4 pb-4">
           <div className={`p-3 rounded-lg bg-black/40 border border-[var(--border-soft)] text-[11px] ${mono ? 'font-mono' : 'font-sans'} text-[var(--text-secondary)] break-all whitespace-pre-wrap relative group`}>
             {content}
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard.writeText(content);
@@ -219,13 +219,13 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
 
   // Parsing logic
   let rows: { key: string, value: string }[] = [];
-  
+
   if (typeof evidence === 'object' && evidence !== null) {
     rows = Object.entries(evidence)
       .filter(([k]) => k !== "sqlmap")
-      .map(([k, v]) => ({ 
-        key: k.replace(/_/g, ' ').toUpperCase(), 
-        value: typeof v === 'object' ? JSON.stringify(v) : String(v) 
+      .map(([k, v]) => ({
+        key: k.replace(/_/g, ' ').toUpperCase(),
+        value: typeof v === 'object' ? JSON.stringify(v) : String(v)
       }));
   } else if (typeof evidence === 'string') {
     const lines = evidence.split(/\n/);
@@ -237,9 +237,9 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
         rows.push({ key: match[1].trim().toUpperCase(), value: match[2].trim() });
       } else {
         if (rows.length > 0 && !trimmed.includes(':')) {
-           rows[rows.length - 1].value += "\n" + trimmed;
+          rows[rows.length - 1].value += "\n" + trimmed;
         } else {
-           rows.push({ key: "DATA", value: trimmed });
+          rows.push({ key: "DATA", value: trimmed });
         }
       }
     });
@@ -262,7 +262,7 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
             </div>
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const isLong = value.length > 100;
@@ -273,7 +273,7 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
       <div className="flex-1 whitespace-pre-wrap leading-relaxed pr-10">
         {displayValue}
         {isLong && (
-          <button 
+          <button
             onClick={() => toggleExpand(rowKey)}
             className="ml-3 text-[9px] font-black text-[var(--primary)]/70 hover:text-[var(--primary)] transition-colors uppercase underline underline-offset-2"
           >
@@ -297,14 +297,14 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
               <div className="px-5 py-4 text-[var(--text-muted)] bg-[var(--bg-elevated)] border-b md:border-b-0 md:border-r border-[var(--border-soft)] font-sans uppercase text-[10px] font-black tracking-widest flex items-center whitespace-nowrap overflow-hidden text-ellipsis">
                 {row.key}
               </div>
-              
+
               {/* Value Column */}
               <div className="px-5 py-4 text-emerald-400/90 relative flex items-start group/val">
                 {renderValue(row.key, row.value, rowKey)}
-                
+
                 {/* Copy Button on the right */}
                 {isCopyable && (
-                  <button 
+                  <button
                     onClick={() => copyToClipboard(row.value, rowKey)}
                     className="absolute right-4 top-4 p-1.5 bg-[var(--bg-elevated)]/80 hover:bg-emerald-600/50 border border-[var(--border-strong)] rounded-md text-[var(--text-primary)] transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 z-10"
                     title="Copy Value"
@@ -334,6 +334,30 @@ const defaultTests = [
   { id: "endpoint_crawling", label: "Deep Crawling", icon: Globe, desc: "Katana headless extraction" },
 ];
 
+const getColorizedJson = (jsonObj: any) => {
+  if (!jsonObj) return "";
+  const str = JSON.stringify(jsonObj, null, 2)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  return str.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    let color = '#93c5fd'; // number
+    if (/^"/.test(match)) {
+      if (/:$/.test(match)) {
+        color = '#6ee7b7'; // key
+      } else {
+        color = '#fde68a'; // string
+      }
+    } else if (/true|false/.test(match)) {
+      color = '#c084fc'; // boolean
+    } else if (/null/.test(match)) {
+      color = '#f87171'; // null
+    }
+    return `<span style="color: ${color}">${match}</span>`;
+  });
+};
+
 export default function WebsiteScannerPage() {
   const { token } = useAuth();
   const [targetUrl, setTargetUrl] = useState("");
@@ -350,10 +374,10 @@ export default function WebsiteScannerPage() {
   const [authorizedAuthMode, setAuthorizedAuthMode] = useState(false);
   const [authLifecycleChecks, setAuthLifecycleChecks] = useState(false);
   const [authzTransitionChecks, setAuthzTransitionChecks] = useState(false);
-  
+
   const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
   const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
-  
+
   const [isScanning, setIsScanning] = useState(false);
   const [currentResult, setCurrentResult] = useState<ScanResult | null>(null);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -385,7 +409,7 @@ export default function WebsiteScannerPage() {
       setError("");
       if (!token) throw new Error("Not authenticated");
       const data = await api.get<any>(`/api/v1/website-scanner/history/${id}`, token);
-      
+
       const hydrated = {
         detected_technologies: data.detected_technologies || data.summary?.detected_technologies || data.scanner_json?.detected_technologies || [],
         detected_assets: data.detected_assets || data.summary?.detected_assets || data.scanner_json?.detected_assets || [],
@@ -397,7 +421,7 @@ export default function WebsiteScannerPage() {
       console.log("[HISTORY HYDRATION] assets", hydrated.detected_assets?.length);
       console.log("[HISTORY HYDRATION] metadata", hydrated.technology_metadata?.length);
       console.log("[HISTORY HYDRATION] scanner_json", !!hydrated.scanner_json);
-      
+
       setCurrentResult({
         scan_id: data.summary?.scan_id || data.id,
         target: data.target,
@@ -499,30 +523,42 @@ export default function WebsiteScannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-secondary)] p-6 font-sans selection:bg-[var(--primary-soft)]">
-      
+    <div className="space-y-6 text-[var(--text-secondary)] selection:bg-[var(--primary-soft)]">
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 pb-6 border-b border-[var(--border-soft)]">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] flex items-center gap-3">
-            <div className="p-2 bg-[var(--primary-soft)] rounded-lg border border-[var(--primary)]">
-              <Radar className="w-8 h-8 text-[var(--primary)]" />
+      <div
+        style={{
+          background: "linear-gradient(90deg, rgba(230,226,220,0.95) 0%, rgba(156,158,160,0.75) 55%, #0f172a 100%)"
+        }}
+        className="border border-[var(--border-soft)] p-[32px] rounded-[20px] shadow-xl relative overflow-hidden animate-[cardFadeIn_300ms_ease-out_forwards] motion-reduce:animate-none flex flex-col md:flex-row md:items-center justify-between gap-6"
+      >
+        <div className="flex items-start gap-4">
+          <div className="p-2.5 bg-[#edf8f3] rounded-xl border border-[#0f9d76]/30 shadow-sm shrink-0 mt-1">
+            <Radar className="w-8 h-8 text-[#0f9d76]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[10px] font-bold text-[#0f9d76] uppercase tracking-widest">
+                PENETRATION TESTING
+              </span>
             </div>
-            Enterprise Penetration Testing Module
-          </h1>
-          <p className="text-[var(--text-muted)] mt-2">Browser-verified vulnerability assessment and intelligence gathering.</p>
+            <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Enterprise Penetration Testing Module</h1>
+            <p className="text-[#4f4a45] mt-1 max-w-xl text-sm leading-relaxed font-medium">
+              Browser-verified vulnerability assessment and intelligence gathering.
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_350px] gap-6">
-        
+
         {/* Main Content Area */}
         <div className="space-y-6">
-          
+
           {/* Scanner Controls */}
           <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--primary-soft)] blur-[100px] pointer-events-none" />
-            
+
             <form onSubmit={handleScan} className="relative z-10">
               <div className="flex gap-4 mb-6">
                 <div className="flex-1 relative group">
@@ -565,7 +601,7 @@ export default function WebsiteScannerPage() {
                       {authMode === "none" ? "No Auth" : authMode === "cookie" ? "Cookie" : "Auto Login"}
                       <ChevronDown className={`w-4 h-4 text-[#4f4a45] transition-transform duration-200 ${authDropdownOpen ? "rotate-180" : ""}`} />
                     </button>
-                    
+
                     {authDropdownOpen && (
                       <div className="absolute top-full right-0 mt-2 w-40 bg-[#ffffff] border border-[#e7ddd1] rounded-2xl shadow-lg shadow-[#0f9d76]/10 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ease-out">
                         {(["none", "cookie", "auto"] as const).map((mode) => (
@@ -576,11 +612,10 @@ export default function WebsiteScannerPage() {
                               setAuthMode(mode);
                               setAuthDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
-                              authMode === mode
-                                ? "bg-[#edf8f3] text-[#0f9d76] font-bold"
-                                : "text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
-                            }`}
+                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${authMode === mode
+                              ? "bg-[#edf8f3] text-[#0f9d76] font-bold"
+                              : "text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
+                              }`}
                           >
                             {mode === "none" ? "No Auth" : mode === "cookie" ? "Cookie" : "Auto Login"}
                             {authMode === mode && <CheckCircle2 className="w-4 h-4" />}
@@ -669,7 +704,7 @@ export default function WebsiteScannerPage() {
                     {scanMode} Mode
                     <ChevronDown className={`w-4 h-4 text-[#4f4a45] transition-transform duration-200 ${scanDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
-                  
+
                   {scanDropdownOpen && (
                     <div className="absolute top-full left-0 mt-2 w-44 bg-[#ffffff] border border-[#e7ddd1] rounded-2xl shadow-lg shadow-[#0f9d76]/10 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ease-out">
                       {(["passive", "safe", "aggressive"] as const).map((mode) => (
@@ -680,11 +715,10 @@ export default function WebsiteScannerPage() {
                             setScanMode(mode);
                             setScanDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between capitalize ${
-                            scanMode === mode
-                              ? "bg-[#edf8f3] text-[#0f9d76] font-bold"
-                              : "text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
-                          }`}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between capitalize ${scanMode === mode
+                            ? "bg-[#edf8f3] text-[#0f9d76] font-bold"
+                            : "text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
+                            }`}
                         >
                           {mode}
                           {scanMode === mode && <CheckCircle2 className="w-4 h-4" />}
@@ -707,31 +741,28 @@ export default function WebsiteScannerPage() {
                           toggleTest(test.id);
                         }
                       }}
-                      className={`p-4 rounded-xl border text-left cursor-pointer transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none shadow-sm group ${
-                        isScanning ? "opacity-60 cursor-not-allowed" : ""
-                      } ${
-                        isSelected 
-                          ? "bg-[#edf8f3] border-[#0f9d76]" 
+                      className={`p-4 rounded-xl border text-left cursor-pointer transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none shadow-sm group ${isScanning ? "opacity-60 cursor-not-allowed" : ""
+                        } ${isSelected
+                          ? "bg-[#edf8f3] border-[#0f9d76]"
                           : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
-                      }`}
+                        }`}
                     >
                       <Icon className={`w-5 h-5 mb-2 transition-colors ${isSelected ? "text-[#0f9d76]" : "text-[#4f4a45] group-hover:text-[#0f9d76]"}`} />
                       <div className={`font-medium text-sm mb-1 transition-colors ${isSelected ? "text-[#0f9d76] font-bold" : "text-[#1d1d1d] group-hover:text-[#0f9d76]"}`}>
                         {test.label}
                       </div>
                       <div className={`text-[10px] line-clamp-1 transition-colors ${isSelected ? "text-[#0b7d5d]" : "text-[#8a8178]"}`}>{test.desc}</div>
-                      
+
                       {test.id === "sqli" && isSelected && (
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
-                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${
-                            isSelected ? "opacity-100" : "opacity-50"
-                          }`}
+                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${isSelected ? "opacity-100" : "opacity-50"
+                            }`}
                         >
                           <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
-                          
+
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <div className="text-[11px] font-medium text-[var(--text-secondary)]">
@@ -751,14 +782,12 @@ export default function WebsiteScannerPage() {
                                 }
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
-                                enableSqlmap ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                              }`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${enableSqlmap ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                                }`}
                             >
                               <span
-                                className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${
-                                  enableSqlmap ? "translate-x-4" : "translate-x-0"
-                                }`}
+                                className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${enableSqlmap ? "translate-x-4" : "translate-x-0"
+                                  }`}
                               />
                             </button>
                           </div>
@@ -770,12 +799,11 @@ export default function WebsiteScannerPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
-                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${
-                            isSelected ? "opacity-100" : "opacity-50"
-                          }`}
+                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${isSelected ? "opacity-100" : "opacity-50"
+                            }`}
                         >
                           <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced Auth Checks</div>
-                          
+
                           {/* Browser Auth Analysis */}
                           <div className="flex items-center justify-between gap-3">
                             <div>
@@ -789,9 +817,8 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning) setAuthBrowserAnalysis(!authBrowserAnalysis);
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
-                                authBrowserAnalysis ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                              }`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authBrowserAnalysis ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                                }`}
                             >
                               <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authBrowserAnalysis ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
@@ -818,9 +845,8 @@ export default function WebsiteScannerPage() {
                                 }
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
-                                authorizedAuthMode ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                              }`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authorizedAuthMode ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                                }`}
                             >
                               <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authorizedAuthMode ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
@@ -864,9 +890,8 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning && authorizedAuthMode) setAuthLifecycleChecks(!authLifecycleChecks);
                               }}
                               disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
-                                authLifecycleChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                              }`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authLifecycleChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                                }`}
                             >
                               <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authLifecycleChecks ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
@@ -885,9 +910,8 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning && authorizedAuthMode) setAuthzTransitionChecks(!authzTransitionChecks);
                               }}
                               disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
-                                authzTransitionChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                              }`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authzTransitionChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                                }`}
                             >
                               <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authzTransitionChecks ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
@@ -909,17 +933,15 @@ export default function WebsiteScannerPage() {
               <div className="flex border-b border-[var(--border-soft)] bg-[#f8f3eb] items-center p-2 gap-2">
                 <button
                   onClick={() => setActiveTab("overview")}
-                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
-                    activeTab === "overview" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${activeTab === "overview" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
+                    }`}
                 >
                   <Activity className="w-4 h-4" /> Overview
                 </button>
                 <button
                   onClick={() => setActiveTab("technology")}
-                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
-                    activeTab === "technology" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${activeTab === "technology" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
+                    }`}
                 >
                   <Server className="w-4 h-4" /> Technologies
                   {(currentResult.detected_technologies?.length ?? 0) > 0 && (
@@ -930,9 +952,8 @@ export default function WebsiteScannerPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("findings")}
-                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
-                    activeTab === "findings" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${activeTab === "findings" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
+                    }`}
                 >
                   <ShieldAlert className="w-4 h-4" /> Findings ({currentResult.findings?.length || 0})
                 </button>
@@ -977,31 +998,28 @@ export default function WebsiteScannerPage() {
 
               <div className="p-6">
                 {activeTab === "overview" && (
-                   <div className="space-y-6">
+                  <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
-                        <div className={`absolute inset-0 opacity-20 ${
-                          (currentResult.risk_score ?? 0) > 70 ? "bg-red-500" : (currentResult.risk_score ?? 0) > 40 ? "bg-orange-500" : "bg-emerald-500"
-                        } blur-[50px]`} />
+                        <div className={`absolute inset-0 opacity-20 ${(currentResult.risk_score ?? 0) > 70 ? "bg-red-500" : (currentResult.risk_score ?? 0) > 40 ? "bg-orange-500" : "bg-emerald-500"
+                          } blur-[50px]`} />
                         <div className="text-sm font-medium text-[var(--text-muted)] mb-2 relative z-10">Risk Score</div>
-                        <div className={`text-6xl font-bold relative z-10 ${
-                          (currentResult.risk_score ?? 0) > 70 ? "text-red-400" : (currentResult.risk_score ?? 0) > 40 ? "text-orange-400" : "text-emerald-400"
-                        }`}>
+                        <div className={`text-6xl font-bold relative z-10 ${(currentResult.risk_score ?? 0) > 70 ? "text-red-400" : (currentResult.risk_score ?? 0) > 40 ? "text-orange-400" : "text-emerald-400"
+                          }`}>
                           {(currentResult.risk_score ?? 0).toFixed(0)}
                         </div>
                       </div>
 
                       <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
-                         {(["critical", "high", "medium", "low"] as const).map(sev => (
-                           <div key={sev} className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-4 flex flex-col items-center justify-center">
-                             <div className="text-3xl font-bold text-[var(--text-primary)] mb-1">{currentResult[sev as keyof ScanResult] as number}</div>
-                             <div className={`text-[10px] font-bold uppercase tracking-widest ${
-                               sev === "critical" ? "text-red-400" :
-                               sev === "high" ? "text-orange-400" :
-                               sev === "medium" ? "text-yellow-400" : "text-[var(--primary)]"
-                             }`}>{sev}</div>
-                           </div>
-                         ))}
+                        {(["critical", "high", "medium", "low"] as const).map(sev => (
+                          <div key={sev} className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-4 flex flex-col items-center justify-center">
+                            <div className="text-3xl font-bold text-[var(--text-primary)] mb-1">{currentResult[sev as keyof ScanResult] as number}</div>
+                            <div className={`text-[10px] font-bold uppercase tracking-widest ${sev === "critical" ? "text-red-400" :
+                              sev === "high" ? "text-orange-400" :
+                                sev === "medium" ? "text-yellow-400" : "text-[var(--primary)]"
+                              }`}>{sev}</div>
+                          </div>
+                        ))}
                       </div>
 
                       {currentResult.executions_confirmed !== undefined && (
@@ -1041,40 +1059,41 @@ export default function WebsiteScannerPage() {
 
                 {/* Technology Detection Tab */}
                 {activeTab === "technology" && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 min-w-0 w-full max-w-6xl mx-auto">
 
                     {/* Detected Technologies */}
                     {(currentResult.detected_technologies?.length ?? 0) > 0 ? (
-                      <div>
+                      <div className="min-w-0 max-w-full">
                         <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                           <Server className="w-4 h-4 text-emerald-400" />
                           Detected Technologies
                           <span className="text-xs font-normal text-[var(--text-muted)]">— evidence-based only</span>
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {currentResult.detected_technologies?.map((tech, i) => (
-                            <div key={i} className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-4 hover:border-emerald-500/20 transition-all group">
-                              <div className="flex items-start justify-between mb-2">
-                                <div>
-                                  <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-emerald-400 transition-colors">{tech.name}</div>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{tech.category.replace(/_/g, ' ')}</div>
-                                    <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)]">
-                                      SRC: {tech.source || "custom_detector"}
-                                    </span>
+                        <div className="max-h-[520px] overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 pb-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {currentResult.detected_technologies?.map((tech, i) => (
+                              <div key={i} className="bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-[12px] px-[14px] shadow-sm hover:border-[#0f9d76] transition-all duration-200 hover:-translate-y-[1px] group min-w-0 flex flex-col gap-2 min-h-0">
+                                <div className="flex items-start justify-between gap-3 min-w-0">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-[#1d1d1d] text-sm group-hover:text-[#0f9d76] transition-colors truncate">{tech.name}</div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#4f4a45] truncate">{tech.category.replace(/_/g, ' ')}</div>
+                                      <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-[#f8f3eb] text-[#8a8178] border border-[#e7ddd1] truncate">
+                                        SRC: {tech.source || "custom_detector"}
+                                      </span>
+                                    </div>
                                   </div>
+                                  <span className={`shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${tech.confidence === 'high' ? 'bg-[#edf8f3] text-[#0f9d76] border-[#0f9d76]/30' :
+                                    tech.confidence === 'medium' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                      'bg-[#f8f3eb] text-[#4f4a45] border-[#e7ddd1]'
+                                    }`}>{tech.confidence}</span>
                                 </div>
-                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
-                                  tech.confidence === 'high' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                                  tech.confidence === 'medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
-                                  'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)]'
-                                }`}>{tech.confidence}</span>
+                                <div className="text-xs text-[#4f4a45] font-mono leading-[1.4] bg-[#f6f0e7] rounded-lg p-[8px] px-[10px] border border-[#e7ddd1] break-all break-words whitespace-pre-wrap overflow-y-auto max-h-28 custom-scrollbar min-w-0 w-full">
+                                  {tech.evidence}
+                                </div>
                               </div>
-                              <div className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed bg-black/20 rounded-lg p-2 border border-[var(--border-soft)]">
-                                {tech.evidence}
-                              </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -1086,7 +1105,7 @@ export default function WebsiteScannerPage() {
 
                     {/* Technical Metadata Collapsible Section */}
                     {(currentResult.technology_metadata?.length ?? 0) > 0 && (
-                      <div className="bg-[var(--bg-page)]/40 border border-[var(--border-soft)] rounded-2xl overflow-hidden shadow-2xl transition-all hover:border-[var(--border-strong)]">
+                      <div className="bg-[var(--bg-page)]/40 border border-[var(--border-soft)] rounded-xl overflow-hidden shadow-sm transition-all hover:border-[var(--border-strong)] min-w-0 max-w-full">
                         <button
                           onClick={() => setShowMetadata(!showMetadata)}
                           className="w-full flex items-center justify-between px-6 py-4 hover:bg-[var(--bg-elevated)] transition-all group/meta-btn"
@@ -1104,24 +1123,24 @@ export default function WebsiteScannerPage() {
                             <ChevronDown className="w-4 h-4 text-[var(--text-muted)] group-hover/meta-btn:text-[var(--text-primary)] transition-colors" />
                           )}
                         </button>
-                        
+
                         {showMetadata && (
-                          <div className="px-6 pb-6 pt-2 border-t border-[var(--border-soft)] bg-[var(--bg-card)]/10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="px-6 pb-6 pt-2 border-t border-[var(--border-soft)] bg-[var(--bg-card)]/10 min-w-0 max-w-full">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[360px] overflow-y-auto overflow-x-hidden custom-scrollbar pr-2">
                               {currentResult.technology_metadata?.map((meta, i) => (
-                                <div key={i} className="bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-xl p-4 hover:border-[var(--primary)] transition-all group">
-                                  <div className="flex items-start justify-between mb-2">
-                                    <div>
-                                      <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-[var(--primary)] transition-colors">{meta.name}</div>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{meta.category}</div>
-                                        <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)]">
+                                <div key={i} className="bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-xl p-[12px] px-[14px] hover:border-[var(--primary)] transition-all group min-w-0 flex flex-col gap-2 min-h-0">
+                                  <div className="flex items-start justify-between gap-3 min-w-0">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-[var(--primary)] transition-colors truncate">{meta.name}</div>
+                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] truncate">{meta.category}</div>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] truncate">
                                           SRC: {meta.source || "wappalyzer"}
                                         </span>
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed bg-black/20 rounded-lg p-2 border border-[var(--border-soft)] break-all max-h-24 overflow-y-auto">
+                                  <div className="text-xs text-[var(--text-muted)] font-mono leading-[1.4] bg-black/20 rounded-lg p-[8px] px-[10px] border border-[var(--border-soft)] break-all break-words whitespace-pre-wrap overflow-y-auto max-h-28 custom-scrollbar min-w-0 w-full">
                                     {meta.evidence}
                                   </div>
                                 </div>
@@ -1130,15 +1149,13 @@ export default function WebsiteScannerPage() {
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {/* Attack Surface Assets */}
+                    )}                    {/* Attack Surface Assets */}
                     {(currentResult.detected_assets?.length ?? 0) > 0 && (() => {
                       const assets = currentResult.detected_assets || [];
                       const filteredAssets = assets.filter(asset => {
                         const query = assetSearch.toLowerCase();
-                        return asset.url.toLowerCase().includes(query) || 
-                               asset.type.toLowerCase().includes(query);
+                        return asset.url.toLowerCase().includes(query) ||
+                          asset.type.toLowerCase().includes(query);
                       });
 
                       const groupedAssets: Record<string, typeof assets> = {};
@@ -1156,17 +1173,17 @@ export default function WebsiteScannerPage() {
                       const displayedAssets = assetGrouped ? [] : filteredAssets.slice(0, assetLimit);
 
                       return (
-                        <div className="space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
-                            <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-                              <Target className="w-4 h-4 text-orange-400" />
-                              Attack Surface Assets
-                              <span className="text-[10px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded border border-[var(--border-soft)]">
+                        <div className="space-y-3 min-w-0 max-w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-soft)] pb-3 min-w-0">
+                            <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2 min-w-0">
+                              <Target className="w-4 h-4 text-orange-400 shrink-0" />
+                              <span className="truncate">Attack Surface Assets</span>
+                              <span className="shrink-0 text-[10px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded border border-[var(--border-soft)]">
                                 {totalCount}
                               </span>
                             </h3>
-                            
-                            <div className="flex items-center gap-2">
+
+                            <div className="flex items-center gap-2 shrink-0">
                               <div className="relative">
                                 <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
@@ -1174,25 +1191,24 @@ export default function WebsiteScannerPage() {
                                   placeholder="Search assets..."
                                   value={assetSearch}
                                   onChange={(e) => setAssetSearch(e.target.value)}
-                                  className="pl-9 pr-4 py-1.5 bg-[var(--bg-page)]/60 border border-[var(--border-soft)] rounded-lg text-xs text-[var(--text-primary)] placeholder-slate-500 focus:border-orange-500/50 focus:outline-none transition-all w-48 sm:w-64 font-medium"
+                                  className="pl-9 pr-4 py-1.5 bg-[var(--bg-page)]/60 border border-[var(--border-soft)] rounded-lg text-xs text-[var(--text-primary)] placeholder-slate-500 focus:border-orange-500/50 focus:outline-none transition-all w-36 sm:w-48 font-medium"
                                 />
                               </div>
 
                               <button
                                 onClick={() => setAssetGrouped(!assetGrouped)}
-                                className={`px-3 py-1.5 rounded-lg text-xs shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
-                                  assetGrouped 
-                                    ? 'bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold' 
-                                    : 'bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]'
-                                }`}
+                                className={`px-3 py-1.5 rounded-lg text-xs shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${assetGrouped
+                                  ? 'bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold'
+                                  : 'bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]'
+                                  }`}
                               >
-                                {assetGrouped ? "Ungroup" : "Group by Type"}
+                                {assetGrouped ? "Ungroup" : "Group"}
                               </button>
                             </div>
                           </div>
 
                           {!assetGrouped ? (
-                            <div className="space-y-2">
+                            <div className="space-y-1.5 max-h-[360px] overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 min-w-0 max-w-full">
                               <AnimatePresence initial={false}>
                                 {displayedAssets.map((asset, i) => (
                                   <motion.div
@@ -1200,21 +1216,19 @@ export default function WebsiteScannerPage() {
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="flex items-center justify-between bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-lg px-4 py-3 hover:border-orange-500/20 transition-all group overflow-hidden"
+                                    transition={{ duration: 0.15 }}
+                                    className="flex items-center justify-between bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-lg p-[8px] px-[12px] hover:border-orange-500/20 transition-all group min-w-0 flex-nowrap gap-[10px] overflow-hidden"
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className={`w-2 h-2 rounded-full ${
-                                        asset.confidence === 'high' ? 'bg-orange-400' : 'bg-yellow-400'
-                                      }`} />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]">
+                                    <div className="flex items-center gap-[10px] min-w-0 flex-1">
+                                      <div className={`shrink-0 w-1.5 h-1.5 rounded-full ${asset.confidence === 'high' ? 'bg-orange-400' : 'bg-yellow-400'
+                                        }`} />
+                                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)] truncate">
                                         {asset.type.replace(/_/g, ' ')}
                                       </span>
-                                      <span className="text-xs font-mono text-[var(--text-secondary)] truncate max-w-xs sm:max-w-md md:max-w-lg">{asset.url}</span>
+                                      <span className="text-xs font-mono text-[var(--text-secondary)] truncate min-w-0 flex-1">{asset.url}</span>
                                     </div>
-                                    <span className={`text-[10px] font-bold ${
-                                      asset.confidence === 'high' ? 'text-orange-400' : 'text-yellow-400'
-                                    }`}>{asset.confidence}</span>
+                                    <span className={`shrink-0 text-[10px] font-bold ${asset.confidence === 'high' ? 'text-orange-400' : 'text-yellow-400'
+                                      }`}>{asset.confidence}</span>
                                   </motion.div>
                                 ))}
                               </AnimatePresence>
@@ -1229,15 +1243,15 @@ export default function WebsiteScannerPage() {
                                         setAssetLimit(prev => prev + 50);
                                       }
                                     }}
-                                    className="px-4 py-2 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] text-[#1d1d1d] rounded-xl text-xs font-bold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 shadow-sm cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
+                                    className="px-3 py-1.5 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] text-[#1d1d1d] rounded-lg text-[11px] font-bold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-1.5 shadow-sm cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                                   >
                                     {assetLimit >= filteredAssets.length ? (
                                       <>
-                                        Show Less <ChevronUp className="w-3.5 h-3.5" />
+                                        Show Less <ChevronUp className="w-3 h-3" />
                                       </>
                                     ) : (
                                       <>
-                                        Show {filteredAssets.length - assetLimit} More Assets <ChevronDown className="w-3.5 h-3.5" />
+                                        Show {filteredAssets.length - assetLimit} More Assets <ChevronDown className="w-3 h-3" />
                                       </>
                                     )}
                                   </button>
@@ -1245,39 +1259,38 @@ export default function WebsiteScannerPage() {
                               )}
 
                               {filteredAssets.length === 0 && (
-                                <div className="text-center py-8 text-[var(--text-muted)] font-medium">
+                                <div className="text-center py-6 text-[var(--text-muted)] text-[11px] font-medium">
                                   No assets match your search filters.
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-3 max-h-[360px] overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 min-w-0 max-w-full">
                               {Object.entries(groupedAssets).map(([groupTitle, groupItems]: [string, any]) => {
                                 const isGroupExpanded = expandedGroups[groupTitle] !== false;
                                 return (
-                                  <div key={groupTitle} className="bg-[var(--bg-page)]/20 border border-[var(--border-soft)] rounded-xl overflow-hidden">
+                                  <div key={groupTitle} className="bg-[var(--bg-page)]/20 border border-[var(--border-soft)] rounded-lg overflow-hidden min-w-0 max-w-full">
                                     <button
                                       onClick={() => setExpandedGroups(prev => ({ ...prev, [groupTitle]: !isGroupExpanded }))}
-                                      className="w-full flex items-center justify-between px-4 py-3 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] transition-colors border-b border-[var(--border-soft)] cursor-pointer"
+                                      className="w-full flex items-center justify-between px-3 py-2 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] transition-colors border-b border-[var(--border-soft)] cursor-pointer"
                                     >
-                                      <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                                        {groupTitle}
-                                        <span className="text-[9px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded border border-[var(--border-soft)] ml-1">
+                                      <span className="text-[11px] font-bold text-[var(--text-primary)] flex items-center gap-2 min-w-0">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                                        <span className="truncate">{groupTitle}</span>
+                                        <span className="shrink-0 text-[8px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded border border-[var(--border-soft)] ml-1">
                                           {groupItems.length} items
                                         </span>
                                       </span>
-                                      {isGroupExpanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+                                      {isGroupExpanded ? <ChevronUp className="shrink-0 w-3 h-3 text-[var(--text-muted)]" /> : <ChevronDown className="shrink-0 w-3 h-3 text-[var(--text-muted)]" />}
                                     </button>
 
                                     {isGroupExpanded && (
-                                      <div className="p-3 space-y-2">
+                                      <div className="p-2 space-y-1.5 min-w-0">
                                         {groupItems.map((asset: any, idx: number) => (
-                                          <div key={idx} className="flex items-center justify-between bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-lg px-4 py-2 hover:border-orange-500/10 transition-all">
-                                            <span className="text-xs font-mono text-[var(--text-secondary)] truncate max-w-xs sm:max-w-md md:max-w-lg">{asset.url}</span>
-                                            <span className={`text-[10px] font-bold ${
-                                              asset.confidence === 'high' ? 'text-orange-400' : 'text-yellow-400'
-                                            }`}>{asset.confidence}</span>
+                                          <div key={idx} className="flex items-center justify-between bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-lg p-[8px] px-[12px] hover:border-orange-500/10 transition-all min-w-0 flex-nowrap gap-[10px]">
+                                            <span className="text-xs font-mono text-[var(--text-secondary)] truncate min-w-0 flex-1">{asset.url}</span>
+                                            <span className={`shrink-0 text-[10px] font-bold ${asset.confidence === 'high' ? 'text-orange-400' : 'text-yellow-400'
+                                              }`}>{asset.confidence}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -1287,7 +1300,7 @@ export default function WebsiteScannerPage() {
                               })}
 
                               {Object.keys(groupedAssets).length === 0 && (
-                                <div className="text-center py-8 text-[var(--text-muted)] font-medium">
+                                <div className="text-center py-6 text-[var(--text-muted)] text-[11px] font-medium">
                                   No assets match your search filters.
                                 </div>
                               )}
@@ -1304,19 +1317,23 @@ export default function WebsiteScannerPage() {
                           <Code className="w-4 h-4 text-[var(--primary)]" />
                           Scanner JSON Preview
                         </h3>
-                        <div className="bg-black/60 border border-[var(--border-soft)] rounded-xl overflow-hidden">
-                          <div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-soft)]">
-                            <span className="text-[10px] font-bold text-[var(--text-muted)] font-mono">scanner_context.json</span>
+                        <div className="bg-[#0f172a] border border-[rgba(15,157,118,0.25)] rounded-[14px] overflow-hidden shadow-xl">
+                          <div className="flex items-center justify-between px-4 py-3 bg-[#1e293b] border-b border-[rgba(15,157,118,0.2)]">
+                            <span className="text-xs font-bold text-[#e2e8f0] font-mono">scanner_context.json</span>
                             <button
                               onClick={() => navigator.clipboard.writeText(JSON.stringify(currentResult.scanner_json, null, 2))}
-                              className="p-1 hover:bg-[var(--bg-elevated)] rounded transition-all"
+                              className="p-1.5 hover:bg-[#334155] rounded-md transition-all text-[#cbd5e1] hover:text-[#ffffff]"
                             >
-                              <Copy className="w-3 h-3 text-[var(--text-muted)]" />
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <pre className="text-[11px] font-mono text-[var(--text-secondary)] p-4 overflow-auto max-h-96 leading-relaxed">
-                            {JSON.stringify(currentResult.scanner_json, null, 2)}
-                          </pre>
+                          <div className="overflow-auto custom-scrollbar" style={{ maxHeight: "420px" }}>
+                            <pre
+                              className="text-[13px] font-mono p-4 leading-[1.6]"
+                              style={{ color: "#e5e7eb" }}
+                              dangerouslySetInnerHTML={{ __html: getColorizedJson(currentResult.scanner_json) }}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1353,7 +1370,7 @@ export default function WebsiteScannerPage() {
                               {finding.url}
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-4">
                             {finding.cwe_id && (
                               <span className="text-[10px] font-bold font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)]/50 px-2 py-1 rounded border border-[var(--border-soft)]">
@@ -1368,20 +1385,19 @@ export default function WebsiteScannerPage() {
 
                         {/* Badges Ribbon */}
                         <div className="px-6 py-2 bg-[var(--bg-card)]/30 flex flex-wrap gap-2 border-b border-[var(--border-soft)]">
-                           {finding.tags?.map((tag: string) => (
-                              <span key={tag} className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-[0.1em] border ${
-                                tag === "PLAYWRIGHT-VERIFIED" || tag === "VERIFIED"
-                                  ? "bg-[var(--primary-hover)]/10 text-[var(--primary)] border-[var(--primary)]" 
-                                  : "bg-[var(--bg-elevated)]/40 text-[var(--text-muted)] border-[var(--border-soft)]"
+                          {finding.tags?.map((tag: string) => (
+                            <span key={tag} className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-[0.1em] border ${tag === "PLAYWRIGHT-VERIFIED" || tag === "VERIFIED"
+                              ? "bg-[var(--primary-hover)]/10 text-[var(--primary)] border-[var(--primary)]"
+                              : "bg-[var(--bg-elevated)]/40 text-[var(--text-muted)] border-[var(--border-soft)]"
                               }`}>
-                                {tag}
-                              </span>
-                            ))}
+                              {tag}
+                            </span>
+                          ))}
                         </div>
 
                         {/* Content Grid */}
                         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-0">
-                          
+
                           {/* Left Column: Evidence & Reproduction */}
                           <div className="p-6 border-r border-[var(--border-soft)] space-y-6">
                             <div>
@@ -1402,11 +1418,10 @@ export default function WebsiteScannerPage() {
                                   <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--text-muted)] mb-2 flex items-center gap-2">
                                     <ShieldAlert className="w-3 h-3 text-[var(--primary)]" /> SQLMAP VERIFICATION
                                   </h4>
-                                  <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300 ${
-                                    sqlmap.verified
-                                      ? "bg-emerald-950/20 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
-                                      : "bg-amber-950/20 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
-                                  }`}>
+                                  <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300 ${sqlmap.verified
+                                    ? "bg-emerald-950/20 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+                                    : "bg-amber-950/20 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
+                                    }`}>
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-2.5">
                                         <span className={`w-2 h-2 rounded-full ${sqlmap.verified ? "bg-emerald-400" : "bg-amber-400"}`} />
@@ -1415,8 +1430,8 @@ export default function WebsiteScannerPage() {
                                         </div>
                                       </div>
                                       <div className="text-[11px] text-[var(--text-muted)]">
-                                        {sqlmap.verified 
-                                          ? "Verified by sqlmap exploitation checks" 
+                                        {sqlmap.verified
+                                          ? "Verified by sqlmap exploitation checks"
                                           : "Scanner detected a possible issue but sqlmap could not fully confirm exploitation."}
                                       </div>
                                     </div>
@@ -1451,9 +1466,9 @@ export default function WebsiteScannerPage() {
                                     if (typeof value === 'object') return null;
                                     const isUrl = String(value).startsWith('http');
                                     const isPayload = key === 'payload';
-                                    
+
                                     return (
-                                      <CollapsibleSection 
+                                      <CollapsibleSection
                                         key={key}
                                         title={`${key.replace(/_/g, ' ').toUpperCase()}`}
                                         content={String(value)}
@@ -1462,9 +1477,9 @@ export default function WebsiteScannerPage() {
                                       />
                                     );
                                   })}
-                                  
+
                                   {/* Curl command */}
-                                  <ReproductionCurl 
+                                  <ReproductionCurl
                                     url={finding.reproduction_data.verification_url || finding.reproduction_data.test_url || finding.url}
                                     method={finding.reproduction_data.method || "GET"}
                                     cookies={sessionCookie}
@@ -1498,7 +1513,7 @@ export default function WebsiteScannerPage() {
                                 <div className="bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-xl overflow-hidden shadow-2xl">
                                   <div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-soft)]">
                                     <div className="text-[10px] font-bold text-[var(--text-muted)] font-mono">CODE SNIPPET</div>
-                                    <button 
+                                    <button
                                       onClick={() => copyToClipboard(finding.auto_fix)}
                                       className="p-1.5 bg-[var(--bg-elevated)]/50 hover:bg-emerald-600/50 rounded-md transition-all"
                                     >
@@ -1516,18 +1531,18 @@ export default function WebsiteScannerPage() {
 
                             {/* Action Buttons */}
                             <div className="pt-4 flex gap-3">
-                               <button 
-                                 onClick={() => copyToClipboard(finding.reproduction_data?.payload || "")}
-                                 className="flex-1 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] rounded-lg py-2.5 text-[11px] font-bold text-[#1d1d1d] flex items-center justify-center gap-2 transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none"
-                               >
-                                 <Copy className="w-3 h-3" /> COPY PAYLOAD
-                               </button>
-                               <button 
-                                 onClick={() => window.open(finding.reproduction_data?.verification_url || finding.url, '_blank')}
-                                 className="btn-animated btn-primary-emerald flex-1 rounded-lg py-2.5 text-[11px] font-bold flex items-center justify-center gap-2"
-                               >
-                                 <ExternalLink className="w-3 h-3" /> TEST MANUAL
-                               </button>
+                              <button
+                                onClick={() => copyToClipboard(finding.reproduction_data?.payload || "")}
+                                className="flex-1 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] rounded-lg py-2.5 text-[11px] font-bold text-[#1d1d1d] flex items-center justify-center gap-2 transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none"
+                              >
+                                <Copy className="w-3 h-3" /> COPY PAYLOAD
+                              </button>
+                              <button
+                                onClick={() => window.open(finding.reproduction_data?.verification_url || finding.url, '_blank')}
+                                className="btn-animated btn-primary-emerald flex-1 rounded-lg py-2.5 text-[11px] font-bold flex items-center justify-center gap-2"
+                              >
+                                <ExternalLink className="w-3 h-3" /> TEST MANUAL
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1564,11 +1579,10 @@ export default function WebsiteScannerPage() {
                       {item.target.replace(/^https?:\/\//, '')}
                     </div>
                     {item.summary.risk_score != null && (
-                      <div className={`text-xs font-bold px-2 py-0.5 rounded ${
-                        (item.summary.risk_score ?? 0) > 70 ? "bg-red-500/20 text-red-400" : 
-                        (item.summary.risk_score ?? 0) > 40 ? "bg-orange-500/20 text-orange-400" : 
-                        "bg-emerald-500/20 text-emerald-400"
-                      }`}>
+                      <div className={`text-xs font-bold px-2 py-0.5 rounded ${(item.summary.risk_score ?? 0) > 70 ? "bg-red-500/20 text-red-400" :
+                        (item.summary.risk_score ?? 0) > 40 ? "bg-orange-500/20 text-orange-400" :
+                          "bg-emerald-500/20 text-emerald-400"
+                        }`}>
                         {(item.summary.risk_score ?? 0).toFixed(0)}
                       </div>
                     )}
@@ -1582,10 +1596,11 @@ export default function WebsiteScannerPage() {
             )}
           </div>
         </div>
-        
+
       </div>
-      
-      <style dangerouslySetInnerHTML={{__html: `
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
