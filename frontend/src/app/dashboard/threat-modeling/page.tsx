@@ -5,6 +5,7 @@ import { Card, Button, Input } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { ScanHistory } from "./scan-history";
+import { notifySuccess, notifyError, notifyWarning } from "@/lib/notify";
 
 // ─────────────────────────────────────────────────────────────────────
 // Types
@@ -169,10 +170,11 @@ function MultiPillSelect<T extends string>({
                             key={opt}
                             type="button"
                             onClick={() => onToggle(opt)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-300 ${active
-                                ? `${PILL_ACTIVE[color]} shadow-[0_0_12px_rgba(0,0,0,0.5)] shadow-${color}-500/30 scale-[1.02]`
-                                : `bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)] hover:border-${color}-500/50 hover:bg-${color}-500/10 hover:text-${color}-400`
-                                }`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
+                                active
+                                    ? 'bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76]'
+                                    : 'bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]'
+                            }`}
                         >
                             {opt}
                         </button>
@@ -220,19 +222,19 @@ function CollapsibleSection({
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 
-                className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
+                className="w-full flex items-center justify-between p-5 text-left transition-all duration-180 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 rounded-2xl motion-reduce:transition-colors motion-reduce:hover:transform-none"
             >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)] text-[var(--primary)] group-hover:bg-[var(--primary)]/20 group-hover:scale-110 transition-all duration-300">
+                    <div className="w-10 h-10 rounded-xl bg-[#edf8f3] flex items-center justify-center border border-[#0f9d76] text-[#0f9d76] group-hover:bg-[#0f9d76] group-hover:text-[#ffffff] transition-all duration-180">
                         {icon}
                     </div>
                     <div>
-                        <h3 className="text-base font-bold text-[var(--text-primary)] tracking-wide">{title}</h3>
-                        <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1 uppercase tracking-wider">{description}</p>
+                        <h3 className="text-base font-bold text-[#1d1d1d] tracking-wide group-hover:text-[#0f9d76] transition-colors">{title}</h3>
+                        <p className="text-[11px] font-medium text-[#8a8178] mt-1 uppercase tracking-wider">{description}</p>
                     </div>
                 </div>
-                <div className={`w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center transition-transform duration-300 ${isOpen ? 'rotate-180 bg-[var(--bg-elevated)]' : ''}`}>
-                    <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className={`w-8 h-8 rounded-full bg-[#f8f3eb] flex items-center justify-center transition-transform duration-180 ${isOpen ? 'rotate-180' : ''}`}>
+                    <svg className="w-4 h-4 text-[#4f4a45] group-hover:text-[#0f9d76] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
@@ -420,8 +422,6 @@ export default function ThreatModelingPage() {
     const { token, isLoading, isAuthenticated } = useAuth();
     const [form, setForm] = useState<FormState>(initialForm);
     const [result, setResult] = useState<AnalysisResult | null>(null);
-    const [saveMsg, setSaveMsg] = useState("");
-    const [saveErr, setSaveErr] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [autoSaved, setAutoSaved] = useState(false);
     const [nameError, setNameErr] = useState("");
@@ -571,11 +571,9 @@ export default function ThreatModelingPage() {
                         token,
                     );
                     setAutoSaved(true);
-                    setSaveMsg("✅ Report auto-saved to your history.");
-                    setTimeout(() => setSaveMsg(""), 5000);
+                    notifySuccess("Report auto-saved", "Threat model report was auto-saved to your history.");
                 } catch {
-                    setSaveErr("⚠️ Auto-save failed — you can save manually if needed.");
-                    setTimeout(() => setSaveErr(""), 6000);
+                    notifyWarning("Auto-save failed", "You can save manually if needed.");
                 } finally {
                     setIsSaving(false);
                 }
@@ -600,13 +598,11 @@ export default function ThreatModelingPage() {
         setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
     };
 
-    const handleReset = () => { setForm(initialForm); setResult(null); setSaveMsg(""); setSaveErr(""); setNameErr(""); setShowWarning(false); setAutoSaved(false); };
+    const handleReset = () => { setForm(initialForm); setResult(null); setNameErr(""); setShowWarning(false); setAutoSaved(false); };
 
     const handleSave = async () => {
         if (!result || !token) return;
         setIsSaving(true);
-        setSaveMsg("");
-        setSaveErr("");
         try {
             await api.post(
                 "/api/v1/threat-modeling/analyses",
@@ -627,11 +623,9 @@ export default function ThreatModelingPage() {
                 },
                 token,
             );
-            setSaveMsg("✅ Report saved! You can view it in the Reports page.");
-            setTimeout(() => setSaveMsg(""), 5000);
+            notifySuccess("Report saved", "You can view it in the Reports page.");
         } catch (err) {
-            setSaveErr(`❌ Failed to save: ${err instanceof Error ? err.message : "Unknown error"}`);
-            setTimeout(() => setSaveErr(""), 5000);
+            notifyError("Failed to save", err instanceof Error ? err.message : "Unknown error");
         } finally {
             setIsSaving(false);
         }
@@ -656,13 +650,18 @@ export default function ThreatModelingPage() {
 
     // ── Render ────────────────────────────────────────────────
     return (
-        <div className="space-y-8 print:p-8 max-w-4xl mx-auto pb-16">
+        <div className="space-y-8 print:p-8 w-full max-w-none pb-16">
 
             {/* ════════════════════ HERO ════════════════════ */}
-            <div className="relative rounded-2xl bg-[var(--bg-card)] border border-[var(--border-soft)] overflow-hidden shadow-sm print:hidden">
-                {/* Background glow effects */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl bg-[var(--primary)]/5 blur-[80px] pointer-events-none" />
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--border-strong)] to-transparent opacity-50" />
+            <div 
+                className="relative rounded-2xl overflow-hidden print:hidden border shadow-xl metric-card-animated"
+                style={{
+                    background: "radial-gradient(circle at center, rgba(15, 157, 118, 0.16), transparent 45%), linear-gradient(135deg, #edf8f3 0%, #fffaf4 55%, #dff5ec 100%)",
+                    borderColor: "rgba(15, 157, 118, 0.25)",
+                    boxShadow: "0 18px 40px rgba(15, 157, 118, 0.10)"
+                }}
+            >
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#0f9d76]/40 to-transparent opacity-50" />
                 
                 <div className="relative px-8 py-14 flex flex-col items-center text-center">
                     <div className="relative w-16 h-16 mb-6">
@@ -688,9 +687,8 @@ export default function ThreatModelingPage() {
                     {!result && (
                         <button
                             onClick={() => document.getElementById("tm-form")?.scrollIntoView({ behavior: "smooth" })}
-                            className="group relative inline-flex items-center justify-center gap-3 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-xl overflow-hidden shadow-md shadow-[var(--primary-soft)] transition-all duration-300"
+                            className="btn-animated btn-primary-emerald inline-flex items-center justify-center gap-3 font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35"
                         >
-                            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
@@ -740,18 +738,18 @@ export default function ThreatModelingPage() {
                                                 key={type} 
                                                 type="button"
                                                 onClick={() => setForm(p => ({ ...p, appType: type as AppType }))}
-                                                className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all duration-300 ${
+                                                className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 group motion-reduce:transition-colors motion-reduce:hover:transform-none shadow-sm ${
                                                     isActive 
-                                                        ? 'bg-[var(--primary-soft)] border-[var(--primary)] shadow-sm' 
-                                                        : 'bg-[var(--bg-elevated)] border-[var(--border-soft)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-elevated)]'
+                                                        ? 'bg-[#edf8f3] border-[#0f9d76]' 
+                                                        : 'bg-[#ffffff] border-[#e7ddd1] hover:border-[#0f9d76] hover:bg-[#edf8f3]'
                                                 }`}
                                             >
-                                                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary-soft)]' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>
+                                                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-[#0f9d76] text-white shadow-md shadow-[#0f9d76]/20' : 'bg-[#f8f3eb] text-[#4f4a45] group-hover:text-[#0f9d76]'}`}>
                                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                         {icon}
                                                     </svg>
                                                 </div>
-                                                <span className={`font-semibold ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>{type} Application</span>
+                                                <span className={`font-semibold ${isActive ? 'text-[#0f9d76]' : 'text-[#4f4a45] group-hover:text-[#0f9d76]'}`}>{type} Application</span>
                                             </button>
                                         );
                                     })}
@@ -769,13 +767,13 @@ export default function ThreatModelingPage() {
                                                 key={key}
                                                 type="button"
                                                 onClick={() => toggleBool(key)}
-                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
+                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 border shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                                                     isChecked 
-                                                        ? 'bg-[var(--primary-soft)] text-[var(--text-primary)] border-[var(--primary)] shadow-sm' 
-                                                        : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                                                        ? 'bg-[#edf8f3] text-[#0f9d76] border-[#0f9d76]' 
+                                                        : 'bg-[#ffffff] text-[#1d1d1d] border-[#e7ddd1] hover:border-[#0f9d76] hover:text-[#0f9d76] hover:bg-[#edf8f3]'
                                                 }`}
                                             >
-                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center border transition-colors ${isChecked ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-transparent border-[var(--border-strong)]'}`}>
+                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center border transition-colors ${isChecked ? 'bg-[#0f9d76] border-[#0f9d76]' : 'bg-transparent border-[#d9cdbf]'}`}>
                                                     {isChecked && (
                                                         <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -895,20 +893,20 @@ export default function ThreatModelingPage() {
                         <button 
                             type="submit" 
                             disabled={!canSubmit}
-                            className={`relative w-full group overflow-hidden rounded-xl font-bold text-lg tracking-widest uppercase py-5 transition-all duration-500 ${
+                            className={`w-full relative overflow-hidden rounded-xl font-bold text-lg tracking-widest uppercase py-5 transition-all duration-180 focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 ${
                                 canSubmit 
-                                    ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-sm hover:shadow-md border border-[var(--primary)]' 
-                                    : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-strong)]'
+                                    ? 'btn-animated btn-primary-emerald shadow-sm hover:shadow-md border border-[#0f9d76]' 
+                                    : 'bg-[#f6f0e7] text-[#8a8178] cursor-not-allowed border border-[#d9cdbf]'
                             }`}
                         >
                             {canSubmit && (
                                 <>
                                     <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)] -translate-x-[150%] animate-[shimmer_2.5s_infinite]" />
-                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-[var(--primary)]/20 mix-blend-overlay transition-opacity duration-500" />
+                                    <div className="absolute inset-0 opacity-0 hover:opacity-100 bg-[#0f9d76]/20 mix-blend-overlay transition-opacity duration-500 pointer-events-none" />
                                 </>
                             )}
                             <div className="relative flex items-center justify-center gap-3">
-                                <svg className={`w-6 h-6 ${canSubmit ? 'animate-pulse text-white' : 'text-[var(--text-muted)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg className={`w-6 h-6 ${canSubmit ? 'animate-pulse text-white' : 'text-[#8a8178]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
                                 Generate Threat Model
@@ -960,8 +958,7 @@ export default function ThreatModelingPage() {
                     ) : (
                         <>
                             {/* ── Report header + action buttons ── */}
-                            {result.blocked !== true && (
-                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
                                     <div>
                                         <h2 className="text-xl font-bold text-[var(--text-primary)]">
                                             Threat Report —{" "}
@@ -971,58 +968,38 @@ export default function ThreatModelingPage() {
                                             {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
                                         </p>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 flex-shrink-0">
-                                        <Button variant="secondary" size="sm" onClick={handleDownloadPDF}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            Download PDF
-                                        </Button>
-                                        <Button variant="secondary" size="sm" onClick={handleDownloadJSON}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            Download JSON
-                                        </Button>
-                                        {isSaving ? (
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] px-3 py-2">
+                                    <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
+                                        {isSaving && (
+                                            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] px-2 mr-1">
                                                 <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                 </svg>
                                                 Saving…
                                             </span>
-                                        ) : autoSaved ? (
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-green-400 px-3 py-2">
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Saved
-                                            </span>
-                                        ) : null}
-                                        <Button variant="ghost" size="sm" onClick={handleReset}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        )}
+                                        <button onClick={handleDownloadPDF} className="btn-animated btn-primary-emerald flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35">
+                                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Download PDF
+                                        </button>
+                                        <button onClick={handleDownloadJSON} className="btn-animated flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Download JSON
+                                        </button>
+                                        <button onClick={handleReset} className="btn-animated flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:border-[#0f9d76] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 transition-colors">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                             </svg>
                                             Run Another Analysis
-                                        </Button>
+                                        </button>
                                     </div>
                                 </div>
-                            )}
-
-                            {/* Save confirmation */}
-                            {result.blocked !== true && saveMsg && (
-                                <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg print:hidden">
-                                    {saveMsg}
-                                </div>
-                            )}
-                            {result.blocked !== true && saveErr && (
-                                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg print:hidden">
-                                    {saveErr}
-                                </div>
-                            )}
 
                             {/* ── Stack summary tags ── */}
-                            {result.blocked !== true && stackTags.length > 0 && (
+                            {stackTags.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 print:hidden">
                                     <span className="text-xs font-medium text-[var(--text-muted)] self-center mr-1">Stack:</span>
                                     {stackTags.map(tag => (
@@ -1034,35 +1011,40 @@ export default function ThreatModelingPage() {
                             )}
 
                             {/* ── Risk Score Card ── */}
-                            {result.blocked !== true && (
-                                <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
-                                    <div className="flex items-center gap-6 mt-2">
-                                        <div className="flex-shrink-0 text-center w-20">
-                                            <div className="text-5xl font-bold text-[var(--text-primary)] leading-none">{result.riskScore ?? 0}</div>
-                                            <div className="text-sm text-[var(--text-muted)] mt-1">/ 100</div>
+                            <div className="metric-card-animated bg-[#ffffff] border border-[#e7ddd1] rounded-[18px] shadow-sm overflow-hidden mt-6 mb-8 print:hidden">
+                                    <div className="px-6 py-5 border-b border-[#f6f0e7] flex items-center justify-between bg-[#fffaf4]">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-[#1d1d1d] tracking-wide">Overall Risk Score</h3>
+                                            <p className="text-xs font-medium text-[#8a8178] mt-0.5 uppercase tracking-wider">Composite score based on all selected system properties</p>
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm font-medium text-[var(--text-muted)]">Risk Level</span>
-                                                <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
-                                                    {riskLabel}
-                                                </span>
+                                    </div>
+                                    <div className="px-6 py-8">
+                                        <div className="flex items-center gap-8">
+                                            <div className="flex-shrink-0 text-center w-24">
+                                                <div className="text-6xl font-black text-[#1d1d1d] leading-none tracking-tighter">{result.riskScore ?? 0}</div>
+                                                <div className="text-xs font-bold text-[#8a8178] mt-2 uppercase tracking-wider">/ 100</div>
                                             </div>
-                                            <div className="w-full bg-[var(--bg-elevated)] rounded-full h-3 overflow-hidden">
-                                                <div
-                                                    className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
-                                                    style={{ width: `${result.riskScore ?? 0}%` }}
-                                                />
-                                            </div>
-                                            <div className="flex justify-between text-xs text-[var(--text-muted)] mt-1.5">
-                                                <span>0 — Safe</span>
-                                                <span>100 — Critical</span>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <span className="text-sm font-bold text-[#4f4a45]">Risk Level</span>
+                                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${labelStyle}`}>
+                                                        {riskLabel}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-[#f6f0e7] rounded-full h-4 overflow-hidden shadow-inner">
+                                                    <div
+                                                        className={`h-full rounded-full transition-all duration-1000 ease-out ${barColor}`}
+                                                        style={{ width: `${result.riskScore ?? 0}%` }}
+                                                    />
+                                                </div>
+                                                <div className="flex justify-between text-xs font-medium text-[#8a8178] mt-2">
+                                                    <span>0 — Safe</span>
+                                                    <span>100 — Critical</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </Card>
-                            )}
-
+                                </div>
                             {/* ── Uploaded files in report ── */}
 
                             {/* ── Threats list ── */}
@@ -1086,71 +1068,76 @@ export default function ThreatModelingPage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        {result.threats.map(threat => (
+                                        {result.threats.map(threat => {
+                                            const borderLeft = threat.risk === "High" ? "border-l-4 border-l-[#dc2626]" : threat.risk === "Medium" ? "border-l-4 border-l-[#d97706]" : "border-l-4 border-l-[#2563eb]";
+                                            const riskBadgeClass = threat.risk === "High" ? "bg-[#fee2e2] text-[#dc2626] border-[#dc2626]" : threat.risk === "Medium" ? "bg-[#fff7ed] text-[#d97706] border-[#d97706]" : "bg-[#eff6ff] text-[#2563eb] border-[#2563eb]";
+                                            return (
                                             <div key={threat.id}
-                                                className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-xl shadow-lg shadow-black/5 overflow-hidden">
+                                                className={`threat-card-animated bg-[#ffffff] border border-[#e7ddd1] rounded-2xl overflow-hidden shadow-sm ${borderLeft}`}>
                                                 {/* Threat header */}
-                                                <div className="px-5 py-3.5 border-b border-[var(--border-strong)] flex items-center justify-between gap-4">
+                                                <div className="px-6 py-4 border-b border-[#f6f0e7] flex items-center justify-between gap-4 bg-[#fffaf4]">
                                                     <div className="flex items-center gap-3 min-w-0">
                                                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]}`} />
                                                         <div className="min-w-0">
-                                                            <h4 className="font-semibold text-[var(--text-primary)] text-sm leading-tight truncate">
+                                                            <h4 className="font-bold text-[#1d1d1d] text-base leading-tight truncate">
                                                                 {threat.title}
                                                             </h4>
-                                                            <span className="text-xs text-[var(--text-muted)]">{threat.category}</span>
+                                                            <span className="text-xs font-medium text-[#8a8178] uppercase tracking-wider">{threat.category}</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 flex-shrink-0">
                                                         {threat.stride_category && (
-                                                            <span className="text-xs font-medium px-2 py-1 rounded bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]">
+                                                            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]">
                                                                 {threat.stride_category}
                                                             </span>
                                                         )}
-                                                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
+                                                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${riskBadgeClass}`}>
                                                             {threat.risk} Risk
                                                         </span>
                                                     </div>
                                                 </div>
                                                 {/* Threat body */}
-                                                <div className="px-5 py-4 space-y-4">
+                                                <div className="px-6 py-5 space-y-5">
                                                     <div>
-                                                        <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+                                                        <p className="text-xs font-bold text-[#8a8178] uppercase tracking-wider mb-2">
                                                             Description
                                                         </p>
-                                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                                                        <p className="text-sm text-[#4f4a45] leading-relaxed">
                                                             {threat.description}
                                                         </p>
                                                     </div>
-                                                    <div className="border-t border-[var(--border-strong)] pt-4">
-                                                        <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
-                                                            ✓ Mitigation
+                                                    <div className="border-t border-[#f6f0e7] pt-5">
+                                                        <p className="text-xs font-bold text-[#0f9d76] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            Mitigation
                                                         </p>
-                                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                                                        <p className="text-sm text-[#4f4a45] leading-relaxed">
                                                             {threat.mitigation}
                                                         </p>
                                                     </div>
                                                     {threat.priority && (
-                                                        <div className="flex items-center gap-2 text-xs">
-                                                            <span className="font-semibold text-[var(--text-muted)]">Priority Score:</span>
-                                                            <div className="flex-1 bg-[var(--bg-elevated)] rounded-full h-2">
+                                                        <div className="flex items-center gap-3 text-xs bg-[#fffaf4] p-3 rounded-xl border border-[#e7ddd1]">
+                                                            <span className="font-bold text-[#8a8178] uppercase tracking-wider">Priority Score:</span>
+                                                            <div className="flex-1 bg-[#e7ddd1] rounded-full h-2 overflow-hidden shadow-inner">
                                                                 <div
-                                                                    className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
+                                                                    className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
                                                                     style={{ width: `${Math.min(threat.priority, 100)}%` }}
                                                                 />
                                                             </div>
-                                                            <span className="text-[var(--text-muted)]">{threat.priority}</span>
+                                                            <span className="font-black text-[#1d1d1d]">{threat.priority}</span>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
-                                        ))}
+                                        )})}
                                     </div>
                                 </div>
                             )}
 
                             {/* ── Print-only header/footer ── */}
-                            {result.blocked !== true && (
-                                <div className="hidden print:block border-t pt-4 mt-8">
+                            <div className="hidden print:block border-t pt-4 mt-8">
                                     <p className="text-xs text-[var(--text-muted)]">
                                         TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
                                     </p>
@@ -1158,7 +1145,6 @@ export default function ThreatModelingPage() {
                                         Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore ?? 0}/100 ({riskLabel})
                                     </p>
                                 </div>
-                            )}
                         </>
                     )}
                 </div>

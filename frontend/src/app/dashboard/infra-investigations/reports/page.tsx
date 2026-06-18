@@ -117,12 +117,12 @@ export default function InfraReportsPage() {
             
             {/* Search input */}
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
+              <Search className="absolute left-3 top-3.5 w-4 h-4 text-[#8a8178]" />
               <Input
                 placeholder="Search report by target..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-[var(--bg-page)]/40 border-[var(--border-soft)]"
+                className="pl-9 bg-[#ffffff] border-[#e7ddd1] text-[#1d1d1d] focus:border-[#0f9d76] focus:ring-1 focus:ring-[#0f9d76]/30 transition-colors"
               />
             </div>
 
@@ -147,10 +147,10 @@ export default function InfraReportsPage() {
                     <div
                       key={report.id}
                       onClick={() => handleViewReport(report.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
+                      className={`p-3.5 rounded-xl border transition-all duration-180 cursor-pointer flex items-center justify-between group hover:-translate-y-[1px] active:scale-[0.98] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                         isActive
-                          ? "border-[var(--primary)]/50 bg-emerald-500/[0.04]"
-                          : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-elevated)]"
+                          ? "border-[#0f9d76] bg-[#edf8f3] shadow-sm"
+                          : "border-[#e7ddd1] bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                       }`}
                     >
                       <div className="min-w-0 space-y-1">
@@ -204,22 +204,18 @@ export default function InfraReportsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
+                      <button
                         onClick={() => handleDownloadJson(selectedReportDetails)}
-                        className="!px-3 !py-1 text-[11px] font-bold gap-1"
+                        className="px-3 py-1.5 flex items-center gap-1.5 bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] shadow-sm font-semibold text-xs whitespace-nowrap transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] rounded-lg cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                       >
                         <Download className="w-3.5 h-3.5" /> Export JSON
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
+                      </button>
+                      <button
                         onClick={() => router.push(`/dashboard/infra-investigations/${selectedReportDetails.id}`)}
-                        className="!px-3 !py-1 text-[11px] font-bold gap-1 !bg-emerald-600 hover:!bg-emerald-500 shadow-lg shadow-emerald-600/20"
+                        className="px-3 py-1.5 flex items-center gap-1.5 bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] !text-white hover:from-[#0b7d5d] hover:to-[#086348] shadow-sm font-semibold text-xs whitespace-nowrap transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] rounded-lg cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                       >
                         <ExternalLink className="w-3.5 h-3.5" /> Open Workspace
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
@@ -261,7 +257,7 @@ export default function InfraReportsPage() {
                           </h4>
                           <button
                             onClick={() => handleCopySummary(selectedReportDetails.results.ai_summary.executive_summary)}
-                            className="p-1 rounded bg-[var(--bg-card)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                            className="p-1.5 rounded-lg bg-[#ffffff] border border-[#e7ddd1] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.95] shadow-sm cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                           >
                             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>

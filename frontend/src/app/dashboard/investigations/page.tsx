@@ -11,20 +11,20 @@ import { InvestigationStatusResponse } from "@/types";
 export default function InvestigationsDashboard() {
   const router = useRouter();
   const { token } = useAuth();
-  
+
   // Launch parameters
   const [target, setTarget] = useState("");
   const [mode, setMode] = useState("safe");
   const [includeTi, setIncludeTi] = useState(true);
   const [tmMode, setTmMode] = useState("enhanced");
-  
+
   const [enableSqlmap, setEnableSqlmap] = useState(false);
   const [authBrowserAnalysis, setAuthBrowserAnalysis] = useState(false);
   const [authorizedAuthMode, setAuthorizedAuthMode] = useState(false);
   const [authLifecycleChecks, setAuthLifecycleChecks] = useState(false);
   const [authzTransitionChecks, setAuthzTransitionChecks] = useState(false);
   const [sessionCookie, setSessionCookie] = useState("");
-  
+
   const [tests, setTests] = useState<string[]>([
     "security_headers",
     "xss",
@@ -199,11 +199,10 @@ export default function InvestigationsDashboard() {
                       key={m}
                       type="button"
                       onClick={() => setMode(m)}
-                      className={`py-1.5 px-3 rounded-lg border text-xs font-bold capitalize transition-all cursor-pointer ${
-                        mode === m
-                          ? "border-blue-500 bg-blue-950/30 text-[var(--primary)]"
-                          : "border-[var(--border-strong)] bg-[var(--bg-page)]/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                      }`}
+                      className={`btn-animated py-1.5 px-3 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${mode === m
+                          ? "bg-[#edf8f3] border-2 border-[#0f9d76] text-[#0f9d76] shadow-sm"
+                          : "btn-secondary-soft hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
+                        }`}
                     >
                       {m}
                     </button>
@@ -218,7 +217,7 @@ export default function InvestigationsDashboard() {
                     type="checkbox"
                     checked={includeTi}
                     onChange={(e) => setIncludeTi(e.target.checked)}
-                    className="w-4 h-4 rounded border-[var(--border-strong)] bg-[var(--bg-page)] text-[var(--primary)] focus:ring-[var(--primary)]"
+                    className="w-4 h-4 rounded border-[var(--border-strong)] bg-white accent-[#0f9d76] focus:ring-2 focus:ring-[#0f9d76]/35 transition-all duration-180 ease-out hover:scale-[1.04] active:scale-95"
                   />
                   <div className="text-xs font-semibold text-[var(--text-secondary)]">
                     Enable Threat Intel Integration
@@ -235,11 +234,10 @@ export default function InvestigationsDashboard() {
                         key={tm}
                         type="button"
                         onClick={() => setTmMode(tm)}
-                        className={`py-1 px-2.5 rounded border text-[10px] font-bold capitalize transition-all cursor-pointer ${
-                          tmMode === tm
-                            ? "border-[var(--primary)] bg-blue-950/20 text-[var(--primary)]"
-                            : "border-[var(--border-strong)] bg-[var(--bg-page)]/20 text-[var(--text-muted)]"
-                        }`}
+                        className={`btn-animated py-1 px-2.5 rounded text-[10px] font-bold capitalize transition-all cursor-pointer ${tmMode === tm
+                            ? "bg-[#edf8f3] border-2 border-[#0f9d76] text-[#0f9d76]"
+                            : "btn-secondary-soft hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
+                          }`}
                       >
                         {tm}
                       </button>
@@ -256,12 +254,12 @@ export default function InvestigationsDashboard() {
                 <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto pr-1">
                   {testOptions.map((opt) => {
                     const isSelected = tests.includes(opt.key);
-                    
+
                     const getOptionIcon = (key: string, selected: boolean) => {
-                      const colorClass = selected 
-                        ? "text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]" 
+                      const colorClass = selected
+                        ? "text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]"
                         : "text-[var(--text-muted)] bg-[var(--bg-card)]/40 border-[var(--border-soft)]";
-                      
+
                       switch (key) {
                         case "security_headers":
                           return <div className={`p-1.5 rounded-lg border transition-colors ${colorClass}`}><Shield className="w-3.5 h-3.5" /></div>;
@@ -288,11 +286,10 @@ export default function InvestigationsDashboard() {
                       <div
                         key={opt.key}
                         onClick={() => handleTestToggle(opt.key)}
-                        className={`flex flex-col p-2.5 rounded-xl border transition-all duration-200 select-none cursor-pointer ${
-                          isSelected 
-                            ? "border-[var(--primary)] bg-[var(--primary)]/[0.03] shadow-md shadow-blue-500/[0.02]" 
+                        className={`flex flex-col p-2.5 rounded-xl border transition-all duration-200 select-none cursor-pointer ${isSelected
+                            ? "border-[var(--primary)] bg-[var(--primary)]/[0.03] shadow-md shadow-[var(--primary)]/[0.1]"
                             : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-card)]/30"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
@@ -302,14 +299,12 @@ export default function InvestigationsDashboard() {
                               <span className="text-[9px] text-[var(--text-muted)] mt-0.5 leading-tight font-medium max-w-[190px]">{opt.desc}</span>
                             </div>
                           </div>
-                          
+
                           {/* iOS-like Custom Switch */}
-                          <div className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out ${
-                            isSelected ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
-                          }`}>
-                            <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                              isSelected ? "translate-x-3" : "translate-x-0"
-                            }`} />
+                          <div className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out ${isSelected ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
+                            }`}>
+                            <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${isSelected ? "translate-x-3" : "translate-x-0"
+                              }`} />
                           </div>
                         </div>
 
@@ -321,7 +316,7 @@ export default function InvestigationsDashboard() {
                             className="mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 text-left w-full"
                           >
                             <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
-                            
+
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <div className="text-[11px] font-medium text-[var(--text-secondary)]">
@@ -338,14 +333,12 @@ export default function InvestigationsDashboard() {
                                   e.stopPropagation();
                                   setEnableSqlmap(!enableSqlmap);
                                 }}
-                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  enableSqlmap ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
-                                }`}
+                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 ${enableSqlmap ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
+                                  }`}
                               >
                                 <span
-                                  className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                                    enableSqlmap ? "translate-x-3" : "translate-x-0"
-                                  }`}
+                                  className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${enableSqlmap ? "translate-x-3" : "translate-x-0"
+                                    }`}
                                 />
                               </button>
                             </div>
@@ -360,7 +353,7 @@ export default function InvestigationsDashboard() {
                             className="mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 text-left w-full"
                           >
                             <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced Auth Checks</div>
-                            
+
                             {/* Browser Auth Analysis */}
                             <div className="flex items-center justify-between gap-3">
                               <div>
@@ -373,13 +366,11 @@ export default function InvestigationsDashboard() {
                                   e.stopPropagation();
                                   setAuthBrowserAnalysis(!authBrowserAnalysis);
                                 }}
-                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authBrowserAnalysis ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
-                                }`}
+                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 ${authBrowserAnalysis ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
+                                  }`}
                               >
-                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                                  authBrowserAnalysis ? "translate-x-3" : "translate-x-0"
-                                }`} />
+                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${authBrowserAnalysis ? "translate-x-3" : "translate-x-0"
+                                  }`} />
                               </button>
                             </div>
 
@@ -401,13 +392,11 @@ export default function InvestigationsDashboard() {
                                     setSessionCookie("");
                                   }
                                 }}
-                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authorizedAuthMode ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
-                                }`}
+                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 ${authorizedAuthMode ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
+                                  }`}
                               >
-                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                                  authorizedAuthMode ? "translate-x-3" : "translate-x-0"
-                                }`} />
+                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${authorizedAuthMode ? "translate-x-3" : "translate-x-0"
+                                  }`} />
                               </button>
                             </div>
 
@@ -448,13 +437,11 @@ export default function InvestigationsDashboard() {
                                   if (authorizedAuthMode) setAuthLifecycleChecks(!authLifecycleChecks);
                                 }}
                                 disabled={!authorizedAuthMode}
-                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authLifecycleChecks ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
-                                }`}
+                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 ${authLifecycleChecks ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
+                                  }`}
                               >
-                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                                  authLifecycleChecks ? "translate-x-3" : "translate-x-0"
-                                }`} />
+                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${authLifecycleChecks ? "translate-x-3" : "translate-x-0"
+                                  }`} />
                               </button>
                             </div>
 
@@ -471,13 +458,11 @@ export default function InvestigationsDashboard() {
                                   if (authorizedAuthMode) setAuthzTransitionChecks(!authzTransitionChecks);
                                 }}
                                 disabled={!authorizedAuthMode}
-                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authzTransitionChecks ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
-                                }`}
+                                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 ${authzTransitionChecks ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
+                                  }`}
                               >
-                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
-                                  authzTransitionChecks ? "translate-x-3" : "translate-x-0"
-                                }`} />
+                                <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${authzTransitionChecks ? "translate-x-3" : "translate-x-0"
+                                  }`} />
                               </button>
                             </div>
 
@@ -514,7 +499,7 @@ export default function InvestigationsDashboard() {
           <Card title="Investigation Pipeline Logs" description="Review and monitor status logs">
             {isHistoryLoading ? (
               <div className="py-20 text-center text-[var(--text-muted)] font-medium font-sans">
-                <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-[#0f9d76] border-t-transparent rounded-full" />
                 Loading logs...
               </div>
             ) : history.length === 0 ? (
@@ -560,15 +545,14 @@ export default function InvestigationsDashboard() {
                           </td>
                           <td className="py-4 px-4">
                             <span
-                              className={`font-bold font-mono text-xs ${
-                                isFailed
+                              className={`font-bold font-mono text-xs ${isFailed
                                   ? "text-[var(--text-muted)]"
                                   : inv.risk_score > 60
-                                  ? "text-red-400"
-                                  : inv.risk_score > 30
-                                  ? "text-orange-400"
-                                  : "text-emerald-400"
-                              }`}
+                                    ? "text-red-400"
+                                    : inv.risk_score > 30
+                                      ? "text-orange-400"
+                                      : "text-emerald-400"
+                                }`}
                             >
                               {isFailed ? "—" : Math.round(inv.risk_score)}
                             </span>

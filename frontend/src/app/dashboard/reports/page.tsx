@@ -434,16 +434,16 @@ export default function ReportsHistoryPage() {
                   setSelectedReport(null);
                   setSelectedThreatModel(null);
                 }}
-                className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all duration-180 cursor-pointer flex items-center gap-2 hover:-translate-y-[1px] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                   active
-                    ? "border-blue-500 text-[var(--primary)]"
-                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    ? "border-[#0f9d76] text-[#0f9d76]"
+                    : "border-transparent text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] rounded-t-lg"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
                 <span className={`px-1.5 py-0.5 rounded text-[10px] ${
-                  active ? "bg-[var(--primary)]/25 text-[var(--primary)] font-black" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
+                  active ? "bg-[#0f9d76]/15 text-[#0f9d76] font-black" : "bg-[#fffaf4] text-[#4f4a45] border border-[#e7ddd1]"
                 }`}>
                   {tab.count}
                 </span>
@@ -486,7 +486,14 @@ export default function ReportsHistoryPage() {
                         <tr
                           key={inv.id}
                           onClick={() => router.push(`/dashboard/investigations/${inv.id}`)}
-                          className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors group"
+                          className="bg-[#ffffff] hover:bg-[#edf8f3] cursor-pointer transition-all duration-180 group focus-within:ring-2 focus-within:ring-[#0f9d76]/35 outline-none"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              router.push(`/dashboard/investigations/${inv.id}`);
+                            }
+                          }}
                         >
                           <td className="py-4 px-4 font-mono text-xs font-semibold text-[var(--text-secondary)]">
                             <div>{inv.scan_id || "SCAN-INF"}</div>
@@ -555,7 +562,14 @@ export default function ReportsHistoryPage() {
                           <tr
                             key={pt.id}
                             onClick={() => handleViewPentestReview(pt.id)}
-                            className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors group"
+                            className="bg-[#ffffff] hover:bg-[#edf8f3] cursor-pointer transition-all duration-180 group focus-within:ring-2 focus-within:ring-[#0f9d76]/35 outline-none"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleViewPentestReview(pt.id);
+                              }
+                            }}
                           >
                             <td className="py-4 px-4 text-[var(--text-primary)] font-semibold">
                               <div className="flex items-center gap-1.5">
@@ -614,25 +628,25 @@ export default function ReportsHistoryPage() {
                         <button
                           key={scan.id}
                           onClick={() => viewThreatReport(scan.id)}
-                          className={`w-full text-left p-3 rounded-xl border transition-all text-sm select-none ${
+                          className={`w-full text-left p-3 rounded-xl border transition-all duration-180 text-sm select-none focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 motion-reduce:transition-colors motion-reduce:hover:transform-none hover:-translate-y-[1px] active:scale-[0.97] hover:shadow-sm ${
                             selectedScan?.id === scan.id
-                              ? "bg-[var(--primary)]/10 border-[var(--primary)]"
-                              : "bg-[var(--bg-elevated)] border-[var(--border-strong)] hover:bg-[var(--bg-card)]/40"
+                              ? "bg-[#edf8f3] border-[#0f9d76] text-[#1d1d1d]"
+                              : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
-                              {scan.scan_type === "url" ? <Globe className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <FileText className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+                            <span className="font-semibold text-[#1d1d1d] flex items-center gap-1.5">
+                              {scan.scan_type === "url" ? <Globe className="w-3.5 h-3.5 text-[#4f4a45]" /> : <FileText className="w-3.5 h-3.5 text-[#4f4a45]" />}
                               {scan.scan_type.toUpperCase()}
                             </span>
                             <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider ${threatColor(scan.threat_level)}`}>
                               {scan.threat_level || "Clean"}
                             </span>
                           </div>
-                          <p className="text-xs text-[var(--text-muted)] truncate mt-2 font-mono">
+                          <p className="text-xs text-[#4f4a45] truncate mt-2 font-mono">
                             {scan.target}
                           </p>
-                          <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium">
+                          <p className="text-[10px] text-[#4f4a45] mt-1 font-medium">
                             {new Date(scan.created_at).toLocaleDateString()}
                           </p>
                         </button>
@@ -667,36 +681,36 @@ export default function ReportsHistoryPage() {
                         <div className="relative">
                           <button
                             onClick={() => setDownloadMenuOpen((v) => !v)}
-                            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 border border-[var(--primary)] transition-all text-xs font-bold"
+                            className="btn-animated btn-primary-emerald inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg shadow-sm transition-all duration-180 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none"
                           >
                             <Download className="w-3.5 h-3.5" />
                             Download Report
                             <ArrowRight className={`w-3 h-3 transition-transform ${downloadMenuOpen ? "rotate-90" : ""}`} />
                           </button>
                           {downloadMenuOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-[#17223b] border border-[var(--border-soft)] shadow-2xl overflow-hidden z-10">
+                            <div className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-[#ffffff] border border-[#e7ddd1] shadow-xl overflow-hidden z-10">
                               <button
                                 onClick={() => handleDownloadThreatReport("txt")}
-                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[var(--bg-elevated)] transition-colors"
+                                className="w-full text-left px-4 py-3 flex items-center gap-3 bg-[#ffffff] hover:bg-[#edf8f3] transition-all duration-180 focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 active:scale-[0.99]"
                               >
                                 <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                                   <FileText className="w-4 h-4 text-emerald-400" />
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-[var(--text-primary)]">Text Report</p>
-                                  <p className="text-[9px] text-[var(--text-muted)]">.txt — Human readable</p>
+                                  <p className="text-xs font-bold text-[#1d1d1d]">Text Report</p>
+                                  <p className="text-[9px] text-[#4f4a45]">.txt — Human readable</p>
                                 </div>
                               </button>
                               <button
                                 onClick={() => handleDownloadThreatReport("json")}
-                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[var(--bg-elevated)] transition-colors border-t border-[var(--border-soft)]"
+                                className="w-full text-left px-4 py-3 flex items-center gap-3 bg-[#ffffff] hover:bg-[#edf8f3] transition-all duration-180 border-t border-[#e7ddd1] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 active:scale-[0.99]"
                               >
                                 <div className="w-8 h-8 rounded-lg bg-[var(--primary-soft)] flex items-center justify-center flex-shrink-0">
                                   <FileJson className="w-4 h-4 text-[var(--primary)]" />
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-[var(--text-primary)]">JSON Report</p>
-                                  <p className="text-[9px] text-[var(--text-muted)]">.json — Machine parsed</p>
+                                  <p className="text-xs font-bold text-[#1d1d1d]">JSON Report</p>
+                                  <p className="text-[9px] text-[#4f4a45]">.json — Machine parsed</p>
                                 </div>
                               </button>
                             </div>
@@ -761,29 +775,29 @@ export default function ReportsHistoryPage() {
                         <button
                           key={model.id}
                           onClick={() => setSelectedThreatModel(model)}
-                          className={`w-full text-left p-3 rounded-xl border transition-all text-sm select-none ${
+                          className={`w-full text-left p-3 rounded-xl border transition-all duration-180 text-sm select-none focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 motion-reduce:transition-colors motion-reduce:hover:transform-none hover:-translate-y-[1px] active:scale-[0.97] hover:shadow-sm ${
                             selectedThreatModel?.id === model.id
-                              ? "bg-[var(--primary)]/10 border-[var(--primary)]"
-                              : "bg-[var(--bg-elevated)] border-[var(--border-strong)] hover:bg-[var(--bg-card)]/40"
+                              ? "bg-[#edf8f3] border-[#0f9d76] text-[#1d1d1d]"
+                              : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-[var(--text-primary)]">
+                            <span className="font-bold text-[#1d1d1d]">
                               {model.project_name}
                             </span>
                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                              model.risk_label === "Critical" ? "bg-red-500/20 text-red-400 border border-red-500/25" :
-                              model.risk_label === "High" ? "bg-red-500/15 text-red-400 border border-red-500/10" :
-                              model.risk_label === "Medium" ? "bg-orange-500/15 text-orange-400 border border-orange-500/10" :
-                              "bg-yellow-500/15 text-yellow-400 border border-yellow-500/10"
+                              model.risk_label === "Critical" ? "bg-red-50 text-red-600 border border-red-200" :
+                              model.risk_label === "High" ? "bg-red-50 text-red-600 border border-red-200" :
+                              model.risk_label === "Medium" ? "bg-orange-50 text-orange-600 border border-orange-200" :
+                              "bg-green-50 text-green-600 border border-green-200"
                             }`}>
                               {model.risk_label}
                             </span>
                           </div>
-                          <p className="text-xs text-[var(--text-muted)] mt-2 font-medium">
+                          <p className="text-xs text-[#4f4a45] mt-2 font-medium">
                             {model.app_type} • {model.threat_count} threat{model.threat_count !== 1 ? "s" : ""}
                           </p>
-                          <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium">
+                          <p className="text-[10px] text-[#4f4a45] mt-1 font-medium">
                             {new Date(model.created_at).toLocaleDateString()}
                           </p>
                         </button>
@@ -839,7 +853,7 @@ export default function ReportsHistoryPage() {
                       <div className="border-t border-[var(--border-strong)] pt-4 flex justify-end">
                         <button
                           onClick={() => router.push(`/dashboard/threat-modeling`)}
-                          className="flex items-center gap-1.5 text-xs text-[var(--primary)] hover:text-[var(--primary)] font-bold transition-colors cursor-pointer"
+                          className="btn-animated flex items-center gap-1.5 text-xs font-bold transition-all duration-180 cursor-pointer bg-[#ffffff] border border-[#e7ddd1] text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] px-4 py-2 rounded-xl shadow-sm hover:-translate-y-[1px] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-[#0f9d76]/35 motion-reduce:transition-colors motion-reduce:hover:transform-none"
                         >
                           Launch Threat Modeler <ExternalLink className="w-3.5 h-3.5" />
                         </button>

@@ -118,4 +118,177 @@ body {
   background: #fffaf4 !important;
   color: #1d1d1d !important;
   border: 1px solid var(--border-soft) !important;
+  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease !important;
+}
+[data-sonner-toaster] [data-close-button]:hover {
+  transform: translateY(-1px) scale(1.05) !important;
+  color: var(--primary) !important;
+  background: var(--primary-soft) !important;
+}
+[data-sonner-toaster] [data-close-button]:active {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+/* ============================================================
+   Global Button Animations
+   ============================================================ */
+
+.btn-animated {
+  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease, border-color 200ms ease, color 200ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-animated:hover {
+  transform: translateY(-1px);
+}
+
+.btn-animated:active {
+  transform: translateY(0) scale(0.97);
+  transition: transform 50ms ease;
+}
+
+/* Primary Button (Emerald Gradient + Shine) */
+.btn-primary-emerald {
+  background: linear-gradient(135deg, #0f9d76, #0b7d5d);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(15, 157, 118, 0.15);
+}
+
+.btn-primary-emerald:hover {
+  box-shadow: 0 10px 24px rgba(15, 157, 118, 0.25);
+}
+
+/* The shine pseudo-element */
+.btn-primary-emerald::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.4s ease-in-out;
+  pointer-events: none;
+}
+
+.btn-primary-emerald:hover::before {
+  left: 200%;
+}
+
+/* Secondary Button (Soft Border to Emerald) */
+.btn-secondary-soft {
+  background: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.btn-secondary-soft:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 6px 16px rgba(15, 157, 118, 0.1);
+}
+
+/* Ghost / Plain Button */
+.btn-ghost-soft {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.btn-ghost-soft:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Icon Buttons */
+.icon-btn-animated {
+  transition: transform 200ms ease, color 200ms ease, background 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-center: center;
+}
+
+.icon-btn-animated:hover {
+  transform: scale(1.08);
+  color: var(--primary);
+}
+
+.icon-btn-animated:active {
+  transform: scale(0.95);
+  transition: transform 50ms ease;
+}
+
+/* Sidebar / Nav Items */
+.sidebar-btn {
+  transition: transform 200ms ease, background 200ms ease, color 200ms ease;
+}
+
+.sidebar-btn:hover {
+  transform: translateX(4px);
+}
+
+.sidebar-btn:active {
+  transform: translateX(2px) scale(0.98);
+}
+
+/* ============================================================
+   Report & Threat Card Animations
+   ============================================================ */
+
+.report-card-animated,
+.threat-card-animated,
+.metric-card-animated {
+  animation: cardFadeIn 400ms ease-out forwards;
+  transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
+}
+
+@keyframes cardFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-card-animated:hover,
+.threat-card-animated:hover,
+.metric-card-animated:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(15, 157, 118, 0.08);
+  border-color: rgba(15, 157, 118, 0.3);
+}
+
+.report-card-animated:active,
+.threat-card-animated:active,
+.metric-card-animated:active {
+  transform: translateY(0) scale(0.99);
+  transition: transform 50ms ease;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .btn-animated,
+  .btn-primary-emerald::before,
+  .icon-btn-animated,
+  .sidebar-btn,
+  .report-card-animated,
+  .threat-card-animated,
+  .metric-card-animated,
+  [data-sonner-toaster] [data-close-button] {
+    transform: none !important;
+    animation: none !important;
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease !important;
+  }
+  
+  .btn-primary-emerald:hover::before {
+    left: -100% !important; /* disable shine */
+  }
 }

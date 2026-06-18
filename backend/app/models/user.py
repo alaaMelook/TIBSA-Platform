@@ -84,12 +84,24 @@ class MFAVerifyRequest(BaseModel):
     code: str
     mfa_token: Optional[str] = None
 
+class MFAEnrollRequest(BaseModel):
+    refresh_token: str
+
 class MFAChallengeRequest(BaseModel):
     """Request a new MFA challenge for a given factor."""
     factor_id: str
+    refresh_token: str
+
+class MFAVerifyEnrollmentRequest(BaseModel):
+    """Verify a TOTP code during initial MFA enrollment."""
+    factor_id: str
+    challenge_id: str
+    code: str
+    refresh_token: str
 
 class MFAEnrollResponse(BaseModel):
     """Response when enrolling a new TOTP factor."""
     factor_id: str
     totp_uri: str
     qr_code: str  # base64 SVG of the QR code
+    secret: Optional[str] = None

@@ -36,7 +36,7 @@ export function InfraSubHeader() {
       </div>
 
       {/* Glassmorphic Tabbed Navigation Row */}
-      <div className="flex bg-[var(--bg-page)]/40 border border-[var(--border-soft)] p-1 rounded-xl w-fit max-w-full overflow-x-auto gap-1">
+      <div className="flex bg-[#ffffff] border border-[#e7ddd1] p-1.5 rounded-2xl w-fit max-w-full overflow-x-auto gap-1 shadow-sm">
         {NAV_ITEMS.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -45,11 +45,11 @@ export function InfraSubHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? "bg-[var(--primary-soft)] border border-[var(--primary)] text-[var(--primary)] shadow-sm"
-                  : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
-              }`}
+                  ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] shadow-sm font-bold"
+                  : "border border-transparent text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
+              } motion-reduce:transition-colors motion-reduce:hover:transform-none`}
             >
               {item.icon}
               {item.label}

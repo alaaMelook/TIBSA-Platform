@@ -298,30 +298,30 @@ export default function InfraSettingsPage() {
               <div
                 key={feed.id}
                 onClick={() => feed.set(!feed.state)}
-                className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer select-none transition-all duration-200 ${
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.98] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                   feed.state
-                    ? "border-[var(--primary)]/30 bg-emerald-500/[0.02]"
-                    : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-card)]/30"
+                    ? "border-[#0f9d76] bg-[#edf8f3] shadow-sm"
+                    : "border-[#e7ddd1] bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className={`p-1.5 rounded border transition-colors ${
+                <div className="flex items-center gap-3">
+                  <div className={`p-1.5 rounded-lg border transition-colors ${
                     feed.state
-                      ? "text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/20"
-                      : "text-[var(--text-muted)] bg-[var(--bg-card)]/40 border-[var(--border-soft)]"
+                      ? "text-[#0f9d76] bg-[#0f9d76]/10 border-[#0f9d76]/20"
+                      : "text-[#8a8178] bg-[#fcfcfb] border-[#e7ddd1]"
                   }`}>
                     {feed.icon}
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-[var(--text-primary)] leading-none">{feed.label}</p>
-                    <p className="text-[9px] text-[var(--text-muted)] mt-1 font-medium leading-none">{feed.desc}</p>
+                    <p className={`text-xs font-bold transition-colors ${feed.state ? "text-[#0f9d76]" : "text-[#1d1d1d]"}`}>{feed.label}</p>
+                    <p className="text-[10px] text-[#4f4a45] mt-0.5 font-medium leading-none">{feed.desc}</p>
                   </div>
                 </div>
                 <div>
                   {feed.state ? (
-                    <ToggleRight className="w-6 h-6 text-[var(--primary)]" />
+                    <ToggleRight className="w-6 h-6 text-[#0f9d76]" />
                   ) : (
-                    <ToggleLeft className="w-6 h-6 text-[var(--text-muted)]" />
+                    <ToggleLeft className="w-6 h-6 text-[#8a8178]" />
                   )}
                 </div>
               </div>
@@ -345,8 +345,8 @@ export default function InfraSettingsPage() {
                 onChange={(e) => setNewKeyword(e.target.value)}
                 className="bg-[var(--bg-page)]/40 border-[var(--border-soft)]"
               />
-              <Button type="submit" className="!px-3 flex items-center justify-center gap-1 !bg-emerald-600 hover:!bg-emerald-500 shadow-lg shadow-emerald-600/20 font-bold text-xs whitespace-nowrap">
-                <Plus className="w-3.5 h-3.5" /> Add Tag
+              <Button type="submit" className="!px-4 flex items-center justify-center gap-1.5 bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] !text-white hover:from-[#0b7d5d] hover:to-[#086348] shadow-sm font-semibold text-xs whitespace-nowrap transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] rounded-lg motion-reduce:transition-colors motion-reduce:hover:transform-none cursor-pointer">
+                <Plus className="w-4 h-4" /> Add Tag
               </Button>
             </form>
 
@@ -444,7 +444,7 @@ export default function InfraSettingsPage() {
           type="button"
           disabled={!isWeightValid}
           onClick={handleSave}
-          className="flex items-center justify-center gap-2 !bg-emerald-600 hover:!bg-emerald-500 shadow-lg shadow-emerald-600/20 font-black text-xs !px-5 !py-2.5"
+          className="flex items-center justify-center gap-2 bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] hover:from-[#0b7d5d] hover:to-[#086348] !text-white shadow-sm font-semibold text-sm !px-6 !py-2.5 rounded-lg transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-colors motion-reduce:hover:transform-none cursor-pointer"
         >
           <Save className="w-4 h-4" /> Save Configuration Parameters
         </Button>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { notifySuccess, notifyError } from "@/lib/notify";
+import { notifySuccess, notifyError, notifyWarning } from "@/lib/notify";
 import { api } from "@/lib/api";
 
 // ─── URL validation helper ────────────────────────────────────
@@ -1175,7 +1175,7 @@ function ScanDetailModal({
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                        className="p-2 rounded-lg bg-[#ffffff] border border-[#e7ddd1] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.95] shadow-sm cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -1816,7 +1816,7 @@ export default function ScansPage() {
                             type="submit"
                             id="url-scan-submit"
                             disabled={isUrlSubmitting || !urlTarget.trim() || !!urlValidationError}
-                            className="w-full py-2.5 px-4 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--text-primary)] text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary-soft)]"
+                            className="btn-animated btn-primary-emerald w-full py-2.5 px-4 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isUrlSubmitting ? (
                                 <>
@@ -1852,14 +1852,14 @@ export default function ScansPage() {
 
                     <form onSubmit={handleFileSubmit} className="px-6 py-5 space-y-4">
                         {/* Mode Toggle */}
-                        <div className="flex bg-[var(--bg-elevated)] rounded-lg p-1 gap-1">
+                        <div className="flex bg-[#f8f3eb] rounded-lg p-1 gap-1">
                             <button
                                 type="button"
                                 id="file-upload-mode"
                                 onClick={() => setFileMode("upload")}
-                                className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${fileMode === "upload"
-                                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-soft)]"
-                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                className={`flex-1 py-1.5 px-3 text-xs rounded-md shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${fileMode === "upload"
+                                    ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold"
+                                    : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                                     }`}
                             >
                                 Upload File
@@ -1868,9 +1868,9 @@ export default function ScansPage() {
                                 type="button"
                                 id="file-hash-mode"
                                 onClick={() => setFileMode("hash")}
-                                className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${fileMode === "hash"
-                                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-soft)]"
-                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                className={`flex-1 py-1.5 px-3 text-xs rounded-md shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${fileMode === "hash"
+                                    ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold"
+                                    : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                                     }`}
                             >
                                 Enter Hash
@@ -1951,7 +1951,7 @@ export default function ScansPage() {
                                 isFileSubmitting ||
                                 (fileMode === "upload" ? !selectedFile : !fileHash.trim())
                             }
-                            className="w-full py-2.5 px-4 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white hover:opacity-90 text-[var(--text-primary)] text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="btn-animated btn-primary-emerald w-full py-2.5 px-4 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isFileSubmitting ? (
                                 <>
@@ -2003,14 +2003,14 @@ export default function ScansPage() {
                         </p>
                     </div>
                     {/* Filter tabs */}
-                    <div className="flex bg-[var(--bg-elevated)] rounded-lg p-1 gap-1 text-xs font-medium self-start sm:self-auto">
+                    <div className="flex bg-[#f8f3eb] rounded-lg p-1 gap-1 self-start sm:self-auto">
                         {(["all", "url", "file"] as const).map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-3 py-1.5 rounded-md transition-all capitalize ${activeTab === tab
-                                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-soft)]"
-                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                                className={`px-3 py-1.5 text-xs rounded-md shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] capitalize motion-reduce:transition-colors motion-reduce:hover:transform-none ${activeTab === tab
+                                    ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold"
+                                    : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                                     }`}
                             >
                                 {tab === "all" ? "All" : tab === "url" ? "URLs" : "Files"}
@@ -2127,9 +2127,9 @@ export default function ScansPage() {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => setSelectedScanId(scan.id)}
-                                                        className="px-3 py-1.5 rounded-lg bg-[var(--primary)]/15 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--text-primary)] text-xs font-medium transition-all flex items-center gap-1.5 flex-shrink-0"
+                                                        className="px-3 py-1.5 rounded-lg bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] shadow-sm font-semibold text-xs whitespace-nowrap transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-1.5 flex-shrink-0 cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                                                     >
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                                         </svg>
                                                         Details
@@ -2139,7 +2139,7 @@ export default function ScansPage() {
                                                             onClick={() => handleCancelScan(scan.id)}
                                                             disabled={cancellingId === scan.id}
                                                             title="Cancel this scan"
-                                                            className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-[var(--text-primary)] flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                                            className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-500 hover:bg-orange-100 hover:border-orange-300 flex items-center justify-center transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.95] shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                                                         >
                                                             {cancellingId === scan.id ? (
                                                                 <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
@@ -2157,7 +2157,7 @@ export default function ScansPage() {
                                                         onClick={() => handleDeleteScan(scan.id)}
                                                         disabled={deletingId === scan.id}
                                                         title="Delete scan permanently"
-                                                        className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-[var(--text-primary)] hover:border-red-500 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                                        className="w-8 h-8 rounded-lg bg-red-50 border border-red-200 text-red-500 hover:bg-red-100 hover:border-red-300 flex items-center justify-center transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.95] shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                                                     >
                                                         {deletingId === scan.id ? (
                                                             <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">

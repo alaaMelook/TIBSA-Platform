@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ShieldAlert, ShieldCheck, Activity, Search, AlertTriangle, 
   Terminal, Server, Globe, FileKey, Layers, Radar, CheckCircle2,
@@ -334,6 +335,7 @@ const defaultTests = [
 ];
 
 export default function WebsiteScannerPage() {
+  const { token } = useAuth();
   const [targetUrl, setTargetUrl] = useState("");
   const [authMode, setAuthMode] = useState<"none" | "cookie" | "auto">("none");
   const [sessionCookie, setSessionCookie] = useState("");
@@ -349,6 +351,9 @@ export default function WebsiteScannerPage() {
   const [authLifecycleChecks, setAuthLifecycleChecks] = useState(false);
   const [authzTransitionChecks, setAuthzTransitionChecks] = useState(false);
   
+  const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
+  const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
+  
   const [isScanning, setIsScanning] = useState(false);
   const [currentResult, setCurrentResult] = useState<ScanResult | null>(null);
   const [showMetadata, setShowMetadata] = useState(false);
@@ -361,14 +366,13 @@ export default function WebsiteScannerPage() {
   const [activeTab, setActiveTab] = useState<"findings" | "overview" | "technology">("overview");
 
   useEffect(() => {
-    fetchHistory();
-  }, []);
+    if (token) fetchHistory();
+  }, [token]);
 
   const fetchHistory = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const data = await api.get<HistoryItem[]>("/api/v1/website-scanner/history", session.access_token);
+      if (!token) return;
+      const data = await api.get<HistoryItem[]>("/api/v1/website-scanner/history", token);
       setHistory(data || []);
     } catch (err: any) {
       console.error("Failed to fetch history", err);
@@ -379,9 +383,8 @@ export default function WebsiteScannerPage() {
     try {
       setIsScanning(true);
       setError("");
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const data = await api.get<any>(`/api/v1/website-scanner/history/${id}`, session.access_token);
+      if (!token) throw new Error("Not authenticated");
+      const data = await api.get<any>(`/api/v1/website-scanner/history/${id}`, token);
       
       const hydrated = {
         detected_technologies: data.detected_technologies || data.summary?.detected_technologies || data.scanner_json?.detected_technologies || [],
@@ -441,8 +444,7 @@ export default function WebsiteScannerPage() {
     setError("");
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      if (!token) throw new Error("Not authenticated");
 
       const result = await api.post<ScanResult>("/api/v1/website-scanner/scan", {
         target: targetUrl,
@@ -461,7 +463,7 @@ export default function WebsiteScannerPage() {
           password: password,
           extra_fields: { security: securityLevel }
         } : { type: "none" }
-      }, session.access_token);
+      }, token);
 
       setCurrentResult(result);
       if (result.error) setError(result.error);
@@ -539,7 +541,7 @@ export default function WebsiteScannerPage() {
                 <button
                   type="submit"
                   disabled={isScanning || !targetUrl || selectedTests.length === 0}
-                  className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white hover:opacity-90 px-8 rounded-xl font-medium flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--primary-soft)] hover:shadow-xl shadow-[var(--primary-light)]"
+                  className="btn-animated btn-primary-emerald w-full sm:w-auto px-8 py-3 rounded-xl font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isScanning ? (
                     <><Activity className="w-5 h-5 animate-pulse" /> Scanning...</>
@@ -554,19 +556,38 @@ export default function WebsiteScannerPage() {
                   <h3 className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-[var(--primary)]" /> Authentication Configuration
                   </h3>
-                  <div className="flex bg-[var(--bg-page)]/50 p-1 rounded-lg border border-[var(--border-soft)]">
-                    {(["none", "cookie", "auto"] as const).map(mode => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setAuthMode(mode)}
-                        className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${
-                          authMode === mode ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                        }`}
-                      >
-                        {mode === "none" ? "No Auth" : mode === "cookie" ? "Cookie" : "Auto Login"}
-                      </button>
-                    ))}
+                  <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setAuthDropdownOpen(false) }}>
+                    <button
+                      type="button"
+                      onClick={() => setAuthDropdownOpen(!authDropdownOpen)}
+                      className="px-4 py-2 bg-[#ffffff] hover:bg-[#edf8f3] border border-[#e7ddd1] focus:border-[#0f9d76] focus:ring-2 focus:ring-[#0f9d76]/30 rounded-xl text-sm font-semibold text-[#1d1d1d] shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.98] flex items-center gap-2"
+                    >
+                      {authMode === "none" ? "No Auth" : authMode === "cookie" ? "Cookie" : "Auto Login"}
+                      <ChevronDown className={`w-4 h-4 text-[#4f4a45] transition-transform duration-200 ${authDropdownOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    
+                    {authDropdownOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-40 bg-[#ffffff] border border-[#e7ddd1] rounded-2xl shadow-lg shadow-[#0f9d76]/10 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ease-out">
+                        {(["none", "cookie", "auto"] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => {
+                              setAuthMode(mode);
+                              setAuthDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                              authMode === mode
+                                ? "bg-[#edf8f3] text-[#0f9d76] font-bold"
+                                : "text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
+                            }`}
+                          >
+                            {mode === "none" ? "No Auth" : mode === "cookie" ? "Cookie" : "Auto Login"}
+                            {authMode === mode && <CheckCircle2 className="w-4 h-4" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -638,21 +659,40 @@ export default function WebsiteScannerPage() {
 
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <span className="text-sm font-medium text-[var(--text-muted)]">Scan Mode:</span>
-                {(["passive", "safe", "aggressive"] as const).map(mode => (
+                <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setScanDropdownOpen(false) }}>
                   <button
-                    key={mode}
                     type="button"
-                    onClick={() => setScanMode(mode)}
+                    onClick={() => setScanDropdownOpen(!scanDropdownOpen)}
                     disabled={isScanning}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize border ${
-                      scanMode === mode 
-                        ? mode === "aggressive" ? "bg-red-500/10 text-red-400 border-red-500/30" : "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]"
-                        : "bg-[var(--bg-card)]/50 text-[var(--text-muted)] border-[var(--border-soft)] hover:bg-[var(--bg-elevated)]"
-                    }`}
+                    className="px-4 py-2 bg-[#ffffff] hover:bg-[#edf8f3] border border-[#e7ddd1] focus:border-[#0f9d76] focus:ring-2 focus:ring-[#0f9d76]/30 rounded-xl text-sm font-semibold text-[#1d1d1d] shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.98] flex items-center gap-2 capitalize disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
                   >
-                    {mode}
+                    {scanMode} Mode
+                    <ChevronDown className={`w-4 h-4 text-[#4f4a45] transition-transform duration-200 ${scanDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
-                ))}
+                  
+                  {scanDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-44 bg-[#ffffff] border border-[#e7ddd1] rounded-2xl shadow-lg shadow-[#0f9d76]/10 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ease-out">
+                      {(["passive", "safe", "aggressive"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => {
+                            setScanMode(mode);
+                            setScanDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between capitalize ${
+                            scanMode === mode
+                              ? "bg-[#edf8f3] text-[#0f9d76] font-bold"
+                              : "text-[#1d1d1d] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
+                          }`}
+                        >
+                          {mode}
+                          {scanMode === mode && <CheckCircle2 className="w-4 h-4" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
@@ -667,19 +707,19 @@ export default function WebsiteScannerPage() {
                           toggleTest(test.id);
                         }
                       }}
-                      className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                      className={`p-4 rounded-xl border text-left cursor-pointer transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none shadow-sm group ${
                         isScanning ? "opacity-60 cursor-not-allowed" : ""
                       } ${
                         isSelected 
-                          ? "bg-[var(--primary-soft)] border-[var(--primary)]" 
-                          : "bg-[var(--bg-card)]/30 border-[var(--border-soft)] hover:bg-[var(--bg-elevated)]"
+                          ? "bg-[#edf8f3] border-[#0f9d76]" 
+                          : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                       }`}
                     >
-                      <Icon className={`w-5 h-5 mb-2 ${isSelected ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} />
-                      <div className={`font-medium text-sm mb-1 ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}`}>
+                      <Icon className={`w-5 h-5 mb-2 transition-colors ${isSelected ? "text-[#0f9d76]" : "text-[#4f4a45] group-hover:text-[#0f9d76]"}`} />
+                      <div className={`font-medium text-sm mb-1 transition-colors ${isSelected ? "text-[#0f9d76] font-bold" : "text-[#1d1d1d] group-hover:text-[#0f9d76]"}`}>
                         {test.label}
                       </div>
-                      <div className="text-[10px] text-[var(--text-muted)] line-clamp-1">{test.desc}</div>
+                      <div className={`text-[10px] line-clamp-1 transition-colors ${isSelected ? "text-[#0b7d5d]" : "text-[#8a8178]"}`}>{test.desc}</div>
                       
                       {test.id === "sqli" && isSelected && (
                         <div
@@ -711,13 +751,13 @@ export default function WebsiteScannerPage() {
                                 }
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${
-                                enableSqlmap ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
+                                enableSqlmap ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
                               }`}
                             >
                               <span
-                                className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${
-                                  enableSqlmap ? "left-4" : "left-0.5"
+                                className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${
+                                  enableSqlmap ? "translate-x-4" : "translate-x-0"
                                 }`}
                               />
                             </button>
@@ -749,9 +789,11 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning) setAuthBrowserAnalysis(!authBrowserAnalysis);
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authBrowserAnalysis ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
+                                authBrowserAnalysis ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                              }`}
                             >
-                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authBrowserAnalysis ? "left-4" : "left-0.5"}`} />
+                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authBrowserAnalysis ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
                           </div>
 
@@ -776,9 +818,11 @@ export default function WebsiteScannerPage() {
                                 }
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authorizedAuthMode ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
+                                authorizedAuthMode ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                              }`}
                             >
-                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authorizedAuthMode ? "left-4" : "left-0.5"}`} />
+                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authorizedAuthMode ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
                           </div>
 
@@ -820,9 +864,11 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning && authorizedAuthMode) setAuthLifecycleChecks(!authLifecycleChecks);
                               }}
                               disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authLifecycleChecks ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
+                                authLifecycleChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                              }`}
                             >
-                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authLifecycleChecks ? "left-4" : "left-0.5"}`} />
+                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authLifecycleChecks ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
                           </div>
 
@@ -839,9 +885,11 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning && authorizedAuthMode) setAuthzTransitionChecks(!authzTransitionChecks);
                               }}
                               disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authzTransitionChecks ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${
+                                authzTransitionChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                              }`}
                             >
-                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authzTransitionChecks ? "left-4" : "left-0.5"}`} />
+                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authzTransitionChecks ? "translate-x-4" : "translate-x-0"}`} />
                             </button>
                           </div>
 
@@ -858,32 +906,32 @@ export default function WebsiteScannerPage() {
           {currentResult && (
             <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-2xl overflow-hidden">
               {/* Results Tabs + Export Button */}
-              <div className="flex border-b border-[var(--border-soft)] bg-[var(--bg-card)]/30 items-center">
+              <div className="flex border-b border-[var(--border-soft)] bg-[#f8f3eb] items-center p-2 gap-2">
                 <button
                   onClick={() => setActiveTab("overview")}
-                  className={`px-6 py-4 font-medium text-sm flex items-center gap-2 border-b-2 transition-all ${
-                    activeTab === "overview" ? "border-[var(--primary)] text-[var(--text-primary)] bg-[var(--primary-soft)]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
+                    activeTab === "overview" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                   }`}
                 >
                   <Activity className="w-4 h-4" /> Overview
                 </button>
                 <button
                   onClick={() => setActiveTab("technology")}
-                  className={`px-6 py-4 font-medium text-sm flex items-center gap-2 border-b-2 transition-all ${
-                    activeTab === "technology" ? "border-emerald-500 text-[var(--text-primary)] bg-emerald-500/5" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
+                    activeTab === "technology" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                   }`}
                 >
                   <Server className="w-4 h-4" /> Technologies
                   {(currentResult.detected_technologies?.length ?? 0) > 0 && (
-                    <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-[#0f9d76]/10 text-[#0f9d76] px-1.5 py-0.5 rounded-full">
                       {currentResult.detected_technologies?.length}
                     </span>
                   )}
                 </button>
                 <button
                   onClick={() => setActiveTab("findings")}
-                  className={`px-6 py-4 font-medium text-sm flex items-center gap-2 border-b-2 transition-all ${
-                    activeTab === "findings" ? "border-[var(--primary)] text-[var(--text-primary)] bg-[var(--primary-soft)]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  className={`px-4 py-2 rounded-lg text-sm shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 motion-reduce:transition-colors motion-reduce:hover:transform-none ${
+                    activeTab === "findings" ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold" : "bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                   }`}
                 >
                   <ShieldAlert className="w-4 h-4" /> Findings ({currentResult.findings?.length || 0})
@@ -899,14 +947,14 @@ export default function WebsiteScannerPage() {
                           const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
                           a.download = `scanner_context_${currentResult.scan_id}.json`; a.click();
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 rounded-lg text-[11px] font-bold transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] text-[#1d1d1d] rounded-lg text-[11px] font-bold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none"
                         title="Download scanner_context.json"
                       >
                         <Zap className="w-3 h-3" /> Export JSON
                       </button>
                       <button
                         onClick={() => { navigator.clipboard.writeText(JSON.stringify(currentResult.scanner_json, null, 2)); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-elevated)]/50 hover:bg-[var(--bg-elevated)] border border-[var(--border-strong)] text-[var(--text-secondary)] rounded-lg text-[11px] font-bold transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] text-[#1d1d1d] rounded-lg text-[11px] font-bold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none"
                         title="Copy scanner JSON to clipboard"
                       >
                         <Copy className="w-3 h-3" /> Copy
@@ -918,7 +966,7 @@ export default function WebsiteScannerPage() {
                           localStorage.setItem('tibsa_scanner_json', JSON.stringify(currentResult.scanner_json));
                           window.location.href = `/dashboard/website-scanner/review`;
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--primary-soft)] hover:opacity-90/20 border border-[var(--primary)] text-[var(--primary)] rounded-lg text-[11px] font-bold transition-all"
+                        className="btn-animated btn-primary-emerald flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold"
                       >
                         <Eye className="w-3 h-3" /> Client Review
                       </a>
@@ -1132,10 +1180,10 @@ export default function WebsiteScannerPage() {
 
                               <button
                                 onClick={() => setAssetGrouped(!assetGrouped)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                className={`px-3 py-1.5 rounded-lg text-xs shadow-sm transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                                   assetGrouped 
-                                    ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' 
-                                    : 'bg-[var(--bg-card)]/50 text-[var(--text-muted)] border-[var(--border-soft)] hover:border-[var(--border-strong)]'
+                                    ? 'bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] font-bold' 
+                                    : 'bg-[#ffffff] border border-[#e7ddd1] text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]'
                                 }`}
                               >
                                 {assetGrouped ? "Ungroup" : "Group by Type"}
@@ -1181,15 +1229,15 @@ export default function WebsiteScannerPage() {
                                         setAssetLimit(prev => prev + 50);
                                       }
                                     }}
-                                    className="px-4 py-2 bg-[var(--bg-page)]/60 border border-[var(--border-soft)] hover:border-orange-500/30 rounded-xl text-xs font-bold text-[var(--text-muted)] hover:text-orange-400 transition-all flex items-center gap-2 shadow-lg cursor-pointer"
+                                    className="px-4 py-2 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] text-[#1d1d1d] rounded-xl text-xs font-bold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] flex items-center gap-2 shadow-sm cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
                                   >
                                     {assetLimit >= filteredAssets.length ? (
                                       <>
-                                        Show Less <ChevronUp className="w-3.5 h-3.5 text-orange-400" />
+                                        Show Less <ChevronUp className="w-3.5 h-3.5" />
                                       </>
                                     ) : (
                                       <>
-                                        Show {filteredAssets.length - assetLimit} More Assets <ChevronDown className="w-3.5 h-3.5 text-orange-400" />
+                                        Show {filteredAssets.length - assetLimit} More Assets <ChevronDown className="w-3.5 h-3.5" />
                                       </>
                                     )}
                                   </button>
@@ -1470,13 +1518,13 @@ export default function WebsiteScannerPage() {
                             <div className="pt-4 flex gap-3">
                                <button 
                                  onClick={() => copyToClipboard(finding.reproduction_data?.payload || "")}
-                                 className="flex-1 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] border border-[var(--border-soft)] rounded-lg py-2.5 text-[11px] font-bold text-[var(--text-muted)] flex items-center justify-center gap-2 transition-all"
+                                 className="flex-1 bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] border border-[#e7ddd1] rounded-lg py-2.5 text-[11px] font-bold text-[#1d1d1d] flex items-center justify-center gap-2 transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none"
                                >
                                  <Copy className="w-3 h-3" /> COPY PAYLOAD
                                </button>
                                <button 
                                  onClick={() => window.open(finding.reproduction_data?.verification_url || finding.url, '_blank')}
-                                 className="flex-1 bg-[var(--primary-soft)] hover:opacity-90/20 border border-[var(--primary)] rounded-lg py-2.5 text-[11px] font-bold text-[var(--primary)] flex items-center justify-center gap-2 transition-all"
+                                 className="btn-animated btn-primary-emerald flex-1 rounded-lg py-2.5 text-[11px] font-bold flex items-center justify-center gap-2"
                                >
                                  <ExternalLink className="w-3 h-3" /> TEST MANUAL
                                </button>
@@ -1509,10 +1557,10 @@ export default function WebsiteScannerPage() {
                   key={item.id}
                   onClick={() => loadPastScan(item.id)}
                   disabled={isScanning}
-                  className="w-full text-left bg-[var(--bg-card)]/50 hover:bg-[var(--bg-elevated)]/50 border border-[var(--border-soft)] rounded-xl p-4 transition-all group"
+                  className="w-full text-left bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] border border-[#e7ddd1] rounded-xl p-4 transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm group motion-reduce:transition-colors motion-reduce:hover:transform-none"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium text-[var(--text-primary)] truncate pr-2 group-hover:text-[var(--primary)] transition-colors">
+                    <div className="font-semibold text-[#1d1d1d] truncate pr-2 group-hover:text-[#0f9d76] transition-colors">
                       {item.target.replace(/^https?:\/\//, '')}
                     </div>
                     {item.summary.risk_score != null && (

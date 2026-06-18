@@ -199,7 +199,7 @@ export function InfraHistoryContent() {
           <button
             type="button"
             onClick={fetchHistory}
-            className="flex-shrink-0 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors cursor-pointer"
+            className="flex-shrink-0 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 hover:border-red-300 transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none"
           >
             Retry
           </button>
@@ -282,7 +282,7 @@ export function InfraHistoryContent() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full h-10 px-3 border border-[var(--border-soft)] rounded-lg text-xs bg-[var(--bg-page)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full h-10 px-3 border border-[#e7ddd1] rounded-lg text-sm font-medium bg-[#ffffff] text-[#1d1d1d] focus:outline-none focus:border-[#0f9d76] focus:ring-1 focus:ring-[#0f9d76]/30 transition-colors"
               >
                 <option value="all">All States</option>
                 <option value="completed">Completed</option>
@@ -301,7 +301,7 @@ export function InfraHistoryContent() {
               <select
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value)}
-                className="w-full h-10 px-3 border border-[var(--border-soft)] rounded-lg text-xs bg-[var(--bg-page)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full h-10 px-3 border border-[#e7ddd1] rounded-lg text-sm font-medium bg-[#ffffff] text-[#1d1d1d] focus:outline-none focus:border-[#0f9d76] focus:ring-1 focus:ring-[#0f9d76]/30 transition-colors"
               >
                 <option value="all">All Risk Levels</option>
                 <option value="critical">Critical (≥ 75)</option>
@@ -327,10 +327,10 @@ export function InfraHistoryContent() {
                     key={t}
                     type="button"
                     onClick={() => toggleTypeFilter(t)}
-                    className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold capitalize transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold capitalize transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                       isSelected
-                        ? "border-emerald-500 bg-emerald-950/30 text-[var(--primary)]"
-                        : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                        ? "border-[#0f9d76] bg-[#edf8f3] text-[#0f9d76] shadow-sm font-bold"
+                        : "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:border-[#0f9d76]"
                     }`}
                   >
                     {t}
@@ -350,10 +350,10 @@ export function InfraHistoryContent() {
                   if (sortBy === "date") setSortOrder((o) => (o === "desc" ? "asc" : "desc"));
                   else setSortBy("date");
                 }}
-                className={`px-2.5 py-1.5 rounded border text-[10px] font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                   sortBy === "date"
-                    ? "border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-primary)]"
-                    : "border-transparent text-[var(--text-muted)]"
+                    ? "border-[#0f9d76] bg-[#edf8f3] text-[#0f9d76] shadow-sm font-bold"
+                    : "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:border-[#0f9d76]"
                 }`}
               >
                 Date {sortBy === "date" && (sortOrder === "desc" ? "↓" : "↑")}
@@ -364,10 +364,10 @@ export function InfraHistoryContent() {
                   if (sortBy === "risk") setSortOrder((o) => (o === "desc" ? "asc" : "desc"));
                   else setSortBy("risk");
                 }}
-                className={`px-2.5 py-1.5 rounded border text-[10px] font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                   sortBy === "risk"
-                    ? "border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-primary)]"
-                    : "border-transparent text-[var(--text-muted)]"
+                    ? "border-[#0f9d76] bg-[#edf8f3] text-[#0f9d76] shadow-sm font-bold"
+                    : "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:border-[#0f9d76]"
                 }`}
               >
                 Risk Score {sortBy === "risk" && (sortOrder === "desc" ? "↓" : "↑")}
@@ -488,10 +488,10 @@ export function InfraHistoryContent() {
                   type="button"
                   disabled={!canPrev}
                   onClick={() => setCurrentPage(1)}
-                  className={`p-1.5 rounded-lg border transition-all ${
+                  className={`p-1.5 rounded-lg border transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                     canPrev
-                      ? "border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
-                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
+                      ? "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] cursor-pointer"
+                      : "border-transparent text-[#8a8178] opacity-50 cursor-not-allowed hover:transform-none"
                   }`}
                   title="First page"
                 >
@@ -503,10 +503,10 @@ export function InfraHistoryContent() {
                   type="button"
                   disabled={!canPrev}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                     canPrev
-                      ? "border-[var(--border-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
-                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
+                      ? "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] cursor-pointer"
+                      : "border-transparent text-[#8a8178] opacity-50 cursor-not-allowed hover:transform-none"
                   }`}
                 >
                   <span className="flex items-center gap-1">
@@ -536,10 +536,10 @@ export function InfraHistoryContent() {
                           key={item}
                           type="button"
                           onClick={() => setCurrentPage(item as number)}
-                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                             currentPage === item
-                              ? "bg-[var(--primary)]/20 border border-[var(--primary)]/40 text-[var(--primary)] shadow-sm shadow-[var(--primary)]/10"
-                              : "border border-[var(--border-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                              ? "bg-[#edf8f3] border border-[#0f9d76] text-[#0f9d76] shadow-sm font-bold"
+                              : "border border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                           }`}
                         >
                           {item}
@@ -553,10 +553,10 @@ export function InfraHistoryContent() {
                   type="button"
                   disabled={!canNext}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                     canNext
-                      ? "border-[var(--border-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
-                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
+                      ? "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] cursor-pointer"
+                      : "border-transparent text-[#8a8178] opacity-50 cursor-not-allowed hover:transform-none"
                   }`}
                 >
                   <span className="flex items-center gap-1">
@@ -569,10 +569,10 @@ export function InfraHistoryContent() {
                   type="button"
                   disabled={!canNext}
                   onClick={() => setCurrentPage(totalPages)}
-                  className={`p-1.5 rounded-lg border transition-all ${
+                  className={`p-1.5 rounded-lg border transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                     canNext
-                      ? "border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
-                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
+                      ? "border-[#e7ddd1] bg-[#ffffff] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] cursor-pointer"
+                      : "border-transparent text-[#8a8178] opacity-50 cursor-not-allowed hover:transform-none"
                   }`}
                   title="Last page"
                 >

@@ -13,10 +13,14 @@ from app.models.user import (
     RefreshTokenRequest,
     MFAVerifyRequest,
     MFAChallengeRequest,
+    MFAEnrollRequest,
+    MFAVerifyEnrollmentRequest,
     MFAEnrollResponse,
 )
 from app.services.auth_service import AuthService
 from app.utils.limiter import limiter
+from app.config import settings
+from supabase import create_client
 
 router = APIRouter()
 
@@ -107,25 +111,109 @@ async def logout(
 
 
 @router.post("/mfa/enroll", response_model=MFAEnrollResponse)
-async def mfa_enroll(current_user: dict = Depends(get_current_user), supabase: Client = Depends(get_supabase)):
+async def mfa_enroll(request_body: MFAEnrollRequest, request: Request, current_user: dict = Depends(get_current_user)):
     """Enroll the current user in TOTP MFA."""
     try:
-        res = supabase.auth.mfa.enroll(factor_type="totp")
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+        
+        access_token = auth_header.split(" ")[1]
+        
+        user_client = create_client(settings.supabase_url, settings.supabase_service_role_key)
+        user_client.auth.set_session(access_token, request_body.refresh_token)
+        
+        res = user_client.auth.mfa.enroll({
+            "factor_type": "totp",
+            "issuer": "TIBSA-Authenticator",
+            "friendly_name": "TIBSA-Authenticator"
+        })
         return {
             "factor_id": res.id,
-            "totp_uri": res.totp.qr_code,  # Returns svg string
-            "qr_code": res.totp.qr_code,
+            "totp_uri": getattr(res.totp, "uri", ""),
+            "qr_code": getattr(res.totp, "qr_code", ""),
+            "secret": getattr(res.totp, "secret", "")
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/mfa/challenge")
-async def mfa_challenge(request: MFAChallengeRequest, current_user: dict = Depends(get_current_user), supabase: Client = Depends(get_supabase)):
+async def mfa_challenge(request_body: MFAChallengeRequest, request: Request, current_user: dict = Depends(get_current_user)):
     """Create a challenge for a factor."""
     try:
-        res = supabase.auth.mfa.challenge(request.factor_id)
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+            
+        access_token = auth_header.split(" ")[1]
+        
+        user_client = create_client(settings.supabase_url, settings.supabase_service_role_key)
+        user_client.auth.set_session(access_token, request_body.refresh_token)
+        
+        res = user_client.auth.mfa.challenge({"factor_id": request_body.factor_id})
         return {"challenge_id": res.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/mfa/verify-enrollment")
+async def mfa_verify_enrollment(request_body: MFAVerifyEnrollmentRequest, request: Request, current_user: dict = Depends(get_current_user)):
+    """Verify a TOTP code during initial MFA enrollment."""
+    try:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+            
+        access_token = auth_header.split(" ")[1]
+        
+        user_client = create_client(settings.supabase_url, settings.supabase_service_role_key)
+        user_client.auth.set_session(access_token, request_body.refresh_token)
+        
+        res = user_client.auth.mfa.verify({
+            "factor_id": request_body.factor_id,
+            "challenge_id": request_body.challenge_id,
+            "code": request_body.code
+        })
+        return {"message": "MFA enrollment verified successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/mfa/status")
+async def get_mfa_status(current_user: dict = Depends(get_current_user)):
+    """Check if the user has verified MFA enabled."""
+    try:
+        auth_user = current_user["auth_user"]
+        factors = getattr(auth_user, "factors", []) or []
+        has_verified_totp = any(
+            getattr(f, "factor_type", None) == "totp" and getattr(f, "status", None) == "verified"
+            for f in factors
+        )
+        
+        return {"is_enrolled": has_verified_totp}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/mfa/unenroll-unverified")
+async def mfa_unenroll_unverified(current_user: dict = Depends(get_current_user), supabase: Client = Depends(get_supabase)):
+    """Unenroll any unverified TOTP factors for the current user using admin API."""
+    try:
+        auth_user = current_user["auth_user"]
+        factors = getattr(auth_user, "factors", []) or []
+        
+        unverified_factors = [
+            f for f in factors
+            if getattr(f, "factor_type", None) == "totp" and getattr(f, "status", None) == "unverified"
+        ]
+        
+        for factor in unverified_factors:
+            supabase.auth.admin.mfa.delete_factor(
+                user_id=auth_user.id,
+                id=factor.id
+            )
+            
+        return {"message": "Unverified factors removed"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

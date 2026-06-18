@@ -16,13 +16,13 @@ export function Button({
     ...props
 }: ButtonProps) {
     const baseClasses =
-        "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
+        "inline-flex items-center justify-center font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-1 focus:ring-offset-[var(--bg-main)] btn-animated";
 
     const variants = {
-        primary: "bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] focus:ring-[var(--primary)] shadow-lg shadow-[var(--primary-soft)]",
-        secondary: "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] focus:ring-[var(--primary)] border border-[var(--border-soft)]",
-        danger: "bg-red-600 text-[var(--text-primary)] hover:bg-red-500 focus:ring-red-500",
-        ghost: "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] focus:ring-[var(--primary)]",
+        primary: "btn-primary-emerald",
+        secondary: "btn-secondary-soft",
+        danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-500 shadow-md",
+        ghost: "btn-ghost-soft",
     };
 
     const sizes = {

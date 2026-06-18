@@ -8,19 +8,19 @@ import { api } from "@/lib/api";
 
 // ── Page title map ───────────────────────────────────────────
 const PAGE_TITLES: Record<string, string> = {
-    "/dashboard":                "Dashboard",
-    "/dashboard/scans":          "Security Scans",
-    "/dashboard/threats":        "Threat Intelligence",
+    "/dashboard": "Dashboard",
+    "/dashboard/scans": "Security Scans",
+    "/dashboard/threats": "Threat Intelligence",
     "/dashboard/threat-modeling": "Threat Modeling",
-    "/dashboard/reports":        "Reports History",
-    "/dashboard/profile":        "Profile Settings",
-    "/admin":                    "Admin Overview",
-    "/admin/users":              "User Management",
-    "/admin/threats":            "Threat Feeds",
-    "/admin/analytics":          "Platform Analytics",
-    "/admin/system":             "System Health",
-    "/admin/audit":              "Audit Log",
-    "/admin/settings":           "System Settings",
+    "/dashboard/reports": "Reports History",
+    "/dashboard/profile": "Profile Settings",
+    "/admin": "Admin Overview",
+    "/admin/users": "User Management",
+    "/admin/threats": "Threat Feeds",
+    "/admin/analytics": "Platform Analytics",
+    "/admin/system": "System Health",
+    "/admin/audit": "Audit Log",
+    "/admin/settings": "System Settings",
 };
 
 // ── Notification types ───────────────────────────────────────
@@ -47,7 +47,7 @@ function timeAgo(dateStr: string): string {
 
 const NOTIF_ICON_COLOR: Record<string, string> = {
     threat: "text-red-400 bg-red-500/15",
-    scan:   "text-[var(--primary)] bg-[var(--primary)]/15",
+    scan: "text-[var(--primary)] bg-[var(--primary)]/15",
     system: "text-amber-400 bg-amber-500/15",
 };
 
@@ -64,7 +64,7 @@ function getBreadcrumbs(pathname: string): string[] {
     if (pathname === "/admin/users") return ["TIBSA", "Admin", "Users"];
     if (pathname === "/admin/threats") return ["TIBSA", "Admin", "Threats"];
     if (pathname === "/admin/system") return ["TIBSA", "Admin", "System"];
-    
+
     const parts = pathname.split("/").filter(Boolean);
     return ["TIBSA", ...parts.map(p => p.charAt(0).toUpperCase() + p.slice(1))];
 }
@@ -75,12 +75,26 @@ export function DashboardHeader() {
 
     const [profileOpen, setProfileOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
+    const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
 
     const unread = notifications.filter((n) => !n.read).length;
+    const visibleNotifications = notifications.slice(0, 5);
+    const remainingCount = Math.max(0, notifications.length - 5);
+
+    // Close modal on Escape
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setIsNotificationsModalOpen(false);
+        };
+        if (isNotificationsModalOpen) {
+            window.addEventListener("keydown", handleKeyDown);
+        }
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isNotificationsModalOpen]);
 
     // First letter for avatar
     const initial = user?.full_name?.charAt(0)?.toUpperCase() || "U";
@@ -169,11 +183,10 @@ export function DashboardHeader() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                     </svg>
                                 )}
-                                <span className={`text-[12px] font-semibold tracking-wide transition-colors ${
-                                    idx === arr.length - 1 
-                                        ? "text-[var(--primary)] font-extrabold" 
+                                <span className={`text-[12px] font-semibold tracking-wide transition-colors ${idx === arr.length - 1
+                                        ? "text-[var(--primary)] font-extrabold"
                                         : "text-[var(--text-muted)]/80 hover:text-[var(--text-secondary)]"
-                                }`}>
+                                    }`}>
                                     {crumb}
                                 </span>
                             </div>
@@ -188,7 +201,11 @@ export function DashboardHeader() {
                     <div ref={notifRef} className="relative">
                         <button
                             onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
-                            className="relative flex items-center justify-center w-9 h-9 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all"
+                            className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-180 active:scale-96 ${
+                                notifOpen
+                                    ? "bg-[#0f9d76] border border-[#0f9d76] text-[#ffffff]"
+                                    : "bg-[#ffffff] border border-[#e7ddd1] text-[#4f4a45] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76] hover:-translate-y-[1px] hover:shadow-[0_8px_20px_rgba(15,157,118,0.16)]"
+                            }`}
                             aria-label="Notifications"
                         >
                             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -196,7 +213,7 @@ export function DashboardHeader() {
                             </svg>
                             {/* Badge */}
                             {unread > 0 && (
-                                <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-[var(--text-primary)] px-1 shadow-lg shadow-red-500/30 ring-2 ring-[#0f172a]">
+                                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#dc2626] text-[10px] font-bold text-white px-1 shadow-sm ring-2 ring-[#ffffff] animate-in zoom-in-90 duration-180">
                                     {unread}
                                 </span>
                             )}
@@ -214,11 +231,11 @@ export function DashboardHeader() {
                                     )}
                                 </div>
                                 <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04]">
-                                    {notifications.length === 0 ? (
+                                    {visibleNotifications.length === 0 ? (
                                         <div className="px-4 py-8 text-center text-[var(--text-muted)] text-sm">
                                             No notifications yet
                                         </div>
-                                    ) : notifications.map((n) => (
+                                    ) : visibleNotifications.map((n) => (
                                         <button
                                             key={n.id}
                                             onClick={() => markOneRead(n.id)}
@@ -226,13 +243,13 @@ export function DashboardHeader() {
                                         >
                                             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${NOTIF_ICON_COLOR[n.type] || NOTIF_ICON_COLOR.system}`}>
                                                 {n.type === "threat" && (
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                                 )}
                                                 {n.type === "scan" && (
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                                                 )}
                                                 {n.type === "system" && (
-                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -246,9 +263,20 @@ export function DashboardHeader() {
                                         </button>
                                     ))}
                                 </div>
-                                <div className="border-t border-[var(--border-strong)] px-4 py-2.5">
-                                    <button className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors font-medium w-full text-center">
+                                <div className="border-t border-[var(--border-strong)] px-2 py-2">
+                                    <button 
+                                        onClick={() => {
+                                            setIsNotificationsModalOpen(true);
+                                            setNotifOpen(false);
+                                        }}
+                                        className="flex items-center justify-center gap-1.5 w-full py-2 px-4 rounded-lg text-xs font-semibold text-[#0f9d76] bg-transparent hover:bg-[#edf8f3] hover:text-[#0b7d5d] transition-all duration-180 hover:-translate-y-[1px] active:scale-98"
+                                    >
                                         View all notifications
+                                        {remainingCount > 0 && (
+                                            <span className="bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/25 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide">
+                                                +{remainingCount}
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -262,62 +290,66 @@ export function DashboardHeader() {
                     <div ref={profileRef} className="relative">
                         <button
                             onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }}
-                            className="flex items-center gap-2.5 pl-1 pr-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] transition-all group"
+                            className={`flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-2xl border transition-all duration-200 group ${
+                                profileOpen
+                                    ? "bg-[#edf8f3] border-[#0f9d76]"
+                                    : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
+                            }`}
                         >
                             {/* Avatar */}
                             <div className="relative flex-shrink-0">
-                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] flex items-center justify-center shadow-md shadow-[var(--primary-soft)] ring-2 ring-white/[0.08]">
+                                <div className="h-8 w-8 rounded-full bg-[#0f9d76] flex items-center justify-center shadow-sm">
                                     <span className="text-[13px] font-bold text-white leading-none">{initial}</span>
                                 </div>
                                 {/* Online indicator */}
-                                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-400 border-2 border-[#0f172a]" />
+                                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-[#ffffff]" />
                             </div>
                             {/* Name + role */}
                             <div className="hidden lg:flex flex-col items-start">
-                                <span className="text-[13px] font-medium text-[#f1f5f9] leading-tight">{user?.full_name || "User"}</span>
-                                <span className="text-[10px] text-[var(--text-muted)] capitalize leading-tight">{user?.role || "user"}</span>
+                                <span className="text-[13px] font-bold text-[#1d1d1d] leading-tight">{user?.full_name || "User"}</span>
+                                <span className="text-[10px] font-semibold text-[#4f4a45] capitalize leading-tight mt-0.5">{user?.role || "user"}</span>
                             </div>
                             {/* Dropdown arrow */}
-                            <svg className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <svg className={`w-3.5 h-3.5 text-[#4f4a45] transition-transform duration-200 ml-1 ${profileOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
 
                         {/* Profile dropdown */}
                         {profileOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-[#ffffff] border border-[#e7ddd1] shadow-[0_12px_32px_rgba(15,157,118,0.1)] overflow-hidden animate-in fade-in zoom-in-98 slide-in-from-top-2 duration-200 ease-out">
                                 {/* User info header */}
-                                <div className="px-4 py-3 border-b border-[var(--border-strong)]">
-                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user?.full_name}</p>
-                                    <p className="text-xs text-[var(--text-muted)] truncate">{user?.email}</p>
+                                <div className="px-4 py-3 border-b border-[#e7ddd1] bg-[#fcf9f5]">
+                                    <p className="text-sm font-bold text-[#1d1d1d] truncate">{user?.full_name}</p>
+                                    <p className="text-xs font-medium text-[#8a8178] truncate mt-0.5">{user?.email}</p>
                                 </div>
                                 {/* Menu items */}
-                                <div className="py-1">
+                                <div className="py-1.5">
                                     <Link href="/dashboard/profile" onClick={() => setProfileOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-                                        <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] transition-colors group/item">
+                                        <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                         Profile Settings
                                     </Link>
                                     {user?.role === "admin" && (
                                         <Link href="/admin" onClick={() => setProfileOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
-                                            <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
+                                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] transition-colors group/item">
+                                            <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" />
                                             </svg>
                                             TIBSA SOC Nexus
                                         </Link>
                                     )}
                                 </div>
                                 {/* Logout */}
-                                <div className="border-t border-[var(--border-strong)] py-1">
+                                <div className="border-t border-[#e7ddd1] py-1.5 bg-[#fcf9f5]">
                                     <button
                                         onClick={() => { setProfileOpen(false); logout(); }}
-                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors group/logout"
                                     >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        <svg className="w-4 h-4 text-red-400 group-hover/logout:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                         </svg>
                                         Sign Out
                                     </button>
@@ -327,6 +359,73 @@ export function DashboardHeader() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal for All Notifications */}
+            {isNotificationsModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-[#1f1717]/25 backdrop-blur-[8px] animate-in fade-in duration-200"
+                        onClick={() => setIsNotificationsModalOpen(false)}
+                    />
+                    {/* Modal Card */}
+                    <div className="relative w-full max-w-[680px] max-h-[75vh] flex flex-col bg-[#fffaf4] border border-[#e7ddd1] rounded-[20px] shadow-[0_24px_70px_rgba(31,23,23,0.18)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-start justify-between px-6 py-5 border-b border-[#e7ddd1] bg-[#ffffff] shrink-0">
+                            <div>
+                                <h2 className="text-xl font-bold text-[#1d1d1d]">All Notifications</h2>
+                                <p className="text-xs text-[#4f4a45] mt-1">Review recent platform and security updates</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsNotificationsModalOpen(false)}
+                                className="p-1.5 rounded-lg text-[#8a8178] hover:bg-[#edf8f3] hover:text-[#0f9d76] transition-colors"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        {/* List */}
+                        <div className="flex-1 overflow-y-auto p-2">
+                            {notifications.length === 0 ? (
+                                <div className="py-20 text-center text-[#8a8178]">
+                                    No notifications found.
+                                </div>
+                            ) : (
+                                <div className="space-y-1">
+                                    {notifications.map((n) => (
+                                        <button
+                                            key={n.id}
+                                            onClick={() => markOneRead(n.id)}
+                                            className={`w-full text-left px-4 py-4 rounded-xl flex gap-4 hover:bg-[#ffffff] border border-transparent transition-colors ${!n.read ? "bg-[#0f9d76]/[0.04] border-[#0f9d76]/20" : ""}`}
+                                        >
+                                            <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${NOTIF_ICON_COLOR[n.type] || NOTIF_ICON_COLOR.system}`}>
+                                                {n.type === "threat" && (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                                )}
+                                                {n.type === "scan" && (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
+                                                )}
+                                                {n.type === "system" && (
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className={`text-sm font-bold truncate ${!n.read ? "text-[#1d1d1d]" : "text-[#4f4a45]"}`}>{n.title}</p>
+                                                    {!n.read && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-[#0f9d76] shadow-[0_0_8px_rgba(15,157,118,0.5)]" />}
+                                                </div>
+                                                <p className="text-xs text-[#8a8178] mt-1 leading-relaxed line-clamp-2">{n.body}</p>
+                                                <p className="text-[10px] font-semibold text-[#8a8178] mt-2 uppercase tracking-wider">{timeAgo(n.created_at)}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
     );
 }

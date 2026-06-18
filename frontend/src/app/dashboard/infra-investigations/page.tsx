@@ -301,10 +301,10 @@ export default function InfraScannerPage() {
                       key={t.key}
                       type="button"
                       onClick={() => setTargetType(t.key)}
-                      className={`py-1.5 rounded-lg border text-[10px] font-bold capitalize transition-all cursor-pointer ${
+                      className={`py-1.5 rounded-lg border text-xs font-semibold capitalize transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                         targetType === t.key
-                          ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary)] font-extrabold shadow-sm"
-                          : "border-[var(--border-strong)] bg-[var(--bg-page)]/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                          ? "bg-[#edf8f3] border-[#0f9d76] text-[#0f9d76] shadow-sm font-bold"
+                          : "bg-[#ffffff] border-[#e7ddd1] text-[#4f4a45] hover:bg-[#edf8f3] hover:border-[#0f9d76] hover:text-[#0f9d76]"
                       }`}
                     >
                       {t.label}
@@ -362,29 +362,29 @@ export default function InfraScannerPage() {
                   <div
                     key={opt.id}
                     onClick={() => opt.set(!opt.state)}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer select-none transition-all duration-200 ${
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer select-none transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.98] motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                       opt.state
-                        ? "border-[var(--primary)] bg-[var(--primary-soft)]"
-                        : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-card)]/30"
+                        ? "border-[#0f9d76] bg-[#edf8f3] shadow-sm"
+                        : "border-[#e7ddd1] bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <div className={`p-1.5 rounded-lg border transition-colors ${
                         opt.state
-                          ? "text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/20"
-                          : "text-[var(--text-muted)] bg-[var(--bg-card)]/40 border-[var(--border-soft)]"
+                          ? "text-[#0f9d76] bg-[#0f9d76]/10 border-[#0f9d76]/20"
+                          : "text-[#8a8178] bg-[#fcfcfb] border-[#e7ddd1]"
                       }`}>
                         {opt.icon}
                       </div>
                       <div>
-                        <p className="text-[11px] font-bold text-[var(--text-primary)]">{opt.label}</p>
-                        <p className="text-[9px] text-[var(--text-muted)] leading-none mt-0.5">{opt.desc}</p>
+                        <p className={`text-xs font-bold transition-colors ${opt.state ? "text-[#0f9d76]" : "text-[#1d1d1d]"}`}>{opt.label}</p>
+                        <p className="text-[10px] text-[#4f4a45] leading-none mt-0.5 font-medium">{opt.desc}</p>
                       </div>
                     </div>
-                    <div className={`relative inline-flex h-4 w-7 rounded-full border-transparent transition-colors duration-200 ease-in-out ${
-                      opt.state ? "bg-[var(--primary)]" : "bg-[var(--bg-elevated)]"
+                    <div className={`relative inline-flex h-4 w-7 rounded-full border-transparent transition-colors duration-180 ease-in-out shadow-inner ${
+                      opt.state ? "bg-[#0f9d76]" : "bg-[#e7ddd1]"
                     }`}>
-                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out mt-[2px] ml-[2px] ${
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-md transition duration-180 ease-in-out mt-[2px] ml-[2px] ${
                         opt.state ? "translate-x-3.5" : "translate-x-0"
                       }`} />
                     </div>
@@ -402,9 +402,9 @@ export default function InfraScannerPage() {
                 type="submit"
                 variant="primary"
                 isLoading={isLaunching}
-                className="w-full justify-center gap-2 mt-2 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-md shadow-[var(--primary-soft)] hover:shadow-lg hover:shadow-[var(--primary-soft)] text-xs font-bold transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 mt-2 bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] !text-white rounded-lg py-2.5 text-sm font-semibold shadow-sm hover:shadow-md hover:from-[#0b7d5d] hover:to-[#086348] transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none"
               >
-                <Play className="w-3.5 h-3.5" /> Launch Intelligence Scan
+                <Play className="w-4 h-4" /> Launch Intelligence Scan
               </Button>
             </form>
           </Card>
@@ -440,26 +440,24 @@ export default function InfraScannerPage() {
                     // Reset tab to match currently selected target type if applicable, or default to domain
                     setActiveIocTab(targetType);
                   }}
-                  className="p-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-card)]/40 hover:border-[var(--primary)] transition-all duration-200 flex items-start gap-3 group cursor-pointer shadow-sm relative overflow-hidden"
+                  className="p-3.5 rounded-xl border border-[#e7ddd1] bg-[#ffffff] hover:bg-[#edf8f3] hover:border-[#0f9d76] transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.98] flex items-start gap-3 group cursor-pointer shadow-sm relative overflow-hidden motion-reduce:transition-colors motion-reduce:hover:transform-none"
                 >
-                  <div className="text-xs font-black text-[var(--primary)] bg-[var(--primary-soft)] border border-[var(--primary)]/30 px-2 py-0.5 rounded-lg group-hover:bg-[var(--primary)]/20 transition-colors">
+                  <div className="text-xs font-black text-[#0f9d76] bg-[#edf8f3] border border-[#0f9d76]/20 px-2 py-0.5 rounded-lg group-hover:bg-[#0f9d76]/10 transition-colors">
                     {stage.step}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-extrabold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">
+                      <h4 className="text-sm font-bold text-[#1d1d1d] group-hover:text-[#0f9d76] transition-colors">
                         {stage.name}
                       </h4>
-                      <span className="text-[9px] text-transparent group-hover:text-[var(--primary)] font-bold transition-all duration-300">
+                      <span className="text-[10px] text-transparent group-hover:text-[#0f9d76] font-bold transition-all duration-180">
                         Details &rarr;
                       </span>
                     </div>
-                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5 leading-snug">
+                    <p className="text-[11px] font-medium text-[#4f4a45] mt-0.5 leading-snug">
                       {stage.desc}
                     </p>
                   </div>
-                  {/* Subtle top border accent on hover */}
-                  <div className="absolute top-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
                 </div>
               ))}
             </div>
@@ -507,24 +505,24 @@ export default function InfraScannerPage() {
               </div>
               <button 
                 onClick={() => setSelectedStageKey(null)}
-                className="p-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all cursor-pointer"
+                className="p-2 rounded-lg bg-[#ffffff] border border-[#e7ddd1] text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76] transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.95] cursor-pointer shadow-sm motion-reduce:transition-colors motion-reduce:hover:transform-none"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* IOC Type Tabs row */}
-            <div className="flex bg-[var(--bg-page)]/40 border border-[var(--border-soft)] p-1 rounded-xl w-fit max-w-full overflow-x-auto gap-1 mb-4">
+            <div className="flex bg-[#ffffff] border border-[#e7ddd1] p-1.5 rounded-xl w-fit max-w-full overflow-x-auto gap-1 mb-4 shadow-sm">
               {["domain", "ip", "url", "hash", "email"].map((iocTab) => {
                 const isActive = activeIocTab === iocTab;
                 return (
                   <button
                     key={iocTab}
                     onClick={() => setActiveIocTab(iocTab)}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold capitalize transition-all duration-200 whitespace-nowrap cursor-pointer border ${
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold capitalize transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] whitespace-nowrap cursor-pointer border motion-reduce:transition-colors motion-reduce:hover:transform-none ${
                       isActive
-                        ? "bg-[var(--primary-soft)] border-[var(--primary)] text-[var(--primary)] shadow-sm"
-                        : "border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+                        ? "bg-[#edf8f3] border-[#0f9d76] text-[#0f9d76] shadow-sm font-bold"
+                        : "border-transparent text-[#4f4a45] hover:text-[#0f9d76] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
                     }`}
                   >
                     {iocTab}
@@ -566,7 +564,7 @@ export default function InfraScannerPage() {
               <span className="text-[9px] text-[var(--text-muted)] font-mono font-medium">TIBSA Platform Flow 2 Pipeline Telemetry</span>
               <button 
                 onClick={() => setSelectedStageKey(null)}
-                className="px-4 py-2 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white rounded-lg text-xs font-bold transition-all duration-200 shadow-sm"
+                className="px-5 py-2 bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] !text-white rounded-lg text-sm font-semibold transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] shadow-sm hover:shadow-md hover:from-[#0b7d5d] hover:to-[#086348] motion-reduce:transition-colors motion-reduce:hover:transform-none cursor-pointer"
               >
                 Close Details
               </button>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { Button, Input } from "@/components/ui";
 import { QRCodeSVG } from "qrcode.react";
 import { CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
 
 export function MFAEnrollment() {
     const [factorId, setFactorId] = useState<string | null>(null);
@@ -16,64 +17,49 @@ export function MFAEnrollment() {
     const [isEnrolled, setIsEnrolled] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
 
+    const { token } = useAuth();
+
     // Check if user is already enrolled
     useEffect(() => {
         const checkMfaStatus = async () => {
+            if (!token) return;
             try {
-                const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-                if (error) {
-                    console.error("Failed to fetch MFA status", error);
-                    return;
-                }
-                
-                // Fetch user factors to see if any TOTP factor is verified
-                const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-                if (factorsError) {
-                    console.error("Failed to list factors", factorsError);
-                    return;
-                }
-                
-                const hasVerifiedTotp = factorsData?.totp?.some(factor => factor.status === 'verified');
-                
-                if (data?.currentLevel === "aal2" || data?.nextLevel === "aal2" || hasVerifiedTotp) {
+                const data = await api.get<{ is_enrolled: boolean }>("/api/v1/auth/mfa/status", token);
+                if (data && data.is_enrolled) {
                     setIsEnrolled(true);
                 }
+            } catch (error) {
+                console.error("Failed to fetch MFA status", error);
             } finally {
                 setIsChecking(false);
             }
         };
         checkMfaStatus();
-    }, []);
+    }, [token]);
 
     const handleEnroll = async () => {
         setIsLoading(true);
         try {
-            // 1. Fetch existing factors
-            const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-            if (factorsError) throw factorsError;
+            if (!token) throw new Error("Not authenticated");
 
-            // 2. Unenroll any unverified TOTP factors
-            if (factorsData?.totp) {
-                const unverifiedFactors = factorsData.totp.filter(factor => factor.status === "unverified");
-                for (const factor of unverifiedFactors) {
-                    const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
-                    if (unenrollError) {
-                        console.error("Failed to unenroll previous factor:", unenrollError);
-                    }
-                }
+            // 1. Unenroll any unverified TOTP factors to avoid garbage
+            try {
+                await api.delete("/api/v1/auth/mfa/unenroll-unverified", token);
+            } catch (e) {
+                console.warn("Could not clean up unverified factors", e);
             }
 
-            // 3. Enroll with a unique friendly name
-            const { data, error } = await supabase.auth.mfa.enroll({
-                factorType: "totp",
-                friendlyName: `TIBSA-Authenticator-${Date.now()}`,
-            });
+            // 2. Enroll via backend
+            const payload = { refresh_token: localStorage.getItem("tibsa_refresh_token") || "dummy" };
+            const data = await api.post<any>("/api/v1/auth/mfa/enroll", payload, token);
 
-            if (error) throw error;
+            if (!data.factor_id || !data.totp_uri) {
+                throw new Error("Invalid response from server");
+            }
 
-            setFactorId(data.id);
-            setQrCode(data.totp.uri);
-            setTotpSecret(data.totp.secret);
+            setFactorId(data.factor_id);
+            setQrCode(data.totp_uri); // The URI used for QRCodeSVG
+            setTotpSecret(data.secret || (data.totp_uri ? new URL(data.totp_uri).searchParams.get("secret") : null));
         } catch (err: any) {
             toast.error("Enrollment Failed", { description: err.message || "Failed to initiate MFA enrollment" });
         } finally {
@@ -83,31 +69,34 @@ export function MFAEnrollment() {
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!factorId) return;
+        if (!factorId || !token) return;
 
         setIsLoading(true);
 
         try {
-            // First challenge the factor
-            const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
-                factorId,
-            });
+            const payloadBase = { refresh_token: localStorage.getItem("tibsa_refresh_token") || "dummy" };
 
-            if (challengeError) throw challengeError;
+            // First challenge the factor
+            const challengeData = await api.post<{ challenge_id: string }>("/api/v1/auth/mfa/challenge", {
+                factor_id: factorId,
+                ...payloadBase
+            }, token);
+
+            if (!challengeData.challenge_id) throw new Error("Failed to create challenge");
 
             // Then verify
-            const { error: verifyError } = await supabase.auth.mfa.verify({
-                factorId,
-                challengeId: challengeData.id,
+            await api.post("/api/v1/auth/mfa/verify-enrollment", {
+                factor_id: factorId,
+                challenge_id: challengeData.challenge_id,
                 code: verifyCode,
-            });
-
-            if (verifyError) throw verifyError;
+                ...payloadBase
+            }, token);
 
             setIsEnrolled(true);
             setFactorId(null);
             setQrCode(null);
             setVerifyCode("");
+            toast.success("Authenticator App Linked", { description: "Two-Factor Authentication is now active." });
         } catch (err: any) {
             toast.error("Verification Failed", { description: err.message || "Failed to verify code" });
         } finally {

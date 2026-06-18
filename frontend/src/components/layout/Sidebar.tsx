@@ -225,7 +225,7 @@ export function Sidebar() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`flex items-center rounded-lg text-xs font-bold transition-all duration-200 relative group cursor-pointer ${isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
+                                className={`flex items-center rounded-lg text-xs font-bold transition-all duration-200 relative group cursor-pointer sidebar-btn ${isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
                                     } ${isActive
                                         ? "bg-[var(--primary)] text-white shadow-md shadow-[var(--primary-soft)]"
                                         : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--primary)]"
@@ -252,7 +252,7 @@ export function Sidebar() {
                 <div className="pt-4 border-t border-[var(--border-soft)]">
                     <Link
                         href={isAdminSection ? "/dashboard" : "/admin"}
-                        className={`flex items-center text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors ${isCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
+                        className={`flex items-center text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors sidebar-btn ${isCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
                             }`}
                         title={isCollapsed ? (isAdminSection ? "TIBSA Shield" : "TIBSA SOC Nexus") : undefined}
                     >

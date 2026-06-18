@@ -36,23 +36,23 @@ const LoadingDotsRing = () => (
     {/* Inner glowing pulse */}
     <div className="absolute w-24 h-24 rounded-full bg-[var(--primary)]/5 border border-[var(--primary)] animate-pulse flex items-center justify-center">
       <div className="flex space-x-1.5 justify-center items-center">
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.3s] shadow-lg shadow-[var(--primary-soft)]" />
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.15s] shadow-lg shadow-[var(--primary-soft)]" />
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce shadow-lg shadow-[var(--primary-soft)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#0f9d76] animate-bounce [animation-delay:-0.3s] shadow-lg shadow-[var(--primary-soft)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#0f9d76] animate-bounce [animation-delay:-0.15s] shadow-lg shadow-[var(--primary-soft)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#0f9d76] animate-bounce shadow-lg shadow-[var(--primary-soft)]" />
       </div>
     </div>
-    
+
     {/* Spinning dotted orbits */}
     <div className="absolute inset-0 animate-spin [animation-duration:8s] rounded-full border border-dashed border-[var(--primary)]" />
     <div className="absolute inset-2.5 animate-spin [animation-duration:12s] [animation-direction:reverse] rounded-full border border-dotted border-[var(--primary)]" />
-    
+
     {/* Sonar sweep SVG dots */}
     <svg className="absolute w-full h-full animate-spin [animation-duration:4s]" viewBox="0 0 100 100">
-      <circle cx="50" cy="10" r="3.5" className="fill-blue-500 shadow-md shadow-blue-500" />
-      <circle cx="78" cy="22" r="3" className="fill-blue-400/80" />
-      <circle cx="90" cy="50" r="2.5" className="fill-blue-400/60" />
-      <circle cx="78" cy="78" r="2" className="fill-blue-400/40" />
-      <circle cx="50" cy="90" r="1.5" className="fill-blue-400/20" />
+      <circle cx="50" cy="10" r="3.5" className="fill-[#0f9d76] shadow-md shadow-[#0f9d76]" />
+      <circle cx="78" cy="22" r="3" className="fill-[#0f9d76]/80" />
+      <circle cx="90" cy="50" r="2.5" className="fill-[#0f9d76]/60" />
+      <circle cx="78" cy="78" r="2" className="fill-[#0f9d76]/40" />
+      <circle cx="50" cy="90" r="1.5" className="fill-[#0f9d76]/20" />
     </svg>
   </div>
 );
@@ -100,9 +100,9 @@ export default function LiveInvestigationWorkspace() {
 
   useEffect(() => {
     if (!investigation) return;
-    
+
     const started = new Date(investigation.started_at).getTime();
-    
+
     const updateTime = () => {
       let diffMs = 0;
       if (investigation.status === "completed" || investigation.status === "failed" || investigation.status === "stopped") {
@@ -123,7 +123,7 @@ export default function LiveInvestigationWorkspace() {
     };
 
     updateTime();
-    
+
     // Only poll clock if investigation is still running
     if (investigation.status !== "completed" && investigation.status !== "failed" && investigation.status !== "stopped") {
       const interval = setInterval(updateTime, 1000);
@@ -136,7 +136,7 @@ export default function LiveInvestigationWorkspace() {
     if (!investigation) return false;
     const progress = investigation.progress_percent;
     const status = investigation.status as string;
-    
+
     if (status === "completed" || status === "stopped") return true;
 
     switch (tab) {
@@ -167,7 +167,7 @@ export default function LiveInvestigationWorkspace() {
         </span>
       );
     }
-    
+
     // Add pulsing green dot if completed and just unlocked
     return (
       <span className="flex items-center gap-1.5">
@@ -180,14 +180,14 @@ export default function LiveInvestigationWorkspace() {
     if (!id || !token) return;
     try {
       setExportLoading(format);
-      
+
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const res = await fetch(`${API_BASE_URL}/api/v1/investigations/${id}/export/${format}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      
+
       if (!res.ok) {
         throw new Error("Failed to export report files.");
       }
@@ -396,19 +396,18 @@ export default function LiveInvestigationWorkspace() {
           ].map((tab) => {
             const unlocked = isTabUnlocked(tab.key);
             const active = activeTab === tab.key;
-            
+
             return (
               <button
                 key={tab.key}
                 disabled={!unlocked}
                 onClick={() => setActiveTab(tab.key)}
-                className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
-                  active
-                    ? "border-blue-500 text-[var(--primary)]"
+                className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${active
+                    ? "border-[#0f9d76] bg-[#edf8f3] text-[#0f9d76]"
                     : unlocked
-                    ? "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
-                }`}
+                      ? "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
+                  }`}
               >
                 {getTabLabel(tab.key, tab.label)}
               </button>
@@ -564,39 +563,38 @@ export default function LiveInvestigationWorkspace() {
                                     {t.category}
                                   </span>
                                 </td>
-                                  <td className="py-4 px-4 font-semibold text-[var(--text-primary)]">
-                                    {(() => {
-                                      const parts = (t.attack_scenario || "").split("[Evidence Tracing]");
-                                      const mainDesc = parts[0].trim();
-                                      const evidence = parts.slice(1).join("[Evidence Tracing]").trim();
-                                      return (
-                                        <div className="space-y-1.5 font-normal">
-                                          <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
-                                            {mainDesc}
-                                          </p>
-                                          {evidence && (
-                                            <details className="group mt-2">
-                                              <summary className="text-[11px] text-[var(--primary)]/80 hover:text-[var(--primary)] cursor-pointer select-none font-medium outline-none flex items-center gap-1">
-                                                <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
-                                                View Technical Evidence
-                                              </summary>
-                                              <pre className="mt-1.5 p-2.5 rounded bg-[var(--bg-page)]/50 border border-[var(--border-soft)] text-[10px] text-[var(--text-muted)] font-mono overflow-x-auto max-w-xl whitespace-pre-wrap leading-relaxed">
-                                                {evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}
-                                              </pre>
-                                            </details>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
-                                  </td>
+                                <td className="py-4 px-4 font-semibold text-[var(--text-primary)]">
+                                  {(() => {
+                                    const parts = (t.attack_scenario || "").split("[Evidence Tracing]");
+                                    const mainDesc = parts[0].trim();
+                                    const evidence = parts.slice(1).join("[Evidence Tracing]").trim();
+                                    return (
+                                      <div className="space-y-1.5 font-normal">
+                                        <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+                                          {mainDesc}
+                                        </p>
+                                        {evidence && (
+                                          <details className="group mt-2">
+                                            <summary className="text-[11px] text-[var(--primary)]/80 hover:text-[var(--primary)] cursor-pointer select-none font-medium outline-none flex items-center gap-1">
+                                              <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
+                                              View Technical Evidence
+                                            </summary>
+                                            <pre className="mt-1.5 p-2.5 rounded bg-[var(--bg-page)]/50 border border-[var(--border-soft)] text-[10px] text-[var(--text-muted)] font-mono overflow-x-auto max-w-xl whitespace-pre-wrap leading-relaxed">
+                                              {evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}
+                                            </pre>
+                                          </details>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </td>
                                 <td className="py-4 px-4">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                                    (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${(t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
                                       ? "border-red-500/25 bg-red-500/10 text-red-400"
                                       : (t.severity ?? "").toLowerCase() === "medium"
-                                      ? "border-orange-500/25 bg-orange-500/10 text-orange-400"
-                                      : "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
-                                  }`}>
+                                        ? "border-orange-500/25 bg-orange-500/10 text-orange-400"
+                                        : "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+                                    }`}>
                                     {t.severity}
                                   </span>
                                 </td>
