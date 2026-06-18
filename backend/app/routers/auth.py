@@ -208,10 +208,10 @@ async def mfa_unenroll_unverified(current_user: dict = Depends(get_current_user)
         ]
         
         for factor in unverified_factors:
-            supabase.auth.admin.mfa.delete_factor(
-                user_id=auth_user.id,
-                id=factor.id
-            )
+            supabase.auth.admin.mfa.delete_factor({
+                "user_id": auth_user.id,
+                "id": factor.id
+            })
             
         return {"message": "Unverified factors removed"}
     except Exception as e:
