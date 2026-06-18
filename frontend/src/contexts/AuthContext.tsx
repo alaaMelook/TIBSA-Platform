@@ -4,10 +4,11 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { api } from "@/lib/api";
-import type { User, AuthState, LoginCredentials, RegisterCredentials } from "@/types";
+import type { User, AuthState, LoginCredentials, RegisterCredentials, LoginResponse } from "@/types";
 
 interface AuthContextType extends AuthState {
-    login: (credentials: LoginCredentials) => Promise<void>;
+    login: (credentials: LoginCredentials) => Promise<LoginResponse | void>;
+    verifyMfa: (factorId: string, code: string, tempToken: string) => Promise<any>;
     loginWithOAuth: (provider: "google" | "github") => Promise<void>;
     register: (credentials: RegisterCredentials) => Promise<void>;
     logout: () => Promise<void>;
@@ -52,87 +53,98 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isAuthenticated: true,
             });
         } catch (error: any) {
+            localStorage.removeItem("tibsa_access_token");
+            localStorage.removeItem("tibsa_refresh_token");
+            api.defaults.headers.common.Authorization = "";
+            setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+
             // Check if error is account deactivated
             if (error?.message?.includes("deactivated") || error?.message?.includes("inactive")) {
-                setState({
-                    user: null,
-                    token: null,
-                    isLoading: false,
-                    isAuthenticated: false,
-                });
                 setTimeout(() => {
                     router.push("/suspended-account");
                 }, 100);
                 return;
             }
 
-            // Backend might be down or profile not ready yet.
-            // Still mark as authenticated with basic info from Supabase session.
-            try {
-                const { data: { user: authUser } } = await supabase.auth.getUser(token);
-                if (authUser) {
-                    setState({
-                        user: {
-                            id: authUser.id,
-                            email: authUser.email || "",
-                            full_name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "",
-                            role: "user",
-                            is_active: true,
-                            created_at: authUser.created_at || "",
-                            updated_at: "",
-                        },
-                        token,
-                        isLoading: false,
-                        isAuthenticated: true,
-                    });
-                    return;
-                }
-            } catch {
-                // Supabase call also failed
-            }
-            setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+            // On generic fetchUser failure (e.g. 401/403), redirect to login
+            router.push("/login");
         }
     }, [router]);
 
-    // ─── Listen to Supabase auth state changes ───────────────
+    // ─── Initialize Auth State ───────────────
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                if (session?.access_token) {
-                    await fetchUser(session.access_token);
-                } else {
-                    setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
-                }
+        // Clear all old Supabase auth keys
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+                keysToRemove.push(key);
             }
-        );
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
 
-        // Check initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.access_token) {
-                fetchUser(session.access_token);
-            } else {
-                setState((prev) => ({ ...prev, isLoading: false }));
-            }
-        });
-
-        return () => subscription.unsubscribe();
+        const access_token = localStorage.getItem("tibsa_access_token");
+        if (access_token) {
+            api.defaults.headers.common.Authorization = `Bearer ${access_token}`;
+            setState({ user: null, token: access_token, isLoading: true, isAuthenticated: true });
+            fetchUser(access_token).catch(console.error);
+        } else {
+            setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+        }
     }, [fetchUser]);
 
     // ─── Auth Actions ─────────────────────────────────────────
     const login = async (credentials: LoginCredentials) => {
         // Use secure backend endpoint (enforces rate limits and auditing)
         try {
-            const res = await api.post<{ access_token: string, refresh_token: string }>("/api/v1/auth/login", credentials);
+            const res = await api.post<LoginResponse>("/api/v1/auth/login", credentials);
+            
+            if (res.mfa_required) {
+                // Do not set session yet, let the UI handle MFA
+                return res;
+            }
+
             if (res.access_token && res.refresh_token) {
-                const { error } = await supabase.auth.setSession({
-                    access_token: res.access_token,
-                    refresh_token: res.refresh_token
-                });
-                if (error) throw new Error(error.message);
-                await fetchUser(res.access_token);
+                localStorage.setItem("tibsa_access_token", res.access_token);
+                localStorage.setItem("tibsa_refresh_token", res.refresh_token);
+                api.defaults.headers.common.Authorization = `Bearer ${res.access_token}`;
+                setState({ user: null, token: res.access_token, isLoading: true, isAuthenticated: true });
+                fetchUser(res.access_token).catch(console.error);
             }
         } catch (err: any) {
             throw new Error(err.message || "Invalid credentials");
+        }
+    };
+
+    const verifyMfa = async (factorId: string, code: string, tempToken: string) => {
+        try {
+            console.log("[verifyMfa] calling api.post");
+            const res = await api.post<{ access_token: string, refresh_token: string }>(
+                "/api/v1/auth/mfa/verify",
+                { factor_id: factorId, code, mfa_token: tempToken }
+            );
+            console.log("[verifyMfa] api.post returned", res);
+            
+            if (res.access_token && res.refresh_token) {
+                localStorage.setItem("tibsa_access_token", res.access_token);
+                localStorage.setItem("tibsa_refresh_token", res.refresh_token);
+                api.defaults.headers.common.Authorization = `Bearer ${res.access_token}`;
+
+                // Immediately update state
+                setState(prev => ({
+                    ...prev,
+                    token: res.access_token,
+                    isAuthenticated: true,
+                }));
+
+                // Non-blocking fetch
+                fetchUser(res.access_token).catch(console.error);
+                
+                return res;
+            }
+            return res;
+        } catch (err: any) {
+            throw new Error(err.message || "Invalid verification code");
         }
     };
 
@@ -141,12 +153,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const res = await api.post<{ access_token: string, refresh_token: string }>("/api/v1/auth/register", credentials);
             if (res.access_token && res.refresh_token) {
-                const { error } = await supabase.auth.setSession({
-                    access_token: res.access_token,
-                    refresh_token: res.refresh_token
-                });
-                if (error) throw new Error(error.message);
-                await fetchUser(res.access_token);
+                localStorage.setItem("tibsa_access_token", res.access_token);
+                localStorage.setItem("tibsa_refresh_token", res.refresh_token);
+                api.defaults.headers.common.Authorization = `Bearer ${res.access_token}`;
+                setState({ user: null, token: res.access_token, isLoading: true, isAuthenticated: true });
+                fetchUser(res.access_token).catch(console.error);
             }
         } catch (err: any) {
             // Use generic error for user enumeration protection where possible
@@ -162,7 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (err) {
             console.error("Failed to log out on backend:", err);
         }
-        await supabase.auth.signOut();
+        localStorage.removeItem("tibsa_access_token");
+        localStorage.removeItem("tibsa_refresh_token");
+        api.defaults.headers.common.Authorization = "";
         setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
         router.push("/");
     };
@@ -178,14 +191,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const refreshUser = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-            await fetchUser(session.access_token);
+        const access_token = localStorage.getItem("tibsa_access_token");
+        if (access_token) {
+            await fetchUser(access_token);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ ...state, login, loginWithOAuth, register, logout, refreshUser }}>
+        <AuthContext.Provider value={{ ...state, login, verifyMfa, loginWithOAuth, register, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );

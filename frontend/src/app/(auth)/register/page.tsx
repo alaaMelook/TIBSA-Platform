@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, Input } from "@/components/ui";
+import { PasswordStrengthMeter } from "@/components/ui/PasswordStrengthMeter";
+import { toast } from "sonner";
 
 // ── Google SVG Icon ────────────────────────────────────────────
 function GoogleIcon() {
@@ -48,11 +50,11 @@ function OAuthButton({
                 border text-sm font-medium transition-all duration-200
                 disabled:opacity-50 disabled:cursor-not-allowed
                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e2d4a]
-                bg-white/[0.04] border-white/[0.12] text-slate-200 hover:bg-white/[0.09] hover:border-white/20 focus:ring-blue-500/50
+                bg-[var(--bg-elevated)] border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-strong)] focus:ring-[var(--primary)]/50
             `}
         >
             {isLoading ? (
-                <svg className="animate-spin w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -71,7 +73,6 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
     const { register, loginWithOAuth } = useAuth();
@@ -79,10 +80,9 @@ export default function RegisterPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
 
         if (password !== confirmPassword) {
-            setError("Passwords do not match");
+            toast.error("Registration Error", { description: "Passwords do not match" });
             return;
         }
 
@@ -92,43 +92,42 @@ export default function RegisterPage() {
             await register({ email, password, full_name: fullName });
             router.push("/dashboard");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Registration failed");
+            toast.error("Registration Failed", { description: err instanceof Error ? err.message : "An error occurred during registration" });
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleOAuth = async (provider: "google" | "github") => {
-        setError("");
         setOauthLoading(provider);
         try {
             await loginWithOAuth(provider);
             // Supabase will redirect the page
         } catch (err) {
-            setError(err instanceof Error ? err.message : `${provider} sign-in failed`);
+            toast.error("Sign-in Failed", { description: err instanceof Error ? err.message : `${provider} sign-in failed` });
             setOauthLoading(null);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] px-4 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-blue-600/[0.04] blur-3xl" />
+                <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary-hover)]/[0.04] blur-3xl" />
                 <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/[0.04] blur-3xl" />
             </div>
 
             <div className="w-full max-w-md relative">
                 {/* Logo & Heading */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 items-center justify-center mb-5 shadow-lg shadow-blue-600/25">
-                        <span className="text-white font-bold text-xl">T</span>
+                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] items-center justify-center mb-5 shadow-lg shadow-[var(--primary-soft)]">
+                        <span className="text-[var(--text-primary)] font-bold text-xl">T</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Create an account</h1>
-                    <p className="text-slate-400 mt-1.5 text-sm">Get started with TIBSA today</p>
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Create an account</h1>
+                    <p className="text-[var(--text-muted)] mt-1.5 text-sm">Get started with TIBSA today</p>
                 </div>
 
-                <div className="bg-[#1e2d4a] rounded-xl border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden">
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden">
                     {/* OAuth Section */}
                     <div className="p-6 pb-5 space-y-3">
                         <OAuthButton
@@ -145,21 +144,13 @@ export default function RegisterPage() {
 
                     {/* Divider */}
                     <div className="flex items-center gap-3 px-6">
-                        <div className="h-px flex-1 bg-white/[0.06]" />
-                        <span className="text-xs text-slate-500 font-medium tracking-wide">OR REGISTER WITH EMAIL</span>
-                        <div className="h-px flex-1 bg-white/[0.06]" />
+                        <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
+                        <span className="text-xs text-[var(--text-muted)] font-medium tracking-wide">OR REGISTER WITH EMAIL</span>
+                        <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
                     </div>
 
                     {/* Email Registration Form */}
                     <form onSubmit={handleSubmit} className="p-6 pt-5 space-y-4">
-                        {error && (
-                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400 flex items-start gap-2">
-                                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                {error}
-                            </div>
-                        )}
 
                         <Input
                             label="Full Name"
@@ -189,7 +180,8 @@ export default function RegisterPage() {
                                 required
                                 minLength={12}
                             />
-                            <p className="text-[10px] text-slate-500 pl-0.5">
+                            <PasswordStrengthMeter password={password} />
+                            <p className="text-[10px] text-[var(--text-muted)] pl-0.5">
                                 Must be at least 12 characters, including uppercase, lowercase, number, and special character.
                             </p>
                         </div>
@@ -208,19 +200,19 @@ export default function RegisterPage() {
                             Create Account
                         </Button>
 
-                        <p className="text-center text-sm text-slate-500">
+                        <p className="text-center text-sm text-[var(--text-muted)]">
                             Already have an account?{" "}
-                            <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                            <Link href="/login" className="text-[var(--primary)] hover:text-[var(--primary)] font-medium transition-colors">
                                 Sign In
                             </Link>
                         </p>
                     </form>
                 </div>
 
-                <p className="text-center text-xs text-slate-600 mt-6">
+                <p className="text-center text-xs text-[var(--text-muted)] mt-6">
                     By creating an account, you agree to our{" "}
-                    <span className="text-slate-500">Terms of Service</span> and{" "}
-                    <span className="text-slate-500">Privacy Policy</span>
+                    <span className="text-[var(--text-muted)]">Terms of Service</span> and{" "}
+                    <span className="text-[var(--text-muted)]">Privacy Policy</span>
                 </p>
             </div>
         </div>

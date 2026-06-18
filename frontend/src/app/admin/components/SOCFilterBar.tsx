@@ -23,18 +23,18 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
     };
 
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-slate-900/50 border border-white/[0.08] rounded-xl shadow-lg backdrop-blur-md">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl shadow-lg backdrop-blur-md">
             <div className="flex flex-wrap items-center gap-3 flex-1">
                 {/* Date Range Picker (Mock) */}
-                <div className="flex items-center bg-black/40 border border-white/[0.06] rounded-lg p-1">
+                <div className="flex items-center bg-black/40 border border-[var(--border-strong)] rounded-lg p-1">
                     {["1h", "24h", "7d", "30d"].map((range) => (
                         <button
                             key={range}
                             onClick={() => handleChange("dateRange", range)}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                                 filters.dateRange === range
-                                    ? "bg-blue-500/20 text-blue-400"
-                                    : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                                    ? "bg-[var(--primary)]/20 text-[var(--primary)]"
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                             }`}
                         >
                             {range}
@@ -42,13 +42,13 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
                     ))}
                 </div>
 
-                <div className="w-px h-6 bg-white/[0.08]" />
+                <div className="w-px h-6 bg-[var(--bg-elevated)]" />
 
                 {/* Severity Dropdown */}
                 <select
                     value={filters.severity}
                     onChange={(e) => handleChange("severity", e.target.value)}
-                    className="bg-black/40 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50"
+                    className="bg-black/40 border border-[var(--border-strong)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="all">All Severities</option>
                     <option value="success">Success</option>
@@ -60,7 +60,7 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
                 <select
                     value={filters.action}
                     onChange={(e) => handleChange("action", e.target.value)}
-                    className="bg-black/40 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50"
+                    className="bg-black/40 border border-[var(--border-strong)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="all">All Actions</option>
                     <option value="LOGIN">Logins</option>
@@ -75,7 +75,7 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
                 <select
                     value={filters.user}
                     onChange={(e) => handleChange("user", e.target.value)}
-                    className="bg-black/40 border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50"
+                    className="bg-black/40 border border-[var(--border-strong)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)]"
                 >
                     <option value="all">All Users</option>
                     <option value="admin">Admins Only</option>
@@ -84,7 +84,7 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
 
                 {/* IP Search */}
                 <div className="relative">
-                    <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
@@ -92,7 +92,7 @@ export function SOCFilterBar({ filters, onFilterChange, onExport, isExporting }:
                         placeholder="Search IP..."
                         value={filters.ipSearch}
                         onChange={(e) => handleChange("ipSearch", e.target.value)}
-                        className="bg-black/40 border border-white/[0.06] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 w-32 focus:w-48 transition-all"
+                        className="bg-black/40 border border-[var(--border-strong)] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[var(--text-secondary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary)] w-32 focus:w-48 transition-all"
                     />
                 </div>
             </div>

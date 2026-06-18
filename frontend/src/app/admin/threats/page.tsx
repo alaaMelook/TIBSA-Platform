@@ -56,14 +56,14 @@ function ThreatBadge({ level }: { level: string }) {
 // ─── Type Badge ─────────────────────────────────────────────
 function TypeBadge({ type }: { type: string }) {
     const styles: Record<string, string> = {
-        ip: "bg-blue-500/15 text-blue-400",
-        domain: "bg-purple-500/15 text-purple-400",
+        ip: "bg-[var(--primary)]/15 text-[var(--primary)]",
+        domain: "bg-[var(--primary-soft)] text-[var(--primary)]",
         hash: "bg-cyan-500/15 text-cyan-400",
         url: "bg-amber-500/15 text-amber-400",
         email: "bg-emerald-500/15 text-emerald-400",
     };
     return (
-        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${styles[type] || "bg-white/5 text-slate-400"}`}>
+        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${styles[type] || "bg-[var(--bg-elevated)] text-[var(--text-muted)]"}`}>
             {type.toUpperCase()}
         </span>
     );
@@ -75,9 +75,9 @@ function CategoryBadge({ category }: { category: string }) {
         malware: "bg-red-500/10 text-red-400",
         phishing: "bg-orange-500/10 text-orange-400",
         c2: "bg-amber-500/10 text-amber-400",
-        botnet: "bg-purple-500/10 text-purple-400",
+        botnet: "bg-[var(--primary-soft)] text-[var(--primary)]",
         apt: "bg-pink-500/10 text-pink-400",
-        general: "bg-slate-500/10 text-slate-400",
+        general: "bg-[var(--bg-elevated)] text-[var(--text-muted)]",
     };
     return (
         <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase ${styles[category] || styles.general}`}>
@@ -253,13 +253,13 @@ export default function ThreatIntelligencePage() {
             sortable: true,
             render: (t) => (
                 <div 
-                    className="flex items-center gap-3 cursor-pointer group hover:bg-white/[0.04] p-1.5 -m-1.5 rounded transition-colors"
+                    className="flex items-center gap-3 cursor-pointer group hover:bg-[var(--bg-elevated)] p-1.5 -m-1.5 rounded transition-colors"
                     onClick={() => setDrawerContext({ type: t.type === "ip" ? "ip" : "threat", value: t.indicator })}
                 >
                     <TypeBadge type={t.type} />
                     <div>
-                        <p className="text-xs font-semibold text-slate-300">{t.name}</p>
-                        <span className="text-[10px] text-slate-500 font-mono truncate max-w-[200px] block group-hover:text-blue-400 transition-colors">
+                        <p className="text-xs font-semibold text-[var(--text-secondary)]">{t.name}</p>
+                        <span className="text-[10px] text-[var(--text-muted)] font-mono truncate max-w-[200px] block group-hover:text-[var(--primary)] transition-colors">
                             {t.indicator}
                         </span>
                     </div>
@@ -280,13 +280,13 @@ export default function ThreatIntelligencePage() {
                 <div className="flex items-center gap-2">
                     <span className={`text-sm font-bold tabular-nums ${
                         (t.score || 0) > 2000 ? "text-red-400" :
-                        (t.score || 0) > 1000 ? "text-amber-400" : "text-blue-400"
+                        (t.score || 0) > 1000 ? "text-amber-400" : "text-[var(--primary)]"
                     }`}>
                         {t.score?.toLocaleString()}
                     </span>
                     {t.trend === "up" && <span className="text-red-500 text-xs font-bold">↑</span>}
                     {t.trend === "down" && <span className="text-emerald-500 text-xs font-bold">↓</span>}
-                    {t.trend === "neutral" && <span className="text-slate-500 text-xs font-bold">—</span>}
+                    {t.trend === "neutral" && <span className="text-[var(--text-muted)] text-xs font-bold">—</span>}
                 </div>
             ),
         },
@@ -294,12 +294,12 @@ export default function ThreatIntelligencePage() {
             key: "detections",
             label: "Detections",
             sortable: true,
-            render: (t) => <span className="text-sm text-slate-300 tabular-nums">{t.detections.toLocaleString()}</span>,
+            render: (t) => <span className="text-sm text-[var(--text-secondary)] tabular-nums">{t.detections.toLocaleString()}</span>,
         },
         {
             key: "source",
             label: "Source",
-            render: (t) => <span className="text-xs text-slate-400">{t.source}</span>,
+            render: (t) => <span className="text-xs text-[var(--text-muted)]">{t.source}</span>,
         },
         {
             key: "analyst_name",
@@ -307,10 +307,10 @@ export default function ThreatIntelligencePage() {
             sortable: true,
             render: (t) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[8px] font-bold text-white uppercase flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[8px] font-bold text-[var(--text-primary)] uppercase flex-shrink-0">
                         {(t.analyst_name || "System").charAt(0)}
                     </div>
-                    <span className="text-xs font-medium text-slate-300">
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">
                         {t.analyst_name || "System"}
                     </span>
                 </div>
@@ -320,7 +320,7 @@ export default function ThreatIntelligencePage() {
             key: "last_seen",
             label: "Last Seen",
             sortable: true,
-            render: (t) => <span className="text-xs text-slate-500">{new Date(t.last_seen).toLocaleString()}</span>,
+            render: (t) => <span className="text-xs text-[var(--text-muted)]">{new Date(t.last_seen).toLocaleString()}</span>,
         },
     ];
 
@@ -362,8 +362,8 @@ export default function ThreatIntelligencePage() {
             sortable: true,
             render: (f) => (
                 <div>
-                    <p className="text-sm font-medium text-white">{f.name}</p>
-                    <p className="text-xs text-slate-500">{f.provider}</p>
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{f.name}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{f.provider}</p>
                 </div>
             ),
         },
@@ -389,7 +389,7 @@ export default function ThreatIntelligencePage() {
             key: "indicators_count",
             label: "Indicators",
             sortable: true,
-            render: (f) => <span className="text-sm text-slate-300 tabular-nums">{f.indicators_count.toLocaleString()}</span>,
+            render: (f) => <span className="text-sm text-[var(--text-secondary)] tabular-nums">{f.indicators_count.toLocaleString()}</span>,
         },
         {
             key: "reliability_score",
@@ -397,20 +397,20 @@ export default function ThreatIntelligencePage() {
             sortable: true,
             render: (f) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className="w-16 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full ${f.reliability_score >= 90 ? "bg-emerald-400" : f.reliability_score >= 80 ? "bg-amber-400" : "bg-red-400"}`}
                             style={{ width: `${f.reliability_score}%` }}
                         />
                     </div>
-                    <span className="text-xs text-slate-400 tabular-nums">{f.reliability_score}%</span>
+                    <span className="text-xs text-[var(--text-muted)] tabular-nums">{f.reliability_score}%</span>
                 </div>
             ),
         },
         {
             key: "update_frequency",
             label: "Frequency",
-            render: (f) => <span className="text-xs text-slate-400">{f.update_frequency}</span>,
+            render: (f) => <span className="text-xs text-[var(--text-muted)]">{f.update_frequency}</span>,
         },
         {
             key: "actions",
@@ -450,24 +450,24 @@ export default function ThreatIntelligencePage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-white">Threat Intelligence Hub</h1>
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Threat Intelligence Hub</h1>
                         <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/20 text-red-400 rounded-full">
                             Intel
                         </span>
                     </div>
-                    <p className="text-sm text-slate-400">Monitor threats, manage feeds, and track indicators of compromise</p>
+                    <p className="text-sm text-[var(--text-muted)]">Monitor threats, manage feeds, and track indicators of compromise</p>
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded-lg p-1">
+                <div className="flex items-center bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-lg p-1">
                     {tabs.map((tab) => (
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
                             className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
                                 activeTab === tab.key
-                                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/20"
-                                    : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]"
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                             }`}
                         >
                             {tab.label}
@@ -511,7 +511,7 @@ export default function ThreatIntelligencePage() {
                         action={
                             <button
                                 onClick={() => setActiveTab("threats")}
-                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors"
                             >
                                 View all →
                             </button>
@@ -527,7 +527,7 @@ export default function ThreatIntelligencePage() {
                             <div className="flex justify-center mt-4">
                                 <button 
                                     onClick={handleLoadMore}
-                                    className="px-4 py-2 text-sm text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                    className="px-4 py-2 text-sm text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-lg transition-colors"
                                 >
                                     Load More
                                 </button>
@@ -552,10 +552,10 @@ export default function ThreatIntelligencePage() {
                         emptyMessage="No threats found matching your search"
                     />
                     {threats.length >= 100 && (
-                        <div className="flex justify-center mt-4 pt-3 border-t border-white/[0.04]">
+                        <div className="flex justify-center mt-4 pt-3 border-t border-[var(--border-soft)]">
                             <button 
                                 onClick={handleLoadMore}
-                                className="px-5 py-2 text-sm font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/15"
+                                className="px-5 py-2 text-sm font-medium text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-lg transition-colors border border-[var(--primary)]"
                             >
                                 Load More Indicators
                             </button>
@@ -573,18 +573,18 @@ export default function ThreatIntelligencePage() {
                                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                                 <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">Active Feeds</span>
                             </div>
-                            <p className="text-2xl font-bold text-white">{activeFeeds}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">Currently collecting intelligence</p>
+                            <p className="text-2xl font-bold text-[var(--text-primary)]">{activeFeeds}</p>
+                            <p className="text-[11px] text-[var(--text-muted)] mt-1">Currently collecting intelligence</p>
                         </div>
-                        <div className="bg-gradient-to-br from-purple-500/[0.06] to-purple-500/[0.02] border border-purple-500/15 rounded-xl p-4">
+                        <div className="bg-gradient-to-br from-purple-500/[0.06] to-[var(--primary-hover)]/[0.02] border border-[var(--primary)]/15 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
-                                <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg className="w-3.5 h-3.5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                                 </svg>
-                                <span className="text-[11px] text-purple-400 font-semibold uppercase tracking-wider">Total Indicators</span>
+                                <span className="text-[11px] text-[var(--primary)] font-semibold uppercase tracking-wider">Total Indicators</span>
                             </div>
-                            <p className="text-2xl font-bold text-white">{totalIndicators.toLocaleString()}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">IOCs across all feeds</p>
+                            <p className="text-2xl font-bold text-[var(--text-primary)]">{totalIndicators.toLocaleString()}</p>
+                            <p className="text-[11px] text-[var(--text-muted)] mt-1">IOCs across all feeds</p>
                         </div>
                         <div className="bg-gradient-to-br from-amber-500/[0.06] to-amber-500/[0.02] border border-amber-500/15 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
@@ -593,8 +593,8 @@ export default function ThreatIntelligencePage() {
                                 </svg>
                                 <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">Paused Feeds</span>
                             </div>
-                            <p className="text-2xl font-bold text-white">{feeds.length - activeFeeds}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">Feeds currently paused</p>
+                            <p className="text-2xl font-bold text-[var(--text-primary)]">{feeds.length - activeFeeds}</p>
+                            <p className="text-[11px] text-[var(--text-muted)] mt-1">Feeds currently paused</p>
                         </div>
                     </div>
 
@@ -605,7 +605,7 @@ export default function ThreatIntelligencePage() {
                         action={
                             <button 
                                 onClick={() => setIsFeedModalOpen(true)} 
-                                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-blue-500/20 border border-blue-500/25 text-blue-400 hover:bg-blue-500/30 hover:text-blue-300 transition-all duration-200 group"
+                                className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[var(--primary)]/20 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)]/30 hover:text-[var(--primary)] transition-all duration-200 group"
                             >
                                 <svg className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -631,23 +631,23 @@ export default function ThreatIntelligencePage() {
             {isFeedModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsFeedModalOpen(false)} />
-                    <div className="relative z-10 w-full max-w-lg bg-[#13203c] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="relative z-10 w-full max-w-lg bg-[#13203c] border border-[var(--border-soft)] rounded-2xl shadow-2xl overflow-hidden">
                         {/* Modal Header */}
-                        <div className="relative px-6 py-5 border-b border-white/[0.06]">
+                        <div className="relative px-6 py-5 border-b border-[var(--border-strong)]">
                             <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-blue-500 to-cyan-400" />
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
                                         </svg>
                                         Add New Threat Feed
                                     </h3>
-                                    <p className="text-xs text-slate-400 mt-1">Configure a new threat intelligence source for IOC collection</p>
+                                    <p className="text-xs text-[var(--text-muted)] mt-1">Configure a new threat intelligence source for IOC collection</p>
                                 </div>
                                 <button 
                                     onClick={() => setIsFeedModalOpen(false)} 
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
                                 >
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -660,27 +660,27 @@ export default function ThreatIntelligencePage() {
                         <form onSubmit={handleAddFeed} className="px-6 py-5 space-y-5">
                             {/* Feed Identity */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                    <span className="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center text-blue-400 text-[10px] font-bold">1</span>
+                                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                                    <span className="w-5 h-5 rounded-md bg-[var(--primary)]/15 flex items-center justify-center text-[var(--primary)] text-[10px] font-bold">1</span>
                                     Feed Identity
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Feed Name <span className="text-red-400">*</span></label>
+                                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Feed Name <span className="text-red-400">*</span></label>
                                         <input 
                                             value={newFeed.name} 
                                             onChange={(e) => setNewFeed({...newFeed, name: e.target.value})} 
                                             placeholder="e.g., AlienVault OTX" 
-                                            className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all" 
+                                            className="w-full px-3 py-2.5 bg-black/30 border border-[var(--border-soft)] rounded-lg text-sm text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 transition-all" 
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Provider <span className="text-red-400">*</span></label>
+                                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Provider <span className="text-red-400">*</span></label>
                                         <input 
                                             value={newFeed.provider} 
                                             onChange={(e) => setNewFeed({...newFeed, provider: e.target.value})} 
                                             placeholder="e.g., AT&T Cybersecurity" 
-                                            className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all" 
+                                            className="w-full px-3 py-2.5 bg-black/30 border border-[var(--border-soft)] rounded-lg text-sm text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 transition-all" 
                                         />
                                     </div>
                                 </div>
@@ -688,26 +688,26 @@ export default function ThreatIntelligencePage() {
 
                             {/* Source Configuration */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                    <span className="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center text-blue-400 text-[10px] font-bold">2</span>
+                                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                                    <span className="w-5 h-5 rounded-md bg-[var(--primary)]/15 flex items-center justify-center text-[var(--primary)] text-[10px] font-bold">2</span>
                                     Source Configuration
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Source URL <span className="text-red-400">*</span></label>
+                                    <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Source URL <span className="text-red-400">*</span></label>
                                     <input 
                                         value={newFeed.source_url} 
                                         onChange={(e) => setNewFeed({...newFeed, source_url: e.target.value})} 
                                         placeholder="https://feeds.example.com/api/v1/indicators" 
-                                        className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white placeholder-slate-600 font-mono focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all" 
+                                        className="w-full px-3 py-2.5 bg-black/30 border border-[var(--border-soft)] rounded-lg text-sm text-[var(--text-primary)] placeholder-slate-600 font-mono focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 transition-all" 
                                     />
-                                    <p className="text-[10px] text-slate-600 mt-1.5">The API endpoint or RSS feed URL for this threat intelligence source</p>
+                                    <p className="text-[10px] text-[var(--text-muted)] mt-1.5">The API endpoint or RSS feed URL for this threat intelligence source</p>
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Threat Category</label>
+                                    <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Threat Category</label>
                                     <select 
                                         value={newFeed.category} 
                                         onChange={(e) => setNewFeed({...newFeed, category: e.target.value})} 
-                                        className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                                        className="w-full px-3 py-2.5 bg-black/30 border border-[var(--border-soft)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 transition-all"
                                     >
                                         <option value="malware">🦠 Malware</option>
                                         <option value="phishing">🎣 Phishing</option>
@@ -720,13 +720,13 @@ export default function ThreatIntelligencePage() {
 
                             {/* Feed Settings */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                    <span className="w-5 h-5 rounded-md bg-blue-500/15 flex items-center justify-center text-blue-400 text-[10px] font-bold">3</span>
+                                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                                    <span className="w-5 h-5 rounded-md bg-[var(--primary)]/15 flex items-center justify-center text-[var(--primary)] text-[10px] font-bold">3</span>
                                     Feed Settings
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Reliability Score</label>
+                                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Reliability Score</label>
                                         <div className="flex items-center gap-3">
                                             <input 
                                                 type="range" 
@@ -734,34 +734,34 @@ export default function ThreatIntelligencePage() {
                                                 max="100" 
                                                 value={newFeed.reliability_score} 
                                                 onChange={(e) => setNewFeed({...newFeed, reliability_score: Number(e.target.value)})} 
-                                                className="flex-1 h-1.5 bg-white/[0.06] rounded-full appearance-none cursor-pointer accent-blue-500"
+                                                className="flex-1 h-1.5 bg-[var(--bg-elevated)] rounded-full appearance-none cursor-pointer accent-blue-500"
                                             />
                                             <span className={`text-sm font-bold tabular-nums min-w-[40px] text-right ${
                                                 newFeed.reliability_score >= 90 ? "text-emerald-400" : 
                                                 newFeed.reliability_score >= 70 ? "text-amber-400" : "text-red-400"
                                             }`}>{newFeed.reliability_score}%</span>
                                         </div>
-                                        <p className="text-[10px] text-slate-600 mt-1">How trustworthy is this source (0-100%)</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-1">How trustworthy is this source (0-100%)</p>
                                     </div>
                                     <div>
-                                        <label className="block text-[11px] font-medium text-slate-400 mb-1.5">Update Frequency</label>
+                                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Update Frequency</label>
                                         <select 
                                             value={newFeed.update_frequency} 
                                             onChange={(e) => setNewFeed({...newFeed, update_frequency: e.target.value})} 
-                                            className="w-full px-3 py-2.5 bg-black/30 border border-white/[0.08] rounded-lg text-sm text-white focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                                            className="w-full px-3 py-2.5 bg-black/30 border border-[var(--border-soft)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 transition-all"
                                         >
                                             <option value="Hourly">⚡ Hourly</option>
                                             <option value="Daily">📅 Daily</option>
                                             <option value="Weekly">📆 Weekly</option>
                                         </select>
-                                        <p className="text-[10px] text-slate-600 mt-1">How often to pull new indicators</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-1">How often to pull new indicators</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Modal Footer */}
-                            <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
-                                <p className="text-[10px] text-slate-600 flex items-center gap-1">
+                            <div className="flex items-center justify-between pt-4 border-t border-[var(--border-strong)]">
+                                <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
                                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -771,14 +771,14 @@ export default function ThreatIntelligencePage() {
                                     <button 
                                         type="button" 
                                         onClick={() => setIsFeedModalOpen(false)} 
-                                        className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.04] transition-colors"
+                                        className="px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-elevated)] transition-colors"
                                     >
                                         Cancel
                                     </button>
                                     <button 
                                         type="submit" 
                                         disabled={addingFeed || !newFeed.name || !newFeed.provider || !newFeed.source_url} 
-                                        className="px-5 py-2 text-sm font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                                        className="px-5 py-2 text-sm font-semibold rounded-lg bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-lg shadow-[var(--primary-soft)]"
                                     >
                                         {addingFeed ? (
                                             <>

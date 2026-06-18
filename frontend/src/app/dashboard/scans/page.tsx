@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { notifySuccess, notifyError } from "@/lib/notify";
 import { api } from "@/lib/api";
 
 // ─── URL validation helper ────────────────────────────────────
@@ -92,11 +93,11 @@ interface FileInfo {
 function FileInfoPanel({ info, loading }: { info: FileInfo | null; loading: boolean }) {
     if (loading) {
         return (
-            <div className="mt-3 rounded-xl border border-purple-500/20 bg-purple-500/10 p-4 space-y-2 animate-pulse">
+            <div className="mt-3 rounded-xl border border-[var(--primary)] bg-[var(--primary-soft)] p-4 space-y-2 animate-pulse">
                 {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="flex justify-between">
-                        <div className="h-3 w-20 bg-purple-500/20 rounded" />
-                        <div className="h-3 w-48 bg-purple-500/20 rounded" />
+                        <div className="h-3 w-20 bg-[var(--primary-soft)] rounded" />
+                        <div className="h-3 w-48 bg-[var(--primary-soft)] rounded" />
                     </div>
                 ))}
             </div>
@@ -121,18 +122,18 @@ function FileInfoPanel({ info, loading }: { info: FileInfo | null; loading: bool
     ];
 
     return (
-        <div className="mt-3 rounded-xl border border-purple-500/20 bg-purple-500/10 p-4">
-            <p className="text-xs font-semibold text-purple-400 mb-2 flex items-center gap-1.5">
+        <div className="mt-3 rounded-xl border border-[var(--primary)] bg-[var(--primary-soft)] p-4">
+            <p className="text-xs font-semibold text-[var(--primary)] mb-2 flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                 File Analysis
             </p>
             <div className="space-y-1.5">
                 {rows.map(([label, value]) => (
                     <div key={label} className="flex items-start justify-between gap-2 text-xs">
-                        <span className="text-slate-500 font-medium flex-shrink-0 w-20">{label}</span>
+                        <span className="text-[var(--text-muted)] font-medium flex-shrink-0 w-20">{label}</span>
                         <span
-                            className={`font-mono text-slate-300 break-all text-right ${["MD5", "SHA-1", "SHA-256"].includes(label)
-                                ? "text-[10px] text-purple-400"
+                            className={`font-mono text-[var(--text-secondary)] break-all text-right ${["MD5", "SHA-1", "SHA-256"].includes(label)
+                                ? "text-[10px] text-[var(--primary)]"
                                 : ""
                                 }`}
                         >
@@ -334,18 +335,18 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
     return (
         <div className="space-y-4">
             {/* Detection Score */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${effectiveTotal === 0 ? "bg-slate-500/10 border-slate-500/20" : malicious >= 5 ? "bg-red-500/10 border-red-500/20" :
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${effectiveTotal === 0 ? "bg-[var(--bg-elevated)] border-[var(--border-soft)]" : malicious >= 5 ? "bg-red-500/10 border-red-500/20" :
                     malicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
                         suspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
                             "bg-green-500/10 border-green-500/20"
                 }`}>
                 <div>
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
+                    <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-widest">Detection Ratio</p>
                     <p className="text-5xl font-black mt-1 tabular-nums">
-                        <span className={effectiveTotal === 0 ? "text-slate-400" : malicious > 0 ? "text-red-400" : "text-green-400"}>{malicious}</span>
-                        <span className="text-slate-600 text-3xl font-light"> / {effectiveTotal}</span>
+                        <span className={effectiveTotal === 0 ? "text-[var(--text-muted)]" : malicious > 0 ? "text-red-400" : "text-green-400"}>{malicious}</span>
+                        <span className="text-[var(--text-muted)] text-3xl font-light"> / {effectiveTotal}</span>
                     </p>
-                    <p className="text-xs text-slate-500 mt-1.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-1.5">
                         {effectiveTotal === 0
                             ? "No engines returned a decisive result"
                             : malicious === 0
@@ -353,15 +354,15 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                                 : `${malicious} engine${malicious > 1 ? "s" : ""} flagged this as malicious`}
                     </p>
                     {nonDecisive > 0 && (
-                        <p className="text-[10px] text-slate-600 mt-1">
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1">
                             +{nonDecisive} engine{nonDecisive > 1 ? "s" : ""} skipped (timeout / unsupported)
                         </p>
                     )}
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${effectiveTotal === 0 ? "bg-slate-500/15" : malicious >= 5 ? "bg-red-500/15" : malicious > 0 ? "bg-orange-500/15" : suspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${effectiveTotal === 0 ? "bg-[var(--bg-elevated)]" : malicious >= 5 ? "bg-red-500/15" : malicious > 0 ? "bg-orange-500/15" : suspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
                     }`}>
                     {effectiveTotal === 0 ? (
-                        <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg className="w-7 h-7 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     ) : malicious >= 5 ? (
                         <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : malicious > 0 ? (
@@ -376,7 +377,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
 
             {/* Stacked progress bar */}
             {effectiveTotal > 0 && (
-                <div className="h-3 flex rounded-full overflow-hidden gap-px bg-white/[0.06]">
+                <div className="h-3 flex rounded-full overflow-hidden gap-px bg-[var(--bg-elevated)]">
                     {segments.filter((s) => s.count > 0).map((s) => (
                         <div
                             key={s.key}
@@ -393,19 +394,19 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
                 {segments.map((s) => (
                     <div key={s.key} className={`rounded-xl border p-3 text-center ${s.bgColor} ${s.borderColor}`}>
                         <p className={`text-2xl font-bold ${s.textColor}`}>{s.count}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">{s.label}</p>
                     </div>
                 ))}
             </div>
 
             {/* File metadata */}
             {(details.file_name || details.file_type) && (
-                <div className="flex flex-wrap gap-4 text-xs bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+                <div className="flex flex-wrap gap-4 text-xs bg-[var(--primary)]/10 rounded-lg p-3 border border-[var(--primary)]">
                     {details.file_name && (
-                        <span><span className="text-blue-400 font-semibold">File:</span> {details.file_name}</span>
+                        <span><span className="text-[var(--primary)] font-semibold">File:</span> {details.file_name}</span>
                     )}
                     {details.file_type && (
-                        <span><span className="text-blue-400 font-semibold">Type:</span> {details.file_type}</span>
+                        <span><span className="text-[var(--primary)] font-semibold">Type:</span> {details.file_type}</span>
                     )}
                 </div>
             )}
@@ -418,7 +419,7 @@ function VTStatsDisplay({ details }: { details: VTDetails }) {
 function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
     if (data.error) {
         return (
-            <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 text-sm text-slate-500">
+            <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--bg-elevated)] p-4 text-sm text-[var(--text-muted)]">
                 Local AV scan unavailable: {data.error}
             </div>
         );
@@ -438,12 +439,12 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
                         "bg-green-500/10 border-green-500/20"
                 }`}>
                 <div>
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Local AV Detection</p>
+                    <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-widest">Local AV Detection</p>
                     <p className="text-4xl font-black mt-1 tabular-nums">
                         <span className={detected > 0 ? "text-red-400" : "text-green-400"}>{detected}</span>
-                        <span className="text-slate-600 text-2xl font-light"> / {total}</span>
+                        <span className="text-[var(--text-muted)] text-2xl font-light"> / {total}</span>
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-[var(--text-muted)] mt-1">
                         {detected === 0
                             ? `All ${clean} engine${clean !== 1 ? "s" : ""} found no threats`
                             : `${detected} engine${detected > 1 ? "s" : ""} flagged this file`
@@ -474,16 +475,16 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
                     {engines.map((eng) => {
                         const isError = !!eng.error;
                         const isMalware = eng.malware;
-                        const borderCls = isError ? "border-white/[0.06] bg-white/[0.03]"
+                        const borderCls = isError ? "border-[var(--border-strong)] bg-[var(--bg-elevated)]"
                             : isMalware ? "border-red-500/20 bg-red-500/10"
                                 : "border-green-500/15 bg-green-500/10";
-                        const iconCls = isError ? "text-slate-500"
+                        const iconCls = isError ? "text-[var(--text-muted)]"
                             : isMalware ? "text-red-400"
                                 : "text-green-400";
                         const statusText = isError ? "Error"
                             : isMalware ? (eng.result || "Detected")
                                 : "Clean";
-                        const statusColor = isError ? "text-slate-500"
+                        const statusColor = isError ? "text-[var(--text-muted)]"
                             : isMalware ? "text-red-400 font-mono"
                                 : "text-green-400";
                         return (
@@ -498,12 +499,12 @@ function MaliceResultsDisplay({ data }: { data: MaliceDetails }) {
                                     )}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-slate-200 leading-tight">{eng.label}</p>
+                                    <p className="text-xs font-semibold text-[var(--text-primary)] leading-tight">{eng.label}</p>
                                     <p className={`text-[11px] truncate mt-0.5 ${statusColor}`}>
                                         {isError ? eng.error : statusText}
                                     </p>
                                     {eng.updated && !isError && (
-                                        <p className="text-[10px] text-slate-600 mt-0.5">DB: {eng.updated}</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">DB: {eng.updated}</p>
                                     )}
                                 </div>
                             </div>
@@ -533,25 +534,25 @@ function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
         <div className="space-y-4">
             {/* Header badge */}
             <div className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-7 h-7 rounded-lg bg-[var(--primary-soft)] flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-slate-200">AI Phishing Classifier</p>
-                    <p className="text-[10px] text-slate-500 font-mono">{data.model}</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">AI Phishing Classifier</p>
+                    <p className="text-[10px] text-[var(--text-muted)] font-mono">{data.model}</p>
                 </div>
             </div>
 
             {/* Verdict card */}
             <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${bgColor} ${borderColor}`}>
                 <div>
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">AI Verdict</p>
+                    <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-widest">AI Verdict</p>
                     <p className={`text-3xl font-black mt-1 ${accentColor}`}>
                         {isPhishing ? "Phishing" : "Legitimate"}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-1.5">
                         {isPhishing
                             ? "AI model flagged this URL as a phishing attempt"
                             : "AI model considers this URL safe"}
@@ -573,7 +574,7 @@ function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
             {/* Confidence bar */}
             <div>
                 <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs text-slate-500 font-medium">Confidence</p>
+                    <p className="text-xs text-[var(--text-muted)] font-medium">Confidence</p>
                     <p className={`text-sm font-bold tabular-nums ${accentColor}`}>{confidence}%</p>
                 </div>
                 <div className={`h-3 rounded-full overflow-hidden ${barTrack}`}>
@@ -582,7 +583,7 @@ function AIClassifierDisplay({ data }: { data: AIClassifierDetails }) {
                         style={{ width: `${confidence}%` }}
                     />
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1.5">
+                <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
                     {confidence >= 80 ? "High confidence" : confidence >= 60 ? "Moderate confidence" : "Low confidence"}
                     {" — "}
                     {isPhishing
@@ -637,8 +638,8 @@ function ThreatScoreDisplay({
                     </svg>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-slate-200">Combined Threat Score</p>
-                    <p className="text-[10px] text-slate-500">Weighted: {vtWeightPct}% VirusTotal · {aiWeightPct}% AI</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Combined Threat Score</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">Weighted: {vtWeightPct}% VirusTotal · {aiWeightPct}% AI</p>
                 </div>
             </div>
 
@@ -652,7 +653,7 @@ function ThreatScoreDisplay({
                                 cx="64" cy="64" r={radius}
                                 fill="none"
                                 stroke="currentColor"
-                                className="text-white/[0.06]"
+                                className="text-[var(--text-primary)]/[0.06]"
                                 strokeWidth="8"
                             />
                             <circle
@@ -668,7 +669,7 @@ function ThreatScoreDisplay({
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className={`text-3xl font-black tabular-nums ${cfg.color}`}>{pct}</span>
-                            <span className="text-[10px] text-slate-500 font-medium">/ 100</span>
+                            <span className="text-[10px] text-[var(--text-muted)] font-medium">/ 100</span>
                         </div>
                     </div>
 
@@ -682,7 +683,7 @@ function ThreatScoreDisplay({
                             </div>
                             <div>
                                 <p className={`text-2xl font-black ${cfg.color}`}>{verdict}</p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-[var(--text-muted)]">
                                     {verdict === "Malicious" ? "High risk — strongly recommended to avoid"
                                         : verdict === "Suspicious" ? "Moderate risk — proceed with caution"
                                             : verdict === "Warning" ? "Low risk — some indicators detected"
@@ -693,18 +694,18 @@ function ThreatScoreDisplay({
 
                         {/* Score breakdown */}
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2">
-                                <p className="text-[10px] text-slate-500 font-medium">AI Weight</p>
-                                <p className="text-sm font-bold text-purple-400">{aiWeightPct}%</p>
+                            <div className="rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-strong)] px-3 py-2">
+                                <p className="text-[10px] text-[var(--text-muted)] font-medium">AI Weight</p>
+                                <p className="text-sm font-bold text-[var(--primary)]">{aiWeightPct}%</p>
                             </div>
-                            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-2">
-                                <p className="text-[10px] text-slate-500 font-medium">VT Weight</p>
-                                <p className="text-sm font-bold text-blue-400">{vtWeightPct}%</p>
+                            <div className="rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-strong)] px-3 py-2">
+                                <p className="text-[10px] text-[var(--text-muted)] font-medium">VT Weight</p>
+                                <p className="text-sm font-bold text-[var(--primary)]">{vtWeightPct}%</p>
                             </div>
                         </div>
 
                         {/* Raw score */}
-                        <p className="text-xs text-slate-500 font-mono">
+                        <p className="text-xs text-[var(--text-muted)] font-mono">
                             Raw score: {score.toFixed(4)}
                         </p>
                     </div>
@@ -804,18 +805,18 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
             )}
 
             {/* Combined Detection Summary */}
-            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${totalEngines === 0 ? "bg-slate-500/10 border-slate-500/20" : totalMalicious >= 5 ? "bg-red-500/10 border-red-500/20" :
+            <div className={`flex items-center justify-between rounded-xl p-5 border-2 ${totalEngines === 0 ? "bg-[var(--bg-elevated)] border-[var(--border-soft)]" : totalMalicious >= 5 ? "bg-red-500/10 border-red-500/20" :
                     totalMalicious > 0 ? "bg-orange-500/10 border-orange-500/20" :
                         totalSuspicious > 0 ? "bg-yellow-500/10 border-yellow-500/20" :
                             "bg-green-500/10 border-green-500/20"
                 }`}>
                 <div>
-                    <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Detection Ratio</p>
+                    <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-widest">Detection Ratio</p>
                     <p className="text-5xl font-black mt-1 tabular-nums">
-                        <span className={totalEngines === 0 ? "text-slate-400" : totalMalicious > 0 ? "text-red-400" : "text-green-400"}>{totalMalicious}</span>
-                        <span className="text-slate-600 text-3xl font-light"> / {totalEngines}</span>
+                        <span className={totalEngines === 0 ? "text-[var(--text-muted)]" : totalMalicious > 0 ? "text-red-400" : "text-green-400"}>{totalMalicious}</span>
+                        <span className="text-[var(--text-muted)] text-3xl font-light"> / {totalEngines}</span>
                     </p>
-                    <p className="text-xs text-slate-500 mt-1.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-1.5">
                         {totalEngines === 0
                             ? "No engines returned a decisive result"
                             : totalMalicious === 0
@@ -823,15 +824,15 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                                 : `${totalMalicious} engine${totalMalicious > 1 ? "s" : ""} flagged this as malicious`}
                     </p>
                     {totalNonDecisive > 0 && (
-                        <p className="text-[10px] text-slate-600 mt-1">
+                        <p className="text-[10px] text-[var(--text-muted)] mt-1">
                             +{totalNonDecisive} engine{totalNonDecisive > 1 ? "s" : ""} skipped (timeout / unsupported)
                         </p>
                     )}
                 </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${totalEngines === 0 ? "bg-slate-500/15" : totalMalicious >= 5 ? "bg-red-500/15" : totalMalicious > 0 ? "bg-orange-500/15" : totalSuspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${totalEngines === 0 ? "bg-[var(--bg-elevated)]" : totalMalicious >= 5 ? "bg-red-500/15" : totalMalicious > 0 ? "bg-orange-500/15" : totalSuspicious > 0 ? "bg-yellow-500/15" : "bg-green-500/15"
                     }`}>
                     {totalEngines === 0 ? (
-                        <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg className="w-7 h-7 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     ) : totalMalicious >= 5 ? (
                         <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : totalMalicious > 0 ? (
@@ -846,7 +847,7 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
 
             {/* Stacked progress bar */}
             {totalEngines > 0 && (
-                <div className="h-3 flex rounded-full overflow-hidden gap-px bg-white/[0.06]">
+                <div className="h-3 flex rounded-full overflow-hidden gap-px bg-[var(--bg-elevated)]">
                     {segments.filter(s => s.count > 0).map(s => (
                         <div
                             key={s.key}
@@ -863,16 +864,16 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                 {segments.map(s => (
                     <div key={s.key} className={`rounded-xl border p-3 text-center ${s.bgColor} ${s.borderColor}`}>
                         <p className={`text-2xl font-bold ${s.textColor}`}>{s.count}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">{s.label}</p>
                     </div>
                 ))}
             </div>
 
             {/* File metadata */}
             {vt && (vt.file_name || vt.file_type) && (
-                <div className="flex flex-wrap gap-4 text-xs bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
-                    {vt.file_name && <span><span className="text-blue-400 font-semibold">File:</span> {vt.file_name}</span>}
-                    {vt.file_type && <span><span className="text-blue-400 font-semibold">Type:</span> {vt.file_type}</span>}
+                <div className="flex flex-wrap gap-4 text-xs bg-[var(--primary)]/10 rounded-lg p-3 border border-[var(--primary)]">
+                    {vt.file_name && <span><span className="text-[var(--primary)] font-semibold">File:</span> {vt.file_name}</span>}
+                    {vt.file_type && <span><span className="text-[var(--primary)] font-semibold">Type:</span> {vt.file_type}</span>}
                 </div>
             )}
 
@@ -885,7 +886,7 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
 
             {/* Malice error banner */}
             {malice?.error && (
-                <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 text-sm text-slate-500">
+                <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--bg-elevated)] p-4 text-sm text-[var(--text-muted)]">
                     Local scan unavailable: {malice.error}
                 </div>
             )}
@@ -896,12 +897,12 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                     {localEngines.map(eng => {
                         const isError = !!eng.error;
                         const isMalware = eng.malware;
-                        const borderCls = isError ? "border-white/[0.06] bg-white/[0.03]"
+                        const borderCls = isError ? "border-[var(--border-strong)] bg-[var(--bg-elevated)]"
                             : isMalware ? "border-red-500/20 bg-red-500/10"
                                 : "border-green-500/15 bg-green-500/10";
-                        const iconCls = isError ? "text-slate-500" : isMalware ? "text-red-400" : "text-green-400";
+                        const iconCls = isError ? "text-[var(--text-muted)]" : isMalware ? "text-red-400" : "text-green-400";
                         const statusText = isError ? "Error" : isMalware ? (eng.result || "Detected") : "Clean";
-                        const statusColor = isError ? "text-slate-500" : isMalware ? "text-red-400 font-mono" : "text-green-400";
+                        const statusColor = isError ? "text-[var(--text-muted)]" : isMalware ? "text-red-400 font-mono" : "text-green-400";
                         return (
                             <div key={eng.engine} className={`rounded-lg border px-3 py-2 flex items-start gap-2 ${borderCls}`}>
                                 <div className="mt-0.5 flex-shrink-0">
@@ -914,12 +915,12 @@ function UnifiedScanResults({ vt, malice }: { vt: VTDetails | null; malice: Mali
                                     )}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-slate-200 leading-tight">{eng.label}</p>
+                                    <p className="text-xs font-semibold text-[var(--text-primary)] leading-tight">{eng.label}</p>
                                     <p className={`text-[11px] truncate mt-0.5 ${statusColor}`}>
                                         {isError ? eng.error : statusText}
                                     </p>
                                     {eng.updated && !isError && (
-                                        <p className="text-[10px] text-slate-600 mt-0.5">DB: {eng.updated}</p>
+                                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">DB: {eng.updated}</p>
                                     )}
                                 </div>
                             </div>
@@ -950,8 +951,8 @@ function MalwareAnalystDisplay({ data }: { data: MalwareAnalystResult }) {
                     </svg>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-slate-200">Malware Analyst Verdict</p>
-                    <p className="text-[10px] text-slate-500">Multi-engine intelligence analysis</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Malware Analyst Verdict</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">Multi-engine intelligence analysis</p>
                 </div>
             </div>
 
@@ -959,9 +960,9 @@ function MalwareAnalystDisplay({ data }: { data: MalwareAnalystResult }) {
             <div className={`rounded-xl p-5 border-2 ${cfg.bg} ${cfg.border}`}>
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Analyst Verdict</p>
+                        <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-widest">Analyst Verdict</p>
                         <p className={`text-3xl font-black mt-1 ${cfg.color}`}>{data.verdict}</p>
-                        <p className="text-xs text-slate-500 mt-1.5">{data.reason}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1.5">{data.reason}</p>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md ${cfg.bg}`}>
@@ -970,7 +971,7 @@ function MalwareAnalystDisplay({ data }: { data: MalwareAnalystResult }) {
                             </svg>
                         </div>
                         <span className={`text-lg font-bold tabular-nums ${cfg.color}`}>{data.confidence}%</span>
-                        <span className="text-[10px] text-slate-500">Confidence</span>
+                        <span className="text-[10px] text-[var(--text-muted)]">Confidence</span>
                     </div>
                 </div>
             </div>
@@ -978,14 +979,14 @@ function MalwareAnalystDisplay({ data }: { data: MalwareAnalystResult }) {
             {/* Key Indicators */}
             {data.key_indicators.length > 0 && (
                 <div className="space-y-1.5">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Key Indicators</p>
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Key Indicators</p>
                     <div className="space-y-1">
                         {data.key_indicators.map((indicator, i) => (
                             <div key={i} className="flex items-start gap-2 text-xs">
-                                <svg className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg className="w-3.5 h-3.5 text-[var(--text-muted)] mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <span className="text-slate-400">{indicator}</span>
+                                <span className="text-[var(--text-muted)]">{indicator}</span>
                             </div>
                         ))}
                     </div>
@@ -1008,7 +1009,7 @@ function URLAnalystDisplay({ data }: { data: URLAnalystResult }) {
         Critical: { color: "text-red-400", bg: "bg-red-500/20" },
         High: { color: "text-orange-400", bg: "bg-orange-500/20" },
         Medium: { color: "text-yellow-400", bg: "bg-yellow-500/20" },
-        Low: { color: "text-blue-400", bg: "bg-blue-500/20" },
+        Low: { color: "text-[var(--primary)]", bg: "bg-[var(--primary)]/20" },
         None: { color: "text-green-400", bg: "bg-green-500/20" },
     };
 
@@ -1029,8 +1030,8 @@ function URLAnalystDisplay({ data }: { data: URLAnalystResult }) {
                     </svg>
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-slate-200">URL Threat Analysis</p>
-                    <p className="text-[10px] text-slate-500">Heuristic + Intelligence + AI</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">URL Threat Analysis</p>
+                    <p className="text-[10px] text-[var(--text-muted)]">Heuristic + Intelligence + AI</p>
                 </div>
             </div>
 
@@ -1040,20 +1041,20 @@ function URLAnalystDisplay({ data }: { data: URLAnalystResult }) {
                     {/* Confidence gauge */}
                     <div className="relative flex-shrink-0">
                         <svg width="100" height="100" viewBox="0 0 100 100" className="-rotate-90">
-                            <circle cx="50" cy="50" r={radius} fill="none" stroke="currentColor" className="text-white/[0.06]" strokeWidth="6" />
+                            <circle cx="50" cy="50" r={radius} fill="none" stroke="currentColor" className="text-[var(--text-primary)]/[0.06]" strokeWidth="6" />
                             <circle cx="50" cy="50" r={radius} fill="none" className={cls.ring} strokeWidth="6" strokeLinecap="round"
                                 strokeDasharray={circumference} strokeDashoffset={dashOffset}
                                 style={{ transition: "stroke-dashoffset 1s ease-out" }} />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className={`text-xl font-black tabular-nums ${cls.color}`}>{data.confidence}</span>
-                            <span className="text-[9px] text-slate-500">/ 100</span>
+                            <span className="text-[9px] text-[var(--text-muted)]">/ 100</span>
                         </div>
                     </div>
 
                     <div className="flex-1 space-y-2">
                         <div>
-                            <p className="text-xs text-slate-500 font-semibold uppercase tracking-widest">Classification</p>
+                            <p className="text-xs text-[var(--text-muted)] font-semibold uppercase tracking-widest">Classification</p>
                             <p className={`text-2xl font-black mt-0.5 ${cls.color}`}>{data.classification}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1061,7 +1062,7 @@ function URLAnalystDisplay({ data }: { data: URLAnalystResult }) {
                                 {data.risk_level} Risk
                             </span>
                         </div>
-                        <p className="text-xs text-slate-500">{data.explanation}</p>
+                        <p className="text-xs text-[var(--text-muted)]">{data.explanation}</p>
                     </div>
                 </div>
             </div>
@@ -1069,14 +1070,14 @@ function URLAnalystDisplay({ data }: { data: URLAnalystResult }) {
             {/* Signals */}
             {data.signals.length > 0 && (
                 <div className="space-y-1.5">
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Detected Signals</p>
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Detected Signals</p>
                     <div className="space-y-1">
                         {data.signals.map((signal, i) => (
                             <div key={i} className="flex items-start gap-2 text-xs">
                                 <svg className="w-3.5 h-3.5 text-teal-500/60 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
-                                <span className="text-slate-400">{signal}</span>
+                                <span className="text-[var(--text-muted)]">{signal}</span>
                             </div>
                         ))}
                     </div>
@@ -1120,9 +1121,9 @@ function ScanDetailModal({
         medium: "text-orange-400 bg-orange-500/10 border-orange-500/20",
         high: "text-red-400 bg-red-500/10 border-red-500/20",
         critical: "text-red-400 bg-red-500/20 border-red-500/30",
-        unknown: "text-slate-400 bg-white/[0.06] border-white/[0.08]",
+        unknown: "text-[var(--text-muted)] bg-[var(--bg-elevated)] border-[var(--border-soft)]",
     };
-    const tClass = threatColors[scan.threat_level || ""] || "text-slate-400 bg-white/[0.06] border-white/[0.08]";
+    const tClass = threatColors[scan.threat_level || ""] || "text-[var(--text-muted)] bg-[var(--bg-elevated)] border-[var(--border-soft)]";
 
     // Support both new combined format { virustotal, malice } and legacy flat VT format
     const rawDetails = report?.details as (CombinedDetails & VTDetails) | null;
@@ -1145,36 +1146,36 @@ function ScanDetailModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-[#1a2744] rounded-2xl shadow-2xl shadow-black/40 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-white/[0.08]">
+            <div className="bg-[var(--bg-elevated)] rounded-2xl shadow-2xl shadow-black/5 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-[var(--border-soft)]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#263554]">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-soft)] bg-[var(--bg-card)]">
                     <div>
                         <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
                                 {scan.scan_type === "url" ? (
-                                    <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                    <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                                 ) : scan.scan_type === "file" ? (
                                     <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
                                 ) : (
-                                    <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 )}
                                 Scan Report
                             </h2>
                             {["pending", "in_progress", "running"].includes(scan.status) && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 text-xs font-medium border border-blue-500/20">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--primary)]/15 text-[var(--primary)] text-xs font-medium border border-[var(--primary)]">
                                     <span className="relative flex h-1.5 w-1.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--primary)] opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--primary)]" />
                                     </span>
                                     Live
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5 font-mono">ID: {scan.id}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5 font-mono">ID: {scan.id}</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.08] transition-colors"
+                        className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -1185,36 +1186,36 @@ function ScanDetailModal({
                 <div className="overflow-y-auto flex-1 p-6 space-y-5">
                     {/* Meta */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.06]">
-                            <p className="text-xs text-slate-500">Type</p>
-                            <p className="font-semibold text-slate-200 mt-0.5 capitalize">{scan.scan_type === "file" ? "Hash" : scan.scan_type.replace("_", " ")}</p>
+                        <div className="bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-strong)]">
+                            <p className="text-xs text-[var(--text-muted)]">Type</p>
+                            <p className="font-semibold text-[var(--text-primary)] mt-0.5 capitalize">{scan.scan_type === "file" ? "Hash" : scan.scan_type.replace("_", " ")}</p>
                         </div>
-                        <div className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.06]">
-                            <p className="text-xs text-slate-500">Status</p>
-                            <p className="font-semibold text-slate-200 mt-0.5 capitalize">{scan.status.replace("_", " ")}</p>
+                        <div className="bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-strong)]">
+                            <p className="text-xs text-[var(--text-muted)]">Status</p>
+                            <p className="font-semibold text-[var(--text-primary)] mt-0.5 capitalize">{scan.status.replace("_", " ")}</p>
                         </div>
-                        <div className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.06]">
-                            <p className="text-xs text-slate-500">Threat Level</p>
+                        <div className="bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-strong)]">
+                            <p className="text-xs text-[var(--text-muted)]">Threat Level</p>
                             {scan.threat_level ? (
                                 <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${tClass}`}>
                                     {scan.threat_level}
                                 </span>
                             ) : (
-                                <p className="font-semibold text-slate-500 mt-0.5">—</p>
+                                <p className="font-semibold text-[var(--text-muted)] mt-0.5">—</p>
                             )}
                         </div>
-                        <div className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.06]">
-                            <p className="text-xs text-slate-500">Scanned</p>
-                            <p className="font-semibold text-slate-200 mt-0.5 text-xs">{new Date(scan.created_at).toLocaleString()}</p>
+                        <div className="bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-strong)]">
+                            <p className="text-xs text-[var(--text-muted)]">Scanned</p>
+                            <p className="font-semibold text-[var(--text-primary)] mt-0.5 text-xs">{new Date(scan.created_at).toLocaleString()}</p>
                         </div>
                     </div>
 
                     {/* Target */}
                     <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
+                        <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
                             {scan.scan_type === "url" ? "URL" : scan.scan_type === "file" ? "Hash" : "File Name"}
                         </p>
-                        <div className="bg-[#0f172a] rounded-lg px-4 py-3 font-mono text-sm text-green-400 break-all border border-white/[0.06]">
+                        <div className="bg-[var(--bg-main)] rounded-lg px-4 py-3 font-mono text-sm text-green-400 break-all border border-[var(--border-strong)]">
                             {scan.target}
                         </div>
                     </div>
@@ -1223,11 +1224,11 @@ function ScanDetailModal({
                     {scan.status === "completed" ? (
                         reportLoading ? (
                             <div className="flex flex-col items-center justify-center py-10 gap-3">
-                                <svg className="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24" fill="none">
+                                <svg className="animate-spin h-8 w-8 text-[var(--primary)]" viewBox="0 0 24 24" fill="none">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                                 </svg>
-                                <p className="text-sm text-slate-500">Loading scan results…</p>
+                                <p className="text-sm text-[var(--text-muted)]">Loading scan results…</p>
                             </div>
                         ) : (vtDetails || maliceDetails || aiDetails || analystDetails || urlAnalystDetails) ? (
                             <div className="space-y-6">
@@ -1235,12 +1236,12 @@ function ScanDetailModal({
                                 {(vtDetails || maliceDetails) && (
                                     <div>
                                         <div className="flex items-center gap-2 mb-3">
-                                            <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                                                <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <div className="w-7 h-7 rounded-lg bg-[var(--primary)]/15 flex items-center justify-center">
+                                                <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                                 </svg>
                                             </div>
-                                            <p className="text-sm font-semibold text-slate-200">VirusTotal Analysis</p>
+                                            <p className="text-sm font-semibold text-[var(--text-primary)]">VirusTotal Analysis</p>
                                         </div>
                                         <UnifiedScanResults vt={vtDetails} malice={maliceDetails} />
                                     </div>
@@ -1248,14 +1249,14 @@ function ScanDetailModal({
 
                                 {/* AI Classifier (URL scans) */}
                                 {aiDetails && (
-                                    <div className="border-t border-white/[0.06] pt-6">
+                                    <div className="border-t border-[var(--border-strong)] pt-6">
                                         <AIClassifierDisplay data={aiDetails} />
                                     </div>
                                 )}
 
                                 {/* Combined Threat Score */}
                                 {isCombined && typeof (rawDetails as CombinedDetails)?.threat_score === "number" && (rawDetails as CombinedDetails)?.verdict && (
-                                    <div className="border-t border-white/[0.06] pt-6">
+                                    <div className="border-t border-[var(--border-strong)] pt-6">
                                         <ThreatScoreDisplay
                                             score={(rawDetails as CombinedDetails).threat_score!}
                                             verdict={(rawDetails as CombinedDetails).verdict!}
@@ -1266,7 +1267,7 @@ function ScanDetailModal({
 
                                 {/* URL Threat Analyst (URL scans) */}
                                 {urlAnalystDetails && (
-                                    <div className="border-t border-white/[0.06] pt-6">
+                                    <div className="border-t border-[var(--border-strong)] pt-6">
                                         <URLAnalystDisplay data={urlAnalystDetails} />
                                     </div>
                                 )}
@@ -1275,16 +1276,16 @@ function ScanDetailModal({
 
                                 {/* Summary */}
                                 {report?.summary && (
-                                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-4">
-                                        <p className="text-xs font-medium text-slate-500 mb-1">Summary</p>
-                                        <p className="text-sm text-slate-300">{report.summary}</p>
+                                    <div className="bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-xl p-4">
+                                        <p className="text-xs font-medium text-[var(--text-muted)] mb-1">Summary</p>
+                                        <p className="text-sm text-[var(--text-secondary)]">{report.summary}</p>
                                     </div>
                                 )}
                             </div>
                         ) : (
-                            <div className="text-center py-8 text-slate-500">
+                            <div className="text-center py-8 text-[var(--text-muted)]">
                                 <div className="flex justify-center mb-2">
-                                    <svg className="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <svg className="w-10 h-10 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 </div>
                                 <p className="text-sm">Report details not available.</p>
                             </div>
@@ -1292,12 +1293,12 @@ function ScanDetailModal({
                     ) : scan.status === "cancelled" ? (
                         <div className="text-center py-12">
                             <div className="flex justify-center mb-4">
-                                <div className="w-16 h-16 rounded-full bg-white/[0.04] flex items-center justify-center">
-                                    <svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
+                                <div className="w-16 h-16 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
                                 </div>
                             </div>
-                            <p className="font-semibold text-slate-300 text-base">Scan was cancelled</p>
-                            <p className="text-sm text-slate-500 mt-1">This scan was stopped before it completed.</p>
+                            <p className="font-semibold text-[var(--text-secondary)] text-base">Scan was cancelled</p>
+                            <p className="text-sm text-[var(--text-muted)] mt-1">This scan was stopped before it completed.</p>
                         </div>
                     ) : scan.status === "failed" ? (
                         <div className="text-center py-12">
@@ -1307,7 +1308,7 @@ function ScanDetailModal({
                                 </div>
                             </div>
                             <p className="font-semibold text-red-400 text-base">Scan failed</p>
-                            <p className="text-sm text-slate-500 mt-1">Something went wrong. Please try again.</p>
+                            <p className="text-sm text-[var(--text-muted)] mt-1">Something went wrong. Please try again.</p>
                         </div>
                     ) : (
                         <div className="text-center py-12">
@@ -1315,14 +1316,14 @@ function ScanDetailModal({
                                 <span className="relative flex h-16 w-16">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-30" />
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20" style={{ animationDelay: "0.5s" }} />
-                                    <span className="relative inline-flex items-center justify-center rounded-full h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30">
+                                    <span className="relative inline-flex items-center justify-center rounded-full h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 text-[var(--text-primary)] shadow-lg shadow-[var(--primary-soft)]">
                                         <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                                     </span>
                                 </span>
                             </div>
-                            <p className="font-semibold text-slate-200 text-base">Scanning in progress…</p>
-                            <p className="text-sm text-slate-500 mt-2">Analyzing your target across multiple security engines.</p>
-                            <p className="text-xs text-slate-600 mt-1">Results will update automatically when ready.</p>
+                            <p className="font-semibold text-[var(--text-primary)] text-base">Scanning in progress…</p>
+                            <p className="text-sm text-[var(--text-muted)] mt-2">Analyzing your target across multiple security engines.</p>
+                            <p className="text-xs text-[var(--text-muted)] mt-1">Results will update automatically when ready.</p>
                         </div>
                     )}
                 </div>
@@ -1359,7 +1360,7 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                         icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     },
                     {
-                        label: "In Progress", value: active.length, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", iconColor: "text-blue-400",
+                        label: "In Progress", value: active.length, color: "text-[var(--primary)]", bg: "bg-[var(--primary)]/10", border: "border-[var(--primary)]", iconColor: "text-[var(--primary)]",
                         icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     },
                     {
@@ -1367,7 +1368,7 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                         icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                     },
                     {
-                        label: "File Scans", value: fileScans, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", iconColor: "text-purple-400",
+                        label: "File Scans", value: fileScans, color: "text-[var(--primary)]", bg: "bg-[var(--primary-soft)]", border: "border-[var(--primary)]", iconColor: "text-[var(--primary)]",
                         icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     },
                 ] as Array<{ label: string; value: number; color: string; bg: string; border: string; iconColor: string; icon: React.ReactNode }>).map(c => (
@@ -1375,7 +1376,7 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                         <span className={c.iconColor}>{c.icon}</span>
                         <div>
                             <p className={`text-xl font-black ${c.color}`}>{c.value}</p>
-                            <p className="text-xs text-slate-500 font-medium">{c.label}</p>
+                            <p className="text-xs text-[var(--text-muted)] font-medium">{c.label}</p>
                         </div>
                     </div>
                 ))}
@@ -1397,8 +1398,8 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                 return (
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Threat Breakdown</p>
-                            <p className="text-xs text-slate-600">{completed.length} completed scan{completed.length !== 1 ? "s" : ""}</p>
+                            <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest">Threat Breakdown</p>
+                            <p className="text-xs text-[var(--text-muted)]">{completed.length} completed scan{completed.length !== 1 ? "s" : ""}</p>
                         </div>
 
                         <div className="space-y-3">
@@ -1410,7 +1411,7 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                                         {/* Label */}
                                         <div className="flex items-center gap-2 w-28 flex-shrink-0">
                                             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.barColor }} />
-                                            <span className="text-xs text-slate-400 font-medium truncate">{b.label}</span>
+                                            <span className="text-xs text-[var(--text-muted)] font-medium truncate">{b.label}</span>
                                         </div>
 
                                         {/* Bar */}
@@ -1423,7 +1424,7 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                                                 }}
                                             >
                                                 {b.value > 0 && widthPct > 15 && (
-                                                    <span className="text-[10px] font-bold text-white">{pct}%</span>
+                                                    <span className="text-[10px] font-bold text-[var(--text-primary)]">{pct}%</span>
                                                 )}
                                             </div>
                                         </div>
@@ -1433,7 +1434,7 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
                                             <span className="text-sm font-bold tabular-nums" style={{ color: b.value > 0 ? b.textColor : "#475569" }}>
                                                 {b.value}
                                             </span>
-                                            <span className="text-[10px] text-slate-600 tabular-nums">
+                                            <span className="text-[10px] text-[var(--text-muted)] tabular-nums">
                                                 {b.value > 0 ? `${pct}%` : "—"}
                                             </span>
                                         </div>
@@ -1447,13 +1448,13 @@ function HistoryBarChart({ scans }: { scans: Scan[] }) {
 
             {/* ── URL vs File donut-style split ── */}
             <div className="flex items-center gap-4">
-                <div className="flex-1 h-2.5 rounded-full overflow-hidden bg-white/[0.06] flex">
+                <div className="flex-1 h-2.5 rounded-full overflow-hidden bg-[var(--bg-elevated)] flex">
                     <div className="bg-indigo-500 h-full rounded-l-full transition-all duration-700" style={{ width: `${(urlScans / total) * 100}%` }} />
-                    <div className="bg-purple-400 h-full rounded-r-full transition-all duration-700" style={{ width: `${(fileScans / total) * 100}%` }} />
+                    <div className="bg-[var(--primary-hover)] h-full rounded-r-full transition-all duration-700" style={{ width: `${(fileScans / total) * 100}%` }} />
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-500 flex-shrink-0">
+                <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] flex-shrink-0">
                     <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />URLs</span>
-                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block" />Files</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[var(--primary-hover)] inline-block" />Files</span>
                 </div>
             </div>
         </div>
@@ -1467,12 +1468,9 @@ export default function ScansPage() {
     const [scans, setScans] = useState<Scan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // URL Scan state
     const [urlTarget, setUrlTarget] = useState("");
     const [urlValidationError, setUrlValidationError] = useState("");
     const [isUrlSubmitting, setIsUrlSubmitting] = useState(false);
-    const [urlError, setUrlError] = useState("");
-    const [urlSuccess, setUrlSuccess] = useState("");
 
     // File Scan state
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -1481,8 +1479,6 @@ export default function ScansPage() {
     const [fileHash, setFileHash] = useState("");
     const [fileMode, setFileMode] = useState<"upload" | "hash">("upload");
     const [isFileSubmitting, setIsFileSubmitting] = useState(false);
-    const [fileError, setFileError] = useState("");
-    const [fileSuccess, setFileSuccess] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // History state
@@ -1539,8 +1535,6 @@ export default function ScansPage() {
         if (!token || !urlTarget.trim()) return;
 
         setIsUrlSubmitting(true);
-        setUrlError("");
-        setUrlSuccess("");
 
         try {
             await api.post(
@@ -1548,11 +1542,11 @@ export default function ScansPage() {
                 { target: urlTarget, scan_type: "url" },
                 token
             );
-            setUrlSuccess("URL scan submitted! Results will appear in history below.");
+            notifySuccess("URL scan submitted!", "Results will appear in history below.");
             setUrlTarget("");
             fetchScans();
         } catch (err) {
-            setUrlError(err instanceof Error ? err.message : "URL scan submission failed");
+            notifyError("URL scan submission failed", err instanceof Error ? err.message : "Unknown error occurred.");
         } finally {
             setIsUrlSubmitting(false);
         }
@@ -1564,8 +1558,6 @@ export default function ScansPage() {
         const file = e.target.files?.[0] || null;
         setSelectedFile(file);
         setFileInfo(null);
-        setFileError("");
-        setFileSuccess("");
         if (!file) return;
 
         setIsHashingFile(true);
@@ -1600,17 +1592,15 @@ export default function ScansPage() {
 
         // In upload mode, validate file selection; in hash mode, validate hash text
         if (fileMode === "upload" && !selectedFile) {
-            setFileError("Please select a file to scan.");
+            notifyWarning("Missing File", "Please select a file to scan.");
             return;
         }
         if (fileMode === "hash" && !fileHash.trim()) {
-            setFileError("Please enter a file hash (SHA-256).");
+            notifyWarning("Missing Hash", "Please enter a file hash (SHA-256).");
             return;
         }
 
         setIsFileSubmitting(true);
-        setFileError("");
-        setFileSuccess("");
 
         try {
             if (fileMode === "upload" && selectedFile) {
@@ -1625,8 +1615,8 @@ export default function ScansPage() {
                     token
                 );
             }
-            setFileSuccess(
-                "File scan submitted! Results will appear in history below."
+            notifySuccess(
+                "File scan submitted!", "Results will appear in history below."
             );
             setSelectedFile(null);
             setFileInfo(null);
@@ -1634,8 +1624,8 @@ export default function ScansPage() {
             if (fileInputRef.current) fileInputRef.current.value = "";
             fetchScans();
         } catch (err) {
-            setFileError(
-                err instanceof Error ? err.message : "File scan submission failed"
+            notifyError(
+                "File scan submission failed", err instanceof Error ? err.message : "Unknown error occurred"
             );
         } finally {
             setIsFileSubmitting(false);
@@ -1652,8 +1642,7 @@ export default function ScansPage() {
             await api.post(`/api/v1/scans/${scanId}/cancel`, {}, token);
             fetchScans();
         } catch (err) {
-            console.error("Cancel scan failed:", err);
-            alert("Failed to cancel scan. It may have already completed.");
+            notifyWarning("Cancellation Failed", "Failed to cancel scan. It may have already completed.");
         } finally {
             setCancellingId(null);
         }
@@ -1670,9 +1659,9 @@ export default function ScansPage() {
         try {
             await api.delete(`/api/v1/scans/${scanId}`, token);
             setScans(prev => prev.filter(s => s.id !== scanId));
+            notifySuccess("Scan deleted successfully");
         } catch (err) {
-            console.error("Delete scan failed:", err);
-            alert("Failed to delete scan.");
+            notifyError("Deletion Failed", "Failed to delete scan.");
             fetchScans();
         } finally {
             setDeletingId(null);
@@ -1684,13 +1673,13 @@ export default function ScansPage() {
     const statusBadge = (status: string) => {
         const styles: Record<string, string> = {
             pending: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
-            running: "bg-blue-500/15 text-blue-400 border border-blue-500/20",
-            in_progress: "bg-blue-500/15 text-blue-400 border border-blue-500/20",
+            running: "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]",
+            in_progress: "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]",
             completed: "bg-green-500/15 text-green-400 border border-green-500/20",
             failed: "bg-red-500/15 text-red-400 border border-red-500/20",
-            cancelled: "bg-white/[0.06] text-slate-400 border border-white/[0.08]",
+            cancelled: "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]",
         };
-        return styles[status] || "bg-white/[0.06] text-slate-500 border border-white/[0.08]";
+        return styles[status] || "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]";
     };
 
     const threatBadge = (level: string | null) => {
@@ -1701,11 +1690,11 @@ export default function ScansPage() {
             medium: "bg-orange-500/15 text-orange-400 border border-orange-500/20",
             high: "bg-red-500/15 text-red-400 border border-red-500/20",
             critical: "bg-red-500/20 text-red-400 border border-red-500/30 font-bold",
-            not_found: "bg-white/[0.06] text-slate-500 border border-white/[0.08]",
+            not_found: "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]",
             timeout: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
-            unknown: "bg-white/[0.06] text-slate-500 border border-white/[0.08]",
+            unknown: "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]",
         };
-        return styles[level || ""] || "bg-white/[0.06] text-slate-500 border border-white/[0.08]";
+        return styles[level || ""] || "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]";
     };
 
     const filteredScans = scans.filter((s) =>
@@ -1723,8 +1712,8 @@ export default function ScansPage() {
         <div className="space-y-6">
             {/* Page header */}
             <div>
-                <h1 className="text-2xl font-bold text-white">Security Scans</h1>
-                <p className="text-slate-400 mt-1">
+                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Security Scans</h1>
+                <p className="text-[var(--text-muted)] mt-1">
                     Scan URLs and files for threats using multiple antivirus engines
                 </p>
             </div>
@@ -1732,9 +1721,9 @@ export default function ScansPage() {
             {/* ── Stats Summary Row ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: "Total Scans", value: scans.length, color: "text-white", bg: "bg-white/[0.04]" },
-                    { label: "URL Scans", value: urlScans.length, color: "text-blue-400", bg: "bg-blue-500/10" },
-                    { label: "File Scans", value: fileScans.length, color: "text-purple-400", bg: "bg-purple-500/10" },
+                    { label: "Total Scans", value: scans.length, color: "text-[var(--text-primary)]", bg: "bg-[var(--bg-elevated)]" },
+                    { label: "URL Scans", value: urlScans.length, color: "text-[var(--primary)]", bg: "bg-[var(--primary)]/10" },
+                    { label: "File Scans", value: fileScans.length, color: "text-[var(--primary)]", bg: "bg-[var(--primary-soft)]" },
                     {
                         label: "Threats Found",
                         value: scans.filter((s) =>
@@ -1746,9 +1735,9 @@ export default function ScansPage() {
                 ].map((stat) => (
                     <div
                         key={stat.label}
-                        className={`${stat.bg} rounded-xl p-4 border border-white/[0.08]`}
+                        className={`${stat.bg} rounded-xl p-4 border border-[var(--border-soft)]`}
                     >
-                        <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
+                        <p className="text-xs text-[var(--text-muted)] font-medium">{stat.label}</p>
                         <p className={`text-3xl font-bold ${stat.color} mt-1`}>
                             {isLoading ? "…" : stat.value}
                         </p>
@@ -1759,21 +1748,21 @@ export default function ScansPage() {
             {/* ── Scan Input Forms — Side by Side ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* URL Scan Card */}
-                <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
-                    <div className="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-blue-500/10 to-transparent">
-                        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
+                <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-lg shadow-black/5 overflow-hidden">
+                    <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border-strong)] bg-gradient-to-r from-blue-500/10 to-transparent">
+                        <div className="w-9 h-9 rounded-xl bg-[var(--primary-hover)] flex items-center justify-center text-[var(--text-primary)] flex-shrink-0">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                         </div>
                         <div>
-                            <h3 className="text-base font-semibold text-white">URL Scan</h3>
-                            <p className="text-xs text-slate-400">
+                            <h3 className="text-base font-semibold text-[var(--text-primary)]">URL Scan</h3>
+                            <p className="text-xs text-[var(--text-muted)]">
                                 Check a URL against multiple antivirus engines
                             </p>
                         </div>
                     </div>
                     <form onSubmit={handleUrlSubmit} className="px-6 py-5 space-y-4">
                         <div>
-                            <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                                 URL to Scan
                             </label>
                             <div className="relative">
@@ -1795,11 +1784,11 @@ export default function ScansPage() {
                                             setUrlValidationError("");
                                         }
                                     }}
-                                    className={`w-full px-3.5 py-2.5 pr-10 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all placeholder-slate-500 bg-[#1a2744] text-slate-100 ${urlValidationError
+                                    className={`w-full px-3.5 py-2.5 pr-10 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all placeholder-slate-500 bg-[var(--bg-elevated)] text-[var(--text-muted)] ${urlValidationError
                                         ? "border-red-500/50 focus:ring-red-500/40 bg-red-500/5"
                                         : urlTarget && !urlValidationError
                                             ? "border-green-500/50 focus:ring-green-500/40 bg-green-500/5"
-                                            : "border-white/[0.08] focus:ring-blue-500/60"
+                                            : "border-[var(--border-soft)] focus:ring-[var(--primary)]/60"
                                         }`}
                                 />
                                 {/* validation icon */}
@@ -1817,30 +1806,17 @@ export default function ScansPage() {
                                     <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> {urlValidationError}
                                 </p>
                             ) : (
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-xs text-[var(--text-muted)] mt-1">
                                     Enter the full URL including <code>https://</code>
                                 </p>
                             )}
                         </div>
 
-                        {urlError && (
-                            <div className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                <span>{urlError}</span>
-                            </div>
-                        )}
-                        {urlSuccess && (
-                            <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span>{urlSuccess}</span>
-                            </div>
-                        )}
-
                         <button
                             type="submit"
                             id="url-scan-submit"
                             disabled={isUrlSubmitting || !urlTarget.trim() || !!urlValidationError}
-                            className="w-full py-2.5 px-4 bg-[#3b82f6] hover:bg-[#60a5fa] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25"
+                            className="w-full py-2.5 px-4 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--text-primary)] text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary-soft)]"
                         >
                             {isUrlSubmitting ? (
                                 <>
@@ -1861,14 +1837,14 @@ export default function ScansPage() {
                 </div>
 
                 {/* File Scan Card */}
-                <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
-                    <div className="flex items-center gap-3 px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-purple-500/10 to-transparent">
-                        <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white flex-shrink-0">
+                <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-lg shadow-black/5 overflow-hidden">
+                    <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border-strong)] bg-gradient-to-r from-purple-500/10 to-transparent">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white flex items-center justify-center text-[var(--text-primary)] flex-shrink-0">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         </div>
                         <div>
-                            <h3 className="text-base font-semibold text-white">File Scan</h3>
-                            <p className="text-xs text-slate-400">
+                            <h3 className="text-base font-semibold text-[var(--text-primary)]">File Scan</h3>
+                            <p className="text-xs text-[var(--text-muted)]">
                                 Upload a file or enter its SHA-256 hash to scan
                             </p>
                         </div>
@@ -1876,14 +1852,14 @@ export default function ScansPage() {
 
                     <form onSubmit={handleFileSubmit} className="px-6 py-5 space-y-4">
                         {/* Mode Toggle */}
-                        <div className="flex bg-white/[0.04] rounded-lg p-1 gap-1">
+                        <div className="flex bg-[var(--bg-elevated)] rounded-lg p-1 gap-1">
                             <button
                                 type="button"
                                 id="file-upload-mode"
                                 onClick={() => setFileMode("upload")}
                                 className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${fileMode === "upload"
-                                    ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
-                                    : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-soft)]"
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                     }`}
                             >
                                 Upload File
@@ -1893,8 +1869,8 @@ export default function ScansPage() {
                                 id="file-hash-mode"
                                 onClick={() => setFileMode("hash")}
                                 className={`flex-1 py-1.5 px-3 text-xs font-medium rounded-md transition-all ${fileMode === "hash"
-                                    ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
-                                    : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-soft)]"
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                     }`}
                             >
                                 Enter Hash
@@ -1903,23 +1879,23 @@ export default function ScansPage() {
 
                         {fileMode === "upload" ? (
                             <div>
-                                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                                     Select File
                                 </label>
                                 <label
                                     htmlFor="file-upload"
                                     className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${selectedFile
-                                        ? "border-purple-500/50 bg-purple-500/10"
-                                        : "border-white/[0.12] bg-white/[0.03] hover:border-purple-500/50 hover:bg-purple-500/10"
+                                        ? "border-[var(--primary)] bg-[var(--primary-soft)]"
+                                        : "border-[var(--border-strong)] bg-[var(--bg-elevated)] hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
                                         }`}
                                 >
                                     {selectedFile ? (
                                         <div className="text-center px-4">
-                                            <div className="flex justify-center"><svg className="w-8 h-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
-                                            <p className="text-sm font-medium text-purple-400 mt-1 truncate max-w-[220px]">
+                                            <div className="flex justify-center"><svg className="w-8 h-8 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+                                            <p className="text-sm font-medium text-[var(--primary)] mt-1 truncate max-w-[220px]">
                                                 {selectedFile.name}
                                             </p>
-                                            <p className="text-xs text-slate-500">
+                                            <p className="text-xs text-[var(--text-muted)]">
                                                 {selectedFile.size < 1024 * 1024
                                                     ? `${(selectedFile.size / 1024).toFixed(1)} KB`
                                                     : `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`}
@@ -1929,11 +1905,11 @@ export default function ScansPage() {
                                         </div>
                                     ) : (
                                         <div className="text-center">
-                                            <div className="flex justify-center"><svg className="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg></div>
-                                            <p className="text-sm text-slate-400 mt-1">
+                                            <div className="flex justify-center"><svg className="w-8 h-8 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg></div>
+                                            <p className="text-sm text-[var(--text-muted)] mt-1">
                                                 Click to upload or drag & drop
                                             </p>
-                                            <p className="text-xs text-slate-500">
+                                            <p className="text-xs text-[var(--text-muted)]">
                                                 Any file type supported
                                             </p>
                                         </div>
@@ -1951,7 +1927,7 @@ export default function ScansPage() {
                             </div>
                         ) : (
                             <div>
-                                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                                     File Hash (SHA-256)
                                 </label>
                                 <input
@@ -1960,24 +1936,11 @@ export default function ScansPage() {
                                     placeholder="e.g. 275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
                                     value={fileHash}
                                     onChange={(e) => setFileHash(e.target.value)}
-                                    className="w-full px-3.5 py-2.5 text-sm border border-white/[0.08] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/60 focus:border-transparent transition-all placeholder-slate-500 font-mono bg-[#1a2744] text-slate-100"
+                                    className="w-full px-3.5 py-2.5 text-sm border border-[var(--border-soft)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all placeholder-slate-500 font-mono bg-[var(--bg-elevated)] text-[var(--text-muted)]"
                                 />
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-xs text-[var(--text-muted)] mt-1">
                                     SHA-256, MD5, or SHA-1 hash accepted
                                 </p>
-                            </div>
-                        )}
-
-                        {fileError && (
-                            <div className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                <span>{fileError}</span>
-                            </div>
-                        )}
-                        {fileSuccess && (
-                            <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-2.5 rounded-lg">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span>{fileSuccess}</span>
                             </div>
                         )}
 
@@ -1988,7 +1951,7 @@ export default function ScansPage() {
                                 isFileSubmitting ||
                                 (fileMode === "upload" ? !selectedFile : !fileHash.trim())
                             }
-                            className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-2.5 px-4 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white hover:opacity-90 text-[var(--text-primary)] text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isFileSubmitting ? (
                                 <>
@@ -2011,13 +1974,13 @@ export default function ScansPage() {
 
             {/* ── Overview Bar Chart ── */}
             {scans.length > 0 && (
-                <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-white/[0.06]">
-                        <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-lg shadow-black/5 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[var(--border-strong)]">
+                        <h3 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                             Scan Results Overview
                         </h3>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">
                             Comparison of clean vs infected results across URL and File scans
                         </p>
                     </div>
@@ -2028,26 +1991,26 @@ export default function ScansPage() {
             )}
 
             {/* ── Scan History ── */}
-            <div className="bg-[#263554] rounded-2xl border border-white/[0.08] shadow-lg shadow-black/25 overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-white/[0.06]">
+            <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-lg shadow-black/5 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-[var(--border-strong)]">
                     <div>
-                        <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                        <h3 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                            <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                             Scan History
                         </h3>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">
                             Click any row to view detailed antivirus results & graphs
                         </p>
                     </div>
                     {/* Filter tabs */}
-                    <div className="flex bg-white/[0.04] rounded-lg p-1 gap-1 text-xs font-medium self-start sm:self-auto">
+                    <div className="flex bg-[var(--bg-elevated)] rounded-lg p-1 gap-1 text-xs font-medium self-start sm:self-auto">
                         {(["all", "url", "file"] as const).map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-3 py-1.5 rounded-md transition-all capitalize ${activeTab === tab
-                                    ? "bg-[#263554] text-white shadow-sm border border-white/[0.08]"
-                                    : "text-slate-400 hover:text-slate-200"
+                                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm border border-[var(--border-soft)]"
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                     }`}
                             >
                                 {tab === "all" ? "All" : tab === "url" ? "URLs" : "Files"}
@@ -2058,7 +2021,7 @@ export default function ScansPage() {
 
                 {isLoading ? (
                     <div className="text-center py-16">
-                        <div className="inline-flex items-center gap-2 text-slate-500">
+                        <div className="inline-flex items-center gap-2 text-[var(--text-muted)]">
                             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -2069,10 +2032,10 @@ export default function ScansPage() {
                 ) : filteredScans.length === 0 ? (
                     <div className="text-center py-16">
                         <div className="flex justify-center mb-3">
-                            <svg className="w-12 h-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
+                            <svg className="w-12 h-12 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" /></svg>
                         </div>
-                        <p className="font-medium text-slate-300">No scans yet</p>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <p className="font-medium text-[var(--text-secondary)]">No scans yet</p>
+                        <p className="text-sm text-[var(--text-muted)] mt-1">
                             {activeTab === "all"
                                 ? "Submit a URL or file scan above to get started."
                                 : `No ${activeTab} scans found. Switch to "All" or start a new scan.`}
@@ -2082,23 +2045,23 @@ export default function ScansPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="bg-white/[0.03] border-b border-white/[0.08]">
-                                    <th className="text-left px-6 py-3 font-medium text-slate-400 text-xs uppercase tracking-wider">
+                                <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-soft)]">
+                                    <th className="text-left px-6 py-3 font-medium text-[var(--text-muted)] text-xs uppercase tracking-wider">
                                         Type
                                     </th>
-                                    <th className="text-left px-6 py-3 font-medium text-slate-400 text-xs uppercase tracking-wider">
+                                    <th className="text-left px-6 py-3 font-medium text-[var(--text-muted)] text-xs uppercase tracking-wider">
                                         Target
                                     </th>
-                                    <th className="text-left px-6 py-3 font-medium text-slate-400 text-xs uppercase tracking-wider">
+                                    <th className="text-left px-6 py-3 font-medium text-[var(--text-muted)] text-xs uppercase tracking-wider">
                                         Status
                                     </th>
-                                    <th className="text-left px-6 py-3 font-medium text-slate-400 text-xs uppercase tracking-wider">
+                                    <th className="text-left px-6 py-3 font-medium text-[var(--text-muted)] text-xs uppercase tracking-wider">
                                         Threat Level
                                     </th>
-                                    <th className="text-left px-6 py-3 font-medium text-slate-400 text-xs uppercase tracking-wider">
+                                    <th className="text-left px-6 py-3 font-medium text-[var(--text-muted)] text-xs uppercase tracking-wider">
                                         Date
                                     </th>
-                                    <th className="text-left px-6 py-3 font-medium text-slate-400 text-xs uppercase tracking-wider">
+                                    <th className="text-left px-6 py-3 font-medium text-[var(--text-muted)] text-xs uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -2110,14 +2073,14 @@ export default function ScansPage() {
                                         <tr
                                             key={scan.id}
                                             onClick={() => setSelectedScanId(scan.id)}
-                                            className="hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                                            className="hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer group"
                                         >
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${scan.scan_type === "url"
-                                                        ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                                        ? "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]"
                                                         : scan.scan_type === "file"
                                                             ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/20"
-                                                            : "bg-purple-500/15 text-purple-400 border border-purple-500/20"
+                                                            : "bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]"
                                                     }`}>
                                                     {scan.scan_type === "url" ? (
                                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
@@ -2131,7 +2094,7 @@ export default function ScansPage() {
                                             </td>
                                             <td className="px-6 py-4 max-w-[220px]">
                                                 <span
-                                                    className="font-mono text-xs text-slate-400 truncate block group-hover:text-blue-400 transition-colors"
+                                                    className="font-mono text-xs text-[var(--text-muted)] truncate block group-hover:text-[var(--primary)] transition-colors"
                                                     title={scan.target}
                                                 >
                                                     {scan.target}
@@ -2154,17 +2117,17 @@ export default function ScansPage() {
                                                         {scan.threat_level}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-slate-600 text-xs">—</span>
+                                                    <span className="text-[var(--text-muted)] text-xs">—</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500 text-xs whitespace-nowrap">
+                                            <td className="px-6 py-4 text-[var(--text-muted)] text-xs whitespace-nowrap">
                                                 {new Date(scan.created_at).toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => setSelectedScanId(scan.id)}
-                                                        className="px-3 py-1.5 rounded-lg bg-blue-500/15 border border-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white text-xs font-medium transition-all flex items-center gap-1.5 flex-shrink-0"
+                                                        className="px-3 py-1.5 rounded-lg bg-[var(--primary)]/15 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--text-primary)] text-xs font-medium transition-all flex items-center gap-1.5 flex-shrink-0"
                                                     >
                                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -2176,7 +2139,7 @@ export default function ScansPage() {
                                                             onClick={() => handleCancelScan(scan.id)}
                                                             disabled={cancellingId === scan.id}
                                                             title="Cancel this scan"
-                                                            className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                                            className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-[var(--text-primary)] flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
                                                         >
                                                             {cancellingId === scan.id ? (
                                                                 <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
@@ -2194,7 +2157,7 @@ export default function ScansPage() {
                                                         onClick={() => handleDeleteScan(scan.id)}
                                                         disabled={deletingId === scan.id}
                                                         title="Delete scan permanently"
-                                                        className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-500 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                                        className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-[var(--text-primary)] hover:border-red-500 flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
                                                     >
                                                         {deletingId === scan.id ? (
                                                             <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">

@@ -219,7 +219,7 @@ export default function FloatingChatbot() {
         id="ai-chatbot-fab" 
         onClick={() => setOpen(o => !o)}
         aria-label="Open AI Security Chatbot"
-        className={`fixed bottom-6 right-6 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-500/30 ${open ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
+        className={`fixed bottom-6 right-6 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-sm transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/30 ${open ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
       >
         <MessageCircle size={28} />
       </button>
@@ -227,25 +227,25 @@ export default function FloatingChatbot() {
       {/* Window */}
       <div 
         id="ai-chatbot-window" 
-        className={`fixed bottom-6 right-6 z-[9998] flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b1120]/95 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-in-out ${
+        className={`fixed bottom-6 right-6 z-[9998] flex flex-col overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-card)] shadow-md transition-all duration-300 ease-in-out ${
           open ? 'scale-100 opacity-100 translate-y-0' : 'pointer-events-none scale-95 opacity-0 translate-y-4'
         } w-[calc(100vw-24px)] h-[calc(100vh-120px)] sm:w-[520px] sm:h-[680px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-32px)] transform origin-bottom-right`}
       >
         {/* Header */}
-        <div className="flex items-center gap-4 border-b border-white/10 bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-inner">
+        <div className="flex items-center gap-4 border-b border-[var(--border-strong)] bg-[var(--bg-card)] p-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary-soft)] border border-[var(--primary)] text-[var(--primary)] shadow-sm">
             <BotIcon />
           </div>
           <div>
-            <h2 className="m-0 text-lg font-semibold tracking-tight text-slate-100">TIBSA AI Assistant</h2>
-            <p className="m-0 text-xs font-medium text-blue-400/80">Cybersecurity & Platform Help</p>
+            <h2 className="m-0 text-lg font-semibold tracking-tight text-[var(--text-primary)]">TIBSA AI Assistant</h2>
+            <p className="m-0 text-xs font-medium text-[var(--text-secondary)]">Cybersecurity & Platform Help</p>
           </div>
           <div className="ml-auto flex gap-2">
             {messages.length > 0 && (
               <button 
                 onClick={clearChat} 
                 title="Clear chat"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400 focus:outline-none"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-red-100 hover:text-red-600 focus:outline-none"
               >
                 <TrashIcon />
               </button>
@@ -253,7 +253,7 @@ export default function FloatingChatbot() {
             <button 
               onClick={() => setOpen(false)} 
               aria-label="Close chat"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-100 focus:outline-none"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-page)] hover:text-[var(--text-primary)] focus:outline-none"
             >
               <CloseIcon />
             </button>
@@ -263,11 +263,11 @@ export default function FloatingChatbot() {
         {/* Body */}
         <div 
           ref={bodyRef} 
-          className="flex flex-1 flex-col gap-6 overflow-y-auto p-5 pb-6 bg-gradient-to-b from-[#0b1120]/50 to-slate-900/50 scroll-smooth"
+          className="flex flex-1 flex-col gap-6 overflow-y-auto p-5 pb-6 bg-[var(--bg-page)] scroll-smooth"
         >
           {messages.length === 0 && !loading && (
             <div className="mt-2">
-              <p className="mb-4 text-sm leading-relaxed text-slate-300">
+              <p className="mb-4 text-sm leading-relaxed text-[var(--text-secondary)]">
                 👋 Hi! Ask me anything about cybersecurity or the TIBSA platform.
               </p>
               <div className="flex flex-wrap gap-2.5">
@@ -275,7 +275,7 @@ export default function FloatingChatbot() {
                   <button 
                     key={q} 
                     onClick={() => sendMessage(q)}
-                    className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-3.5 py-2 text-sm font-medium text-blue-300 transition-all hover:bg-blue-500/25 hover:text-blue-200 focus:outline-none active:scale-95"
+                    className="rounded-lg border border-[var(--primary)] bg-[var(--bg-card)] px-3.5 py-2 text-sm font-medium text-[var(--primary)] transition-all hover:bg-[var(--primary-soft)] hover:border-[var(--primary-hover)] hover:text-[var(--primary-hover)] focus:outline-none active:scale-95"
                   >
                     {q}
                   </button>
@@ -285,30 +285,30 @@ export default function FloatingChatbot() {
           )}
 
           {messages.map(m => m.role === "user" ? (
-            <div key={m.id} className="self-end max-w-[80%] rounded-2xl rounded-tr-sm bg-gradient-to-br from-blue-600 to-indigo-600 p-3.5 text-sm leading-relaxed text-white shadow-md">
+            <div key={m.id} className="self-end max-w-[80%] rounded-2xl rounded-tr-sm bg-[var(--primary)] p-3.5 text-sm leading-relaxed !text-white shadow-sm">
               <span className="whitespace-pre-wrap">{m.content}</span>
             </div>
           ) : (
             <div key={m.id} className="group flex w-full max-w-[85%] items-start gap-3 self-start">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm mt-1">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--primary-soft)] border border-[var(--primary)] text-[var(--primary)] shadow-sm mt-1">
                 <BotIcon />
               </div>
               <div className="flex flex-col items-start gap-1 w-full overflow-hidden">
-                <div className="w-full overflow-hidden rounded-2xl rounded-tl-sm border border-white/10 bg-slate-800/80 p-4 text-sm leading-relaxed text-slate-200 shadow-sm backdrop-blur-sm">
+                <div className="w-full overflow-hidden rounded-2xl rounded-tl-sm border border-[var(--border-strong)] bg-[var(--bg-elevated)] p-4 text-sm leading-relaxed text-[var(--text-primary)] shadow-sm">
                   <ReactMarkdown
                     components={{
                       p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
                       ul: ({ node, ...props }) => <ul className="mb-3 list-disc pl-5 last:mb-0 space-y-1" {...props} />,
                       ol: ({ node, ...props }) => <ol className="mb-3 list-decimal pl-5 last:mb-0 space-y-1" {...props} />,
                       li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                      h1: ({ node, ...props }) => <h3 className="mb-2 mt-4 text-base font-semibold text-white first:mt-0" {...props} />,
-                      h2: ({ node, ...props }) => <h3 className="mb-2 mt-4 text-base font-semibold text-white first:mt-0" {...props} />,
-                      h3: ({ node, ...props }) => <h3 className="mb-2 mt-4 text-base font-semibold text-white first:mt-0" {...props} />,
+                      h1: ({ node, ...props }) => <h3 className="mb-2 mt-4 text-base font-semibold text-[var(--text-primary)] first:mt-0" {...props} />,
+                      h2: ({ node, ...props }) => <h3 className="mb-2 mt-4 text-base font-semibold text-[var(--text-primary)] first:mt-0" {...props} />,
+                      h3: ({ node, ...props }) => <h3 className="mb-2 mt-4 text-base font-semibold text-[var(--text-primary)] first:mt-0" {...props} />,
                       code: ({ node, className, children, ...props }) => {
                         const match = /language-(\w+)/.exec(className || "");
                         const isInline = !match && !className;
                         return isInline ? (
-                          <code className="rounded bg-black/30 px-1.5 py-0.5 text-[13px] font-mono text-blue-300" {...props}>
+                          <code className="rounded bg-[var(--bg-page)] border border-[var(--border-soft)] px-1.5 py-0.5 text-[13px] font-mono text-[var(--text-primary)]" {...props}>
                             {children}
                           </code>
                         ) : (
@@ -317,7 +317,7 @@ export default function FloatingChatbot() {
                           </code>
                         );
                       },
-                      pre: ({ node, ...props }) => <pre className="my-3 overflow-x-auto rounded-lg bg-black/40 p-3 text-[13px] font-mono border border-white/5" {...props} />,
+                      pre: ({ node, ...props }) => <pre className="my-3 overflow-x-auto rounded-lg bg-[var(--bg-page)] p-3 text-[13px] font-mono text-[var(--text-primary)] border border-[var(--border-soft)]" {...props} />,
                     }}
                   >
                     {m.content}
@@ -326,7 +326,7 @@ export default function FloatingChatbot() {
                 <button 
                   onClick={() => copyText(m.id, m.content)} 
                   title="Copy answer"
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:text-slate-300 focus:opacity-100"
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-[var(--text-muted)] opacity-0 transition-all group-hover:opacity-100 hover:text-[var(--text-secondary)] focus:opacity-100"
                 >
                   {copiedId === m.id ? <><CheckIcon /><span>Copied</span></> : <><CopyIcon /><span>Copy</span></>}
                 </button>
@@ -336,37 +336,37 @@ export default function FloatingChatbot() {
 
           {loading && (
             <div className="flex w-full max-w-[85%] items-start gap-3 self-start">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm mt-1">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--primary-soft)] border border-[var(--primary)] text-[var(--primary)] shadow-sm mt-1">
                 <BotIcon />
               </div>
               <div className="flex flex-col items-start gap-2 mt-2">
-                <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm border border-white/10 bg-slate-800/80 px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-3 shadow-sm">
                   {[0, 1, 2].map(i => (
-                    <span key={i} className="h-2 w-2 rounded-full bg-blue-400" style={{ animation: `chatDotPulse 1.2s ${i * 0.2}s infinite ease-in-out` }} />
+                    <span key={i} className="h-2 w-2 rounded-full bg-[var(--primary)]" style={{ animation: `chatDotPulse 1.2s ${i * 0.2}s infinite ease-in-out` }} />
                   ))}
                 </div>
-                <span className="pl-1 text-xs font-medium text-slate-500">Generating response…</span>
+                <span className="pl-1 text-xs font-medium text-[var(--text-muted)]">Generating response…</span>
               </div>
             </div>
           )}
 
           {error && (
             <div className="flex w-full max-w-[85%] items-start gap-3 self-start">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-400 shadow-sm mt-1 border border-white/5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-elevated)] text-[var(--text-muted)] shadow-sm mt-1 border border-[var(--border-soft)]">
                 <BotIcon />
               </div>
               <div className="flex flex-col items-start gap-2 w-full mt-1">
                 <div className={`w-fit rounded-2xl rounded-tl-sm border px-4 py-3 text-[13px] leading-relaxed shadow-sm backdrop-blur-sm ${
                   error.isRateLimit 
-                    ? 'border-amber-500/20 bg-amber-500/10 text-amber-200/90' 
-                    : 'border-red-500/20 bg-red-500/10 text-red-200/90'
+                    ? 'border-amber-500/20 bg-amber-500/10 text-amber-700' 
+                    : 'border-red-500/20 bg-red-500/10 text-red-700'
                 }`}>
                   {error.message}
                 </div>
                 <button
                   onClick={retryLastMessage}
                   disabled={cooldown > 0}
-                  className="ml-1 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:pointer-events-none disabled:opacity-50"
+                  className="ml-1 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] disabled:pointer-events-none disabled:opacity-50"
                 >
                   <RetryIcon />
                   {cooldown > 0 ? `Retry in ${cooldown}s` : "Retry"}
@@ -377,7 +377,7 @@ export default function FloatingChatbot() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-white/10 bg-slate-900/80 p-4 backdrop-blur-md">
+        <div className="border-t border-[var(--border-strong)] bg-[var(--bg-card)] p-4">
           <div className="relative flex items-end gap-3">
             <textarea 
               rows={1} 
@@ -390,14 +390,14 @@ export default function FloatingChatbot() {
               }} 
               onKeyDown={handleKey} 
               disabled={loading}
-              className="max-h-[120px] min-h-[52px] w-full resize-none rounded-2xl border border-slate-700 bg-slate-800/50 py-3.5 pl-5 pr-14 text-sm leading-relaxed text-slate-100 placeholder-slate-500 transition-all focus:border-blue-500/50 focus:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:opacity-50"
+              className="max-h-[120px] min-h-[52px] w-full resize-none rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-elevated)] py-3.5 pl-5 pr-14 text-sm leading-relaxed text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all focus:border-[var(--primary)] focus:bg-[var(--bg-elevated)] focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/20 disabled:opacity-50"
             />
             <div className="absolute right-1.5 bottom-1.5 flex">
               {loading ? (
                 <button 
                   onClick={stopGenerating} 
                   title="Stop generating"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 text-red-400 transition-colors hover:bg-red-500/30 focus:outline-none"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 transition-colors hover:bg-red-200 focus:outline-none"
                 >
                   <StopIcon />
                 </button>
@@ -406,7 +406,7 @@ export default function FloatingChatbot() {
                   onClick={() => sendMessage(input)} 
                   disabled={!input.trim() || cooldown > 0} 
                   aria-label="Send"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md transition-all hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:pointer-events-none disabled:opacity-50"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-sm transition-all hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 disabled:pointer-events-none disabled:opacity-50"
                 >
                   <SendIcon />
                 </button>

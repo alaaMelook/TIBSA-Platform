@@ -1,42 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f172a;
-  --foreground: #e2e8f0;
-  --nav-bg: #0f172a;
-  --card-bg: #263554;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --accent: #3b82f6;
-  --accent-hover: #60a5fa;
+  --bg-main: #f8f3eb;
+  --bg-page: #f6f0e7;
+  --bg-sidebar: #f3ede4;
+  --bg-card: #fffaf4;
+  --bg-elevated: #ffffff;
+
+  --border-soft: #e7ddd1;
+  --border-strong: #d9cdbf;
+
+  --primary: #0f9d76;
+  --primary-hover: #0b7d5d;
+  --primary-light: #dff5ec;
+  --primary-soft: #edf8f3;
+
+  --text-primary: #1d1d1d;
+  --text-secondary: #4f4a45;
+  --text-muted: #8a8178;
+
+  --success: #0f9d76;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #2563eb;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-main);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-main);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Scrollbar styling for dark theme */
+/* Scrollbar styling for light theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--text-muted);
 }
 
 @keyframes shimmer {
@@ -54,4 +69,53 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Sonner toast - TIBSA Ivory Emerald style */
+[data-sonner-toaster] [data-sonner-toast] {
+  background: #ffffff !important;
+  color: #1d1d1d !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+}
+
+/* Main toast title */
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  color: #1d1d1d !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em;
+}
+
+/* Toast description */
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: #4f4a45 !important;
+  font-weight: 600 !important;
+}
+
+/* Success accent */
+[data-sonner-toast][data-type="success"] {
+  border-color: var(--success) !important;
+}
+
+/* Error accent */
+[data-sonner-toast][data-type="error"] {
+  border-color: var(--danger) !important;
+}
+
+/* Warning accent */
+[data-sonner-toast][data-type="warning"] {
+  border-color: var(--warning) !important;
+}
+
+/* Info accent */
+[data-sonner-toast][data-type="info"] {
+  border-color: var(--info) !important;
+}
+
+/* Close button */
+[data-sonner-toaster] [data-close-button] {
+  background: #fffaf4 !important;
+  color: #1d1d1d !important;
+  border: 1px solid var(--border-soft) !important;
 }

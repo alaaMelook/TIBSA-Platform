@@ -4,6 +4,14 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const defaults = {
+    headers: {
+        common: {
+            Authorization: "",
+        },
+    },
+};
+
 interface RequestOptions {
     method?: string;
     body?: unknown;
@@ -18,6 +26,9 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         method,
         headers: {
             "Content-Type": "application/json",
+            ...(defaults.headers.common.Authorization 
+                ? { Authorization: defaults.headers.common.Authorization } 
+                : {}),
             ...headers,
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
@@ -58,6 +69,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
 // ─── API Methods ─────────────────────────────────────────────
 export const api = {
+    defaults,
+    
     get: <T>(endpoint: string, token?: string) =>
         request<T>(endpoint, { token }),
 

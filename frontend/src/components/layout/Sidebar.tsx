@@ -185,7 +185,7 @@ export function Sidebar() {
 
     return (
         <aside
-            className={`min-h-screen bg-[#0f172a] border-r border-white/[0.08] p-3 flex flex-col justify-between transition-all duration-300 ease-in-out ${isCollapsed ? "w-16" : "w-64"
+            className={`min-h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border-strong)] p-3 flex flex-col justify-between transition-all duration-300 ease-in-out ${isCollapsed ? "w-16" : "w-64"
                 }`}
         >
             <div className="space-y-6">
@@ -193,13 +193,13 @@ export function Sidebar() {
                 {/* ── Header & Toggle ── */}
                 <div className={`flex items-center justify-between min-h-[32px] ${isCollapsed ? "justify-center" : "px-2"}`}>
                     {!isCollapsed && (
-                        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest animate-fadeIn truncate">
+                        <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest animate-fadeIn truncate">
                             {sectionTitle}
                         </h2>
                     )}
                     <button
                         onClick={handleToggle}
-                        className="p-1.5 rounded-lg border border-white/[0.08] text-slate-500 hover:text-slate-200 hover:bg-white/[0.04] transition-all cursor-pointer flex-shrink-0"
+                        className="p-1.5 rounded-lg border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all cursor-pointer flex-shrink-0"
                         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         {isCollapsed ? (
@@ -227,12 +227,12 @@ export function Sidebar() {
                                 href={link.href}
                                 className={`flex items-center rounded-lg text-xs font-bold transition-all duration-200 relative group cursor-pointer ${isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5"
                                     } ${isActive
-                                        ? "bg-[#3b82f6]/15 text-blue-400 border border-blue-500/20"
-                                        : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
+                                        ? "bg-[var(--primary)] text-white shadow-md shadow-[var(--primary-soft)]"
+                                        : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--primary)]"
                                     }`}
                                 title={isCollapsed ? link.label : undefined}
                             >
-                                <span className={isActive ? "text-blue-400" : "text-slate-500"}>
+                                <span className={isActive ? "text-white" : "text-[var(--text-muted)] group-hover:text-[var(--primary)]"}>
                                     {link.icon}
                                 </span>
                                 {!isCollapsed && (
@@ -249,10 +249,10 @@ export function Sidebar() {
 
             {/* ── Admin / User Switcher ── */}
             {isAdmin && (
-                <div className="pt-4 border-t border-white/[0.08]">
+                <div className="pt-4 border-t border-[var(--border-soft)]">
                     <Link
                         href={isAdminSection ? "/dashboard" : "/admin"}
-                        className={`flex items-center text-xs text-slate-500 hover:text-slate-300 transition-colors ${isCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
+                        className={`flex items-center text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors ${isCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
                             }`}
                         title={isCollapsed ? (isAdminSection ? "TIBSA Shield" : "TIBSA SOC Nexus") : undefined}
                     >

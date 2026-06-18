@@ -55,28 +55,28 @@ export function ConfirmationModal({
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-xl shadow-2xl shadow-red-500/10 pointer-events-auto overflow-hidden"
+                            className="w-full max-w-md bg-[var(--bg-card)] border border-red-500/30 rounded-xl shadow-2xl shadow-red-500/10 pointer-events-auto overflow-hidden"
                         >
                             {/* Header */}
-                            <div className="flex items-center gap-3 p-5 border-b border-white/[0.06] bg-red-500/[0.03]">
+                            <div className="flex items-center gap-3 p-5 border-b border-[var(--border-strong)] bg-red-500/[0.03]">
                                 <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
                                     <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-white">{title}</h3>
+                                    <h3 className="text-lg font-bold text-[var(--text-primary)]">{title}</h3>
                                     <p className="text-sm text-red-400">{description}</p>
                                 </div>
                             </div>
 
                             {/* Body */}
                             <div className="p-5 space-y-4">
-                                <p className="text-sm text-slate-300">
+                                <p className="text-sm text-[var(--text-secondary)]">
                                     {consequences}
                                 </p>
                                 <div className="space-y-2">
-                                    <label className="block text-xs font-medium text-slate-400">
+                                    <label className="block text-xs font-medium text-[var(--text-muted)]">
                                         Please type <span className="font-mono text-red-400 select-all">{confirmationString}</span> to confirm.
                                     </label>
                                     <input
@@ -85,17 +85,17 @@ export function ConfirmationModal({
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder={confirmationString}
                                         disabled={isConfirming}
-                                        className="w-full px-3 py-2 bg-black/20 border border-white/[0.08] rounded-md text-sm text-white placeholder-slate-600 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-colors"
+                                        className="w-full px-3 py-2 bg-black/20 border border-[var(--border-soft)] rounded-md text-sm text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50 transition-colors"
                                     />
                                 </div>
                             </div>
 
                             {/* Footer */}
-                            <div className="flex items-center justify-end gap-3 p-5 border-t border-white/[0.06] bg-black/20">
+                            <div className="flex items-center justify-end gap-3 p-5 border-t border-[var(--border-strong)] bg-black/20">
                                 <button
                                     onClick={onClose}
                                     disabled={isConfirming}
-                                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors disabled:opacity-50"
+                                    className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
@@ -104,8 +104,8 @@ export function ConfirmationModal({
                                     disabled={!isValid || isConfirming}
                                     className={`flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
                                         isValid
-                                            ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20"
-                                            : "bg-white/[0.04] text-slate-500 cursor-not-allowed"
+                                            ? "bg-red-500 text-[var(--text-primary)] hover:bg-red-600 shadow-lg shadow-red-500/20"
+                                            : "bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed"
                                     }`}
                                 >
                                     {isConfirming ? (

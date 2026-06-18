@@ -21,12 +21,12 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
   const getStageIcon = (name: string, status: string) => {
     const iconClass = `w-5 h-5 ${
       status === "running"
-        ? "animate-pulse text-blue-400"
+        ? "animate-pulse text-[var(--primary)]"
         : status === "completed"
         ? "text-emerald-400"
         : status === "failed"
         ? "text-red-400"
-        : "text-slate-500"
+        : "text-[var(--text-muted)]"
     }`;
 
     if (name.includes("Pentest")) return <Search className={iconClass} />;
@@ -42,19 +42,19 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
       case "completed":
         return "border-emerald-500/30 bg-emerald-950/20 text-emerald-400";
       case "running":
-        return "border-blue-500/30 bg-blue-950/20 text-blue-400 border-dashed animate-pulse";
+        return "border-[var(--primary)] bg-blue-950/20 text-[var(--primary)] border-dashed animate-pulse";
       case "failed":
         return "border-red-500/30 bg-red-950/20 text-red-400";
       case "skipped":
-        return "border-slate-800 bg-slate-900/50 text-slate-500";
+        return "border-[var(--border-strong)] bg-[var(--bg-card)]/50 text-[var(--text-muted)]";
       default:
-        return "border-slate-800 bg-slate-900/10 text-slate-500";
+        return "border-[var(--border-strong)] bg-[var(--bg-card)]/10 text-[var(--text-muted)]";
     }
   };
 
   return (
-    <div className="w-full bg-[#1e293b]/30 rounded-xl border border-white/[0.04] p-6 shadow-md">
-      <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-6">
+    <div className="w-full bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] p-6 shadow-md">
+      <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-6">
         Investigation Progress Pipeline
       </h3>
 
@@ -67,24 +67,24 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
           return (
             <React.Fragment key={stage.stage}>
               {/* Stage Node */}
-              <div className="flex-1 flex flex-col items-center text-center p-3 rounded-xl border bg-slate-900/25 relative transition-all duration-300">
+              <div className="flex-1 flex flex-col items-center text-center p-3 rounded-xl border bg-[var(--bg-card)]/25 relative transition-all duration-300">
                 {/* Node Top Icon */}
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center border ${
                     status === "running"
-                      ? "border-blue-500 bg-blue-950/50 shadow-md shadow-blue-500/10"
+                      ? "border-blue-500 bg-blue-950/50 shadow-md shadow-[var(--primary-soft)]"
                       : status === "completed"
                       ? "border-emerald-500 bg-emerald-950/30"
                       : status === "failed"
                       ? "border-red-500 bg-red-950/30"
-                      : "border-slate-800 bg-slate-900/60"
+                      : "border-[var(--border-strong)] bg-[var(--bg-card)]/60"
                   } mb-3`}
                 >
                   {getStageIcon(stage.stage, status)}
                 </div>
 
                 {/* Info */}
-                <span className="text-sm font-semibold text-slate-200 block truncate max-w-full">
+                <span className="text-sm font-semibold text-[var(--text-primary)] block truncate max-w-full">
                   {stage.stage}
                 </span>
 
@@ -102,7 +102,7 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
 
               {/* Connecting line */}
               {!isLast && (
-                <div className="hidden md:block w-8 h-[2px] bg-slate-800 relative self-center">
+                <div className="hidden md:block w-8 h-[2px] bg-[var(--bg-elevated)] relative self-center">
                   {status === "completed" && (
                     <div className="absolute inset-0 bg-emerald-500/50 transition-all duration-500" />
                   )}

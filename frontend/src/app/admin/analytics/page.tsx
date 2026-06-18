@@ -138,17 +138,17 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-white">Platform Analytics</h1>
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/20 text-purple-400 rounded-full">
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Platform Analytics</h1>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-[var(--primary)] text-[var(--primary)] rounded-full">
                             Insights
                         </span>
                     </div>
-                    <p className="text-sm text-slate-400">Comprehensive platform usage metrics and performance insights</p>
+                    <p className="text-sm text-[var(--text-muted)]">Comprehensive platform usage metrics and performance insights</p>
                 </div>
                 <button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
                 >
                     <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -209,19 +209,19 @@ export default function AnalyticsPage() {
                 >
                     <div className="space-y-4">
                         {[
-                            { label: "Total Users Registered", value: (stats.totalUsers ?? 0).toLocaleString(), bar: 100, color: "bg-blue-500" },
+                            { label: "Total Users Registered", value: (stats.totalUsers ?? 0).toLocaleString(), bar: 100, color: "bg-[var(--primary)]" },
                             { label: "Active Users (30d)", value: (stats.activeUsers ?? 0).toLocaleString(), bar: ((stats.activeUsers ?? 0) / (stats.totalUsers || 1)) * 100, color: "bg-emerald-500" },
-                            { label: "Scans Processed", value: (stats.totalScans ?? 0).toLocaleString(), bar: 100, color: "bg-purple-500" },
+                            { label: "Scans Processed", value: (stats.totalScans ?? 0).toLocaleString(), bar: 100, color: "bg-[var(--primary)] !text-white" },
                             { label: "Threats Detected", value: (stats.threatsDetected ?? 0).toLocaleString(), bar: ((stats.threatsDetected ?? 0) / (stats.totalScans || 1)) * 100 * 10, color: "bg-red-500" },
                             { label: "Avg Response Time", value: `${stats.avgResponseTime ?? 0}ms`, bar: Math.min(((stats.avgResponseTime ?? 0) / 500) * 100, 100), color: "bg-cyan-500" },
                             { label: "System Uptime", value: `${stats.systemUptime ?? 0}%`, bar: stats.systemUptime ?? 0, color: "bg-emerald-400" },
                         ].map((metric) => (
                             <div key={metric.label} className="space-y-1.5">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-400">{metric.label}</span>
-                                    <span className="text-sm font-semibold text-white tabular-nums">{metric.value}</span>
+                                    <span className="text-xs text-[var(--text-muted)]">{metric.label}</span>
+                                    <span className="text-sm font-semibold text-[var(--text-primary)] tabular-nums">{metric.value}</span>
                                 </div>
-                                <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                                <div className="w-full h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
                                     <div
                                         className={`h-full rounded-full ${metric.color} transition-all duration-1000 ease-out`}
                                         style={{ width: `${Math.min(metric.bar, 100)}%` }}
@@ -241,19 +241,19 @@ export default function AnalyticsPage() {
                         {(charts.topUrls || []).map((url, i) => (
                             <div
                                 key={i}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.02] transition-colors"
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors"
                             >
                                 <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                                    i < 3 ? "bg-blue-500/15 text-blue-400" : "bg-white/[0.04] text-slate-500"
+                                    i < 3 ? "bg-[var(--primary)]/15 text-[var(--primary)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
                                 }`}>
                                     {i + 1}
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-slate-300 truncate font-mono">{url.url}</p>
+                                    <p className="text-sm text-[var(--text-secondary)] truncate font-mono">{url.url}</p>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-[11px] text-slate-500">{url.scan_count} scans</span>
-                                        <span className="text-[11px] text-slate-600">•</span>
-                                        <span className="text-[11px] text-slate-500">
+                                        <span className="text-[11px] text-[var(--text-muted)]">{url.scan_count} scans</span>
+                                        <span className="text-[11px] text-[var(--text-muted)]">•</span>
+                                        <span className="text-[11px] text-[var(--text-muted)]">
                                             {new Date(url.last_scanned || Date.now()).toLocaleDateString()}
                                         </span>
                                     </div>

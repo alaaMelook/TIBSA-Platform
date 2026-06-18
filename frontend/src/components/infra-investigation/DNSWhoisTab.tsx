@@ -9,19 +9,19 @@ interface Props {
 
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <div className="flex items-start justify-between py-2 border-b border-white/[0.03] last:border-0 gap-4">
-      <span className="text-xs text-slate-500 flex-shrink-0">{label}</span>
-      <span className="text-xs text-slate-200 font-medium text-right break-all">{value || "—"}</span>
+    <div className="flex items-start justify-between py-2 border-b border-[var(--border-strong)] last:border-0 gap-4">
+      <span className="text-xs text-[var(--text-muted)] flex-shrink-0">{label}</span>
+      <span className="text-xs text-[var(--text-primary)] font-medium text-right break-all">{value || "—"}</span>
     </div>
   );
 }
 
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-[#1e293b]/60 border border-white/[0.06] rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.04]">
+    <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border-soft)]">
         {icon}
-        <span className="text-xs font-bold text-slate-200">{title}</span>
+        <span className="text-xs font-bold text-[var(--text-primary)]">{title}</span>
       </div>
       <div className="px-4 py-2">{children}</div>
     </div>
@@ -39,18 +39,18 @@ export function DNSWhoisTab({ results }: Props) {
 
       {/* DNS Records */}
       {dns && !dns.error && (
-        <SectionCard title="DNS Records" icon={<Globe className="w-4 h-4 text-blue-400" />}>
+        <SectionCard title="DNS Records" icon={<Globe className="w-4 h-4 text-[var(--primary)]" />}>
           {dns.records.length === 0 ? (
-            <p className="text-slate-500 text-xs py-4">No DNS records retrieved</p>
+            <p className="text-[var(--text-muted)] text-xs py-4">No DNS records retrieved</p>
           ) : (
             <div className="divide-y divide-white/[0.03]">
               {dns.records.map((rec, i) => (
                 <div key={i} className="flex items-center gap-3 py-2">
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 tracking-wider flex-shrink-0">
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-[var(--primary)]/10 border border-[var(--primary)] text-[var(--primary)] tracking-wider flex-shrink-0">
                     {rec.type}
                   </span>
-                  <span className="text-xs text-slate-200 font-mono truncate">{rec.value}</span>
-                  {rec.ttl && <span className="text-[10px] text-slate-600 ml-auto flex-shrink-0">TTL {rec.ttl}</span>}
+                  <span className="text-xs text-[var(--text-primary)] font-mono truncate">{rec.value}</span>
+                  {rec.ttl && <span className="text-[10px] text-[var(--text-muted)] ml-auto flex-shrink-0">TTL {rec.ttl}</span>}
                 </div>
               ))}
             </div>
@@ -60,7 +60,7 @@ export function DNSWhoisTab({ results }: Props) {
 
       {/* WHOIS */}
       {whois && !whois.error && (
-        <SectionCard title="WHOIS / Registration" icon={<Server className="w-4 h-4 text-purple-400" />}>
+        <SectionCard title="WHOIS / Registration" icon={<Server className="w-4 h-4 text-[var(--primary)]" />}>
           <InfoRow label="Registrar"        value={whois.registrar} />
           <InfoRow label="Registrant Org"   value={whois.registrant_org} />
           <InfoRow label="Created"          value={whois.creation_date ? new Date(whois.creation_date).toLocaleDateString() : null} />
@@ -68,7 +68,7 @@ export function DNSWhoisTab({ results }: Props) {
           <InfoRow label="Updated"          value={whois.updated_date ? new Date(whois.updated_date).toLocaleDateString() : null} />
           <InfoRow label="Domain Age"       value={whois.domain_age_days !== null ? `${whois.domain_age_days} days` : null} />
           <div className="py-2 flex items-center justify-between">
-            <span className="text-xs text-slate-500">Newly Registered</span>
+            <span className="text-xs text-[var(--text-muted)]">Newly Registered</span>
             {whois.is_newly_registered ? (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400">
                 YES – HIGH RISK
@@ -82,7 +82,7 @@ export function DNSWhoisTab({ results }: Props) {
           {whois.status.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-2">
               {whois.status.slice(0, 4).map((s, i) => (
-                <span key={i} className="text-[9px] font-semibold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-white/[0.04]">
+                <span key={i} className="text-[9px] font-semibold bg-[var(--bg-elevated)] text-[var(--text-muted)] px-1.5 py-0.5 rounded border border-[var(--border-soft)]">
                   {s.split(" ")[0]}
                 </span>
               ))}
@@ -109,11 +109,11 @@ export function DNSWhoisTab({ results }: Props) {
             )}
           </div>
           {ssl.san_domains.length > 0 && (
-            <div className="mt-3 pt-2 border-t border-white/[0.04]">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">SAN Domains</p>
+            <div className="mt-3 pt-2 border-t border-[var(--border-soft)]">
+              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">SAN Domains</p>
               <div className="flex flex-wrap gap-1">
                 {ssl.san_domains.slice(0, 8).map((d, i) => (
-                  <span key={i} className="text-[9px] font-mono bg-slate-900/60 text-slate-400 px-1.5 py-0.5 rounded border border-white/[0.04]">
+                  <span key={i} className="text-[9px] font-mono bg-[var(--bg-card)]/60 text-[var(--text-muted)] px-1.5 py-0.5 rounded border border-[var(--border-soft)]">
                     {d}
                   </span>
                 ))}
@@ -144,7 +144,7 @@ export function DNSWhoisTab({ results }: Props) {
 
 function Empty() {
   return (
-    <div className="py-20 text-center text-slate-600">
+    <div className="py-20 text-center text-[var(--text-muted)]">
       <Minus className="w-6 h-6 mx-auto mb-2 opacity-40" />
       <p className="text-sm">DNS & infrastructure data not yet available</p>
     </div>

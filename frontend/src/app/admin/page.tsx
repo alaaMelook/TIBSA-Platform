@@ -235,26 +235,26 @@ export default function AdminPage() {
                 {/* Skeleton header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <div className="h-7 w-56 bg-white/[0.04] rounded-lg" />
-                        <div className="h-4 w-80 bg-white/[0.03] rounded mt-2" />
+                        <div className="h-7 w-56 bg-[var(--bg-elevated)] rounded-lg" />
+                        <div className="h-4 w-80 bg-[var(--bg-elevated)] rounded mt-2" />
                     </div>
-                    <div className="h-4 w-40 bg-white/[0.03] rounded hidden md:block" />
+                    <div className="h-4 w-40 bg-[var(--bg-elevated)] rounded hidden md:block" />
                 </div>
                 {/* Skeleton stat cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="h-28 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
+                        <div key={i} className="h-28 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
                     ))}
                 </div>
                 {/* Skeleton charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 h-80 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-                    <div className="h-80 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
+                    <div className="lg:col-span-2 h-80 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
+                    <div className="h-80 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
                 </div>
                 {/* Skeleton bottom row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="h-72 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-                    <div className="h-72 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
+                    <div className="h-72 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
+                    <div className="h-72 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
                 </div>
             </div>
         );
@@ -274,7 +274,7 @@ export default function AdminPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-white tracking-tight">SOC Monitoring Console</h1>
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">SOC Monitoring Console</h1>
                         {isLive && (
                             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.2)]">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -282,33 +282,33 @@ export default function AdminPage() {
                             </span>
                         )}
                     </div>
-                    <p className="text-sm text-slate-400">
-                        Active threat monitoring and platform oversight for <span className="text-slate-200 font-medium">{user?.full_name}</span>
+                    <p className="text-sm text-[var(--text-muted)]">
+                        Active threat monitoring and platform oversight for <span className="text-[var(--text-primary)] font-medium">{user?.full_name}</span>
                     </p>
                 </div>
-                <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] rounded-lg p-2 backdrop-blur-md">
+                <div className="flex items-center gap-4 bg-black/40 border border-[var(--border-strong)] rounded-lg p-2 backdrop-blur-md">
                     <button
                         onClick={handleRefresh}
                         disabled={refreshing}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
                     >
                         <svg className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         {refreshing ? "Refreshing..." : "Refresh"}
                     </button>
-                    <div className="w-px h-4 bg-white/[0.1]" />
+                    <div className="w-px h-4 bg-[var(--bg-elevated)]" />
                     <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-400 font-mono">AUTO-REFRESH</span>
+                        <span className="text-[var(--text-muted)] font-mono">AUTO-REFRESH</span>
                         <button 
                             onClick={() => setIsLive(!isLive)}
-                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-slate-700'}`}
+                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-[var(--bg-elevated)]'}`}
                         >
                             <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isLive ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                     </div>
-                    <div className="w-px h-4 bg-white/[0.1]" />
-                    <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
+                    <div className="w-px h-4 bg-[var(--bg-elevated)]" />
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] font-mono">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
                         <span>SYSTEMS_NOMINAL</span>
                     </div>
@@ -380,9 +380,9 @@ export default function AdminPage() {
             </div>
 
             {/* ── Infrastructure Intel Stats Grid ─────────────────── */}
-            <div className="border-t border-white/[0.08] pt-6 mt-6">
+            <div className="border-t border-[var(--border-soft)] pt-6 mt-6">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <h2 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                         Infrastructure Intelligence Metrics
                     </h2>
@@ -461,7 +461,7 @@ export default function AdminPage() {
                     description="Last 14 days detection overview"
                     className="lg:col-span-2"
                     action={
-                        <Link href="/admin/threats" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                        <Link href="/admin/threats" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors">
                             View all →
                         </Link>
                     }
@@ -483,7 +483,7 @@ export default function AdminPage() {
                     title="Scan Volume"
                     description="Last 7 days"
                     action={
-                        <Link href="/admin/analytics" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                        <Link href="/admin/analytics" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors">
                             Analytics →
                         </Link>
                     }
@@ -496,7 +496,7 @@ export default function AdminPage() {
                     description="Real-time platform events"
                     noPadding
                     action={
-                        <Link href="/admin/audit" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                        <Link href="/admin/audit" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors">
                             View audit log →
                         </Link>
                     }
@@ -505,7 +505,7 @@ export default function AdminPage() {
                         {activity.length > 0 ? (
                             <ActivityFeed activities={activity} />
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
+                            <div className="flex flex-col items-center justify-center py-10 text-[var(--text-muted)]">
                                 <p className="text-sm">No recent activity found.</p>
                             </div>
                         )}
@@ -525,20 +525,20 @@ export default function AdminPage() {
                             charts.topUrls.map((url, i) => (
                                 <div
                                     key={i}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors group"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors group"
                                 >
                                     {/* Rank */}
                                     <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                                        i < 3 ? "bg-blue-500/15 text-blue-400" : "bg-white/[0.04] text-slate-500"
+                                        i < 3 ? "bg-[var(--primary)]/15 text-[var(--primary)]" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
                                     }`}>
                                         {i + 1}
                                     </span>
                                     {/* URL */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-slate-300 truncate group-hover:text-white transition-colors">
+                                        <p className="text-sm text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)] transition-colors">
                                             {url.url}
                                         </p>
-                                        <p className="text-[11px] text-slate-500">
+                                        <p className="text-[11px] text-[var(--text-muted)]">
                                             {url.scan_count} scans
                                         </p>
                                     </div>
@@ -547,7 +547,7 @@ export default function AdminPage() {
                                 </div>
                             ))
                         ) : (
-                            <div className="py-8 text-center text-slate-500 text-sm">No scan targets found.</div>
+                            <div className="py-8 text-center text-[var(--text-muted)] text-sm">No scan targets found.</div>
                         )}
                     </div>
                 </AdminSectionCard>
@@ -557,7 +557,7 @@ export default function AdminPage() {
                     title="System Health"
                     description={`${healthyServices}/${totalServices} services operational`}
                     action={
-                        <Link href="/admin/system" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                        <Link href="/admin/system" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors">
                             Details →
                         </Link>
                     }
@@ -566,14 +566,14 @@ export default function AdminPage() {
                         {health.map((service) => (
                             <div
                                 key={service.name}
-                                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors"
+                                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors"
                             >
                                 <StatusDot status={service.status} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-slate-300">{service.name}</p>
-                                    <p className="text-xs text-slate-500 truncate">{service.description}</p>
+                                    <p className="text-sm text-[var(--text-secondary)]">{service.name}</p>
+                                    <p className="text-xs text-[var(--text-muted)] truncate">{service.description}</p>
                                 </div>
-                                <span className="text-xs text-slate-500 tabular-nums">{service.responseTime}ms</span>
+                                <span className="text-xs text-[var(--text-muted)] tabular-nums">{service.responseTime}ms</span>
                                 <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                                     service.status === "operational" ? "bg-emerald-500/10 text-emerald-400" :
                                     service.status === "degraded" ? "bg-amber-500/10 text-amber-400" :
@@ -598,7 +598,7 @@ export default function AdminPage() {
                     title="Active Analysts & Users"
                     description={`${presence?.active_count || 0} active analysts online`}
                     action={
-                        <Link href="/admin/users" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                        <Link href="/admin/users" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors">
                             Manage Users →
                         </Link>
                     }
@@ -610,22 +610,22 @@ export default function AdminPage() {
                                 <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-emerald-500/[0.02] border border-emerald-500/10 hover:bg-emerald-500/[0.04] transition-colors">
                                     {/* Avatar */}
                                     <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-                                        <span className="text-xs font-bold text-white uppercase">{user.full_name.charAt(0)}</span>
+                                        <span className="text-xs font-bold text-[var(--text-primary)] uppercase">{user.full_name.charAt(0)}</span>
                                         <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-400 border-2 border-[#0B1528] animate-pulse" />
                                     </div>
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-1.5">
-                                            <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
+                                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user.full_name}</p>
                                             <span className="px-1.5 py-0.5 rounded text-[8px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
                                                 Active
                                             </span>
                                         </div>
-                                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                        <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
                                     </div>
                                     {/* Role Badge */}
                                     <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${
-                                        user.role === "admin" ? "bg-purple-500/15 text-purple-400 border border-purple-500/20" : "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                        user.role === "admin" ? "bg-[var(--primary-soft)] text-[var(--primary)] border border-[var(--primary)]" : "bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]"
                                     }`}>
                                         {user.role === "admin" ? "⚡ ADMIN" : "👤 USER"}
                                     </span>
@@ -641,20 +641,20 @@ export default function AdminPage() {
                                     user.seconds_ago < 3600 ? `${Math.floor(user.seconds_ago / 60)}m ago` :
                                     `${Math.floor(user.seconds_ago / 3600)}h ago`;
                                 return (
-                                    <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.01] transition-colors group">
+                                    <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors group">
                                         {/* Avatar */}
-                                        <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-slate-800 border border-white/[0.06] flex items-center justify-center">
-                                            <span className="text-xs font-bold text-slate-400 uppercase">{user.full_name.charAt(0)}</span>
-                                            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-slate-600 border-2 border-[#0B1528]" />
+                                        <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-strong)] flex items-center justify-center">
+                                            <span className="text-xs font-bold text-[var(--text-muted)] uppercase">{user.full_name.charAt(0)}</span>
+                                            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-[var(--bg-elevated)] border-2 border-[#0B1528]" />
                                         </div>
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-400 group-hover:text-white transition-colors truncate">{user.full_name}</p>
-                                            <p className="text-xs text-slate-600 truncate font-mono">last seen {lastSeenStr}</p>
+                                            <p className="text-sm font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors truncate">{user.full_name}</p>
+                                            <p className="text-xs text-[var(--text-muted)] truncate font-mono">last seen {lastSeenStr}</p>
                                         </div>
                                         {/* Role Badge */}
                                         <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${
-                                            user.role === "admin" ? "bg-white/[0.04] text-purple-400/60 border border-purple-500/10" : "bg-white/[0.04] text-slate-500 border border-white/[0.06]"
+                                            user.role === "admin" ? "bg-[var(--bg-elevated)] text-[var(--primary)]/60 border border-[var(--primary)]/10" : "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-strong)]"
                                         }`}>
                                             {user.role === "admin" ? "ADMIN" : "USER"}
                                         </span>
@@ -665,7 +665,7 @@ export default function AdminPage() {
 
                         {(!presence?.active_users || presence.active_users.length === 0) && 
                          (!presence?.offline_users || presence.offline_users.length === 0) && (
-                            <div className="py-8 text-center text-slate-500 text-sm">
+                            <div className="py-8 text-center text-[var(--text-muted)] text-sm">
                                 No registered analysts found.
                             </div>
                         )}
@@ -676,19 +676,19 @@ export default function AdminPage() {
             {/* ── Quick Navigation ──────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { href: "/admin/users", icon: "👥", title: "User Management", desc: "Manage users, roles & permissions", color: "border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5" },
+                    { href: "/admin/users", icon: "👥", title: "User Management", desc: "Manage users, roles & permissions", color: "border-[var(--primary)] hover:border-[var(--primary)] hover:bg-[var(--primary)]/5" },
                     { href: "/admin/threats", icon: "🛡️", title: "Threat Intelligence", desc: "Feeds, indicators & blocklists", color: "border-red-500/20 hover:border-red-500/40 hover:bg-red-500/5" },
-                    { href: "/admin/analytics", icon: "📊", title: "Platform Analytics", desc: "Usage metrics & growth data", color: "border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/5" },
+                    { href: "/admin/analytics", icon: "📊", title: "Platform Analytics", desc: "Usage metrics & growth data", color: "border-[var(--primary)] hover:border-[var(--primary)]/40 hover:bg-[var(--primary-soft)]" },
                     { href: "/admin/audit", icon: "📋", title: "Audit Log", desc: "Security events & admin actions", color: "border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/5" },
                 ].map((item) => (
                     <Link
                         key={item.href}
                         href={item.href}
-                        className={`block p-5 rounded-xl border bg-white/[0.01] transition-all duration-300 group ${item.color}`}
+                        className={`block p-5 rounded-xl border bg-[var(--bg-elevated)] transition-all duration-300 group ${item.color}`}
                     >
                         <span className="text-2xl">{item.icon}</span>
-                        <h3 className="text-sm font-semibold text-white mt-3 group-hover:text-blue-300 transition-colors">{item.title}</h3>
-                        <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)] mt-3 group-hover:text-[var(--primary)] transition-colors">{item.title}</h3>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">{item.desc}</p>
                     </Link>
                 ))}
             </div>

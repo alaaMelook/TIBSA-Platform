@@ -47,7 +47,7 @@ function timeAgo(dateStr: string): string {
 
 const NOTIF_ICON_COLOR: Record<string, string> = {
     threat: "text-red-400 bg-red-500/15",
-    scan:   "text-blue-400 bg-blue-500/15",
+    scan:   "text-[var(--primary)] bg-[var(--primary)]/15",
     system: "text-amber-400 bg-amber-500/15",
 };
 
@@ -131,17 +131,17 @@ export function DashboardHeader() {
     return (
         <header className="sticky top-0 z-50 w-full">
             {/* Glow layer behind the bar */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/[0.06] via-transparent to-blue-600/[0.06] pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/[0.04] via-transparent to-[var(--primary)]/[0.04] pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--primary)]/20 to-transparent" />
 
             {/* Main bar */}
-            <div className="relative flex items-center h-16 px-6 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/[0.08]">
+            <div className="relative flex items-center h-16 px-6 bg-[var(--bg-main)]/95 backdrop-blur-xl border-b border-[var(--border-soft)]">
 
                 {/* ── LEFT: Logo ────────────────────────────── */}
                 <Link href="/dashboard" className="flex items-center gap-2.5 group mr-8 flex-shrink-0">
                     <div className="relative">
-                        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:shadow-blue-500/30 transition-shadow">
-                            <svg className="w-[18px] h-[18px] text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] flex items-center justify-center shadow-lg shadow-[var(--primary-soft)] group-hover:shadow-[var(--primary-soft)] transition-shadow">
+                            <svg className="w-[18px] h-[18px] text-[var(--text-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                             </svg>
                         </div>
@@ -152,8 +152,8 @@ export function DashboardHeader() {
                         </span>
                     </div>
                     <div className="hidden sm:flex flex-col">
-                        <span className="text-[15px] font-bold tracking-tight text-white leading-none">TIBSA</span>
-                        <span className="text-[10px] font-medium text-blue-400/70 tracking-widest uppercase leading-none mt-0.5">
+                        <span className="text-[15px] font-bold tracking-tight text-[var(--text-primary)] leading-none">TIBSA</span>
+                        <span className="text-[10px] font-medium text-[var(--primary)]/70 tracking-widest uppercase leading-none mt-0.5">
                             {pathname.startsWith("/admin") ? "SOC Nexus" : "Shield"}
                         </span>
                     </div>
@@ -161,18 +161,18 @@ export function DashboardHeader() {
 
                 {/* ── CENTER: Breadcrumbs ─────────────────────── */}
                 <div className="flex-1 flex justify-center">
-                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.04] backdrop-blur-md shadow-inner shadow-white/[0.01]">
+                    <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-soft)] backdrop-blur-md shadow-inner shadow-white/[0.01]">
                         {getBreadcrumbs(pathname).map((crumb, idx, arr) => (
                             <div key={idx} className="flex items-center gap-1.5">
                                 {idx > 0 && (
-                                    <svg className="w-3 h-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                    <svg className="w-3 h-3 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                     </svg>
                                 )}
                                 <span className={`text-[12px] font-semibold tracking-wide transition-colors ${
                                     idx === arr.length - 1 
-                                        ? "text-blue-400 font-extrabold" 
-                                        : "text-slate-400/80 hover:text-slate-300"
+                                        ? "text-[var(--primary)] font-extrabold" 
+                                        : "text-[var(--text-muted)]/80 hover:text-[var(--text-secondary)]"
                                 }`}>
                                     {crumb}
                                 </span>
@@ -188,7 +188,7 @@ export function DashboardHeader() {
                     <div ref={notifRef} className="relative">
                         <button
                             onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
-                            className="relative flex items-center justify-center w-9 h-9 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                            className="relative flex items-center justify-center w-9 h-9 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all"
                             aria-label="Notifications"
                         >
                             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -196,7 +196,7 @@ export function DashboardHeader() {
                             </svg>
                             {/* Badge */}
                             {unread > 0 && (
-                                <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1 shadow-lg shadow-red-500/30 ring-2 ring-[#0f172a]">
+                                <span className="absolute top-1 right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-[var(--text-primary)] px-1 shadow-lg shadow-red-500/30 ring-2 ring-[#0f172a]">
                                     {unread}
                                 </span>
                             )}
@@ -204,25 +204,25 @@ export function DashboardHeader() {
 
                         {/* Notification dropdown */}
                         {notifOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-[#1a2744] border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-                                    <span className="text-sm font-semibold text-white">Notifications</span>
+                            <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-strong)]">
+                                    <span className="text-sm font-semibold text-[var(--text-primary)]">Notifications</span>
                                     {unread > 0 && (
-                                        <button onClick={markAllRead} className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                                        <button onClick={markAllRead} className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors font-medium">
                                             Mark all read
                                         </button>
                                     )}
                                 </div>
                                 <div className="max-h-72 overflow-y-auto divide-y divide-white/[0.04]">
                                     {notifications.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                                        <div className="px-4 py-8 text-center text-[var(--text-muted)] text-sm">
                                             No notifications yet
                                         </div>
                                     ) : notifications.map((n) => (
                                         <button
                                             key={n.id}
                                             onClick={() => markOneRead(n.id)}
-                                            className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-white/[0.03] transition-colors ${!n.read ? "bg-blue-500/[0.04]" : ""}`}
+                                            className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-[var(--bg-elevated)] transition-colors ${!n.read ? "bg-[var(--primary)]/[0.04]" : ""}`}
                                         >
                                             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${NOTIF_ICON_COLOR[n.type] || NOTIF_ICON_COLOR.system}`}>
                                                 {n.type === "threat" && (
@@ -237,17 +237,17 @@ export function DashboardHeader() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <p className={`text-sm font-medium truncate ${!n.read ? "text-white" : "text-slate-300"}`}>{n.title}</p>
-                                                    {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-400" />}
+                                                    <p className={`text-sm font-medium truncate ${!n.read ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>{n.title}</p>
+                                                    {!n.read && <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />}
                                                 </div>
-                                                <p className="text-xs text-slate-500 truncate mt-0.5">{n.body}</p>
-                                                <p className="text-[10px] text-slate-600 mt-1">{timeAgo(n.created_at)}</p>
+                                                <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">{n.body}</p>
+                                                <p className="text-[10px] text-[var(--text-muted)] mt-1">{timeAgo(n.created_at)}</p>
                                             </div>
                                         </button>
                                     ))}
                                 </div>
-                                <div className="border-t border-white/[0.06] px-4 py-2.5">
-                                    <button className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium w-full text-center">
+                                <div className="border-t border-[var(--border-strong)] px-4 py-2.5">
+                                    <button className="text-xs text-[var(--primary)] hover:text-[var(--primary)] transition-colors font-medium w-full text-center">
                                         View all notifications
                                     </button>
                                 </div>
@@ -256,17 +256,17 @@ export function DashboardHeader() {
                     </div>
 
                     {/* Divider */}
-                    <div className="h-6 w-px bg-white/[0.08] mx-2" />
+                    <div className="h-6 w-px bg-[var(--bg-elevated)] mx-2" />
 
                     {/* ─ Profile Area ── */}
                     <div ref={profileRef} className="relative">
                         <button
                             onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }}
-                            className="flex items-center gap-2.5 pl-1 pr-2 py-1.5 rounded-lg hover:bg-white/[0.06] transition-all group"
+                            className="flex items-center gap-2.5 pl-1 pr-2 py-1.5 rounded-lg hover:bg-[var(--bg-elevated)] transition-all group"
                         >
                             {/* Avatar */}
                             <div className="relative flex-shrink-0">
-                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-md shadow-blue-600/20 ring-2 ring-white/[0.08]">
+                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] flex items-center justify-center shadow-md shadow-[var(--primary-soft)] ring-2 ring-white/[0.08]">
                                     <span className="text-[13px] font-bold text-white leading-none">{initial}</span>
                                 </div>
                                 {/* Online indicator */}
@@ -275,35 +275,35 @@ export function DashboardHeader() {
                             {/* Name + role */}
                             <div className="hidden lg:flex flex-col items-start">
                                 <span className="text-[13px] font-medium text-[#f1f5f9] leading-tight">{user?.full_name || "User"}</span>
-                                <span className="text-[10px] text-slate-500 capitalize leading-tight">{user?.role || "user"}</span>
+                                <span className="text-[10px] text-[var(--text-muted)] capitalize leading-tight">{user?.role || "user"}</span>
                             </div>
                             {/* Dropdown arrow */}
-                            <svg className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <svg className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
 
                         {/* Profile dropdown */}
                         {profileOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#1a2744] border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                                 {/* User info header */}
-                                <div className="px-4 py-3 border-b border-white/[0.06]">
-                                    <p className="text-sm font-medium text-white truncate">{user?.full_name}</p>
-                                    <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                                <div className="px-4 py-3 border-b border-[var(--border-strong)]">
+                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user?.full_name}</p>
+                                    <p className="text-xs text-[var(--text-muted)] truncate">{user?.email}</p>
                                 </div>
                                 {/* Menu items */}
                                 <div className="py-1">
                                     <Link href="/dashboard/profile" onClick={() => setProfileOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors">
-                                        <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+                                        <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                         </svg>
                                         Profile Settings
                                     </Link>
                                     {user?.role === "admin" && (
                                         <Link href="/admin" onClick={() => setProfileOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors">
-                                            <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors">
+                                            <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
                                             </svg>
                                             TIBSA SOC Nexus
@@ -311,7 +311,7 @@ export function DashboardHeader() {
                                     )}
                                 </div>
                                 {/* Logout */}
-                                <div className="border-t border-white/[0.06] py-1">
+                                <div className="border-t border-[var(--border-strong)] py-1">
                                     <button
                                         onClick={() => { setProfileOpen(false); logout(); }}
                                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"

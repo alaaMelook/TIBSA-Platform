@@ -132,21 +132,21 @@ function getRiskLabel(score: number | null): string {
 type PillColor = "blue" | "indigo" | "violet" | "teal" | "emerald" | "rose";
 
 const PILL_ACTIVE: Record<PillColor, string> = {
-    blue: "bg-blue-600 text-white border-blue-600",
-    indigo: "bg-indigo-600 text-white border-indigo-600",
-    violet: "bg-violet-600 text-white border-violet-600",
-    teal: "bg-teal-600 text-white border-teal-600",
-    emerald: "bg-emerald-600 text-white border-emerald-600",
-    rose: "bg-rose-600 text-white border-rose-600",
+    blue: "bg-[var(--primary)] !text-white border-[var(--primary)]",
+    indigo: "bg-[var(--primary)] !text-white border-[var(--primary)]",
+    violet: "bg-[var(--primary)] !text-white border-[var(--primary)]",
+    teal: "bg-[var(--primary)] !text-white border-[var(--primary)]",
+    emerald: "bg-[var(--primary)] !text-white border-[var(--primary)]",
+    rose: "bg-[var(--primary)] !text-white border-[var(--primary)]",
 };
 
 const PILL_HOVER: Record<PillColor, string> = {
-    blue: "hover:border-blue-400/50 hover:text-blue-400",
-    indigo: "hover:border-indigo-400/50 hover:text-indigo-400",
-    violet: "hover:border-violet-400/50 hover:text-violet-400",
-    teal: "hover:border-teal-400/50 hover:text-teal-400",
-    emerald: "hover:border-emerald-400/50 hover:text-emerald-400",
-    rose: "hover:border-rose-400/50 hover:text-rose-400",
+    blue: "hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    indigo: "hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    violet: "hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    teal: "hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    emerald: "hover:border-[var(--primary)] hover:text-[var(--primary)]",
+    rose: "hover:border-[var(--primary)] hover:text-[var(--primary)]",
 };
 
 function MultiPillSelect<T extends string>({
@@ -158,8 +158,8 @@ function MultiPillSelect<T extends string>({
     return (
         <div>
             <div className="mb-3">
-                <span className="block text-sm font-semibold text-slate-200">{label}</span>
-                {hint && <span className="block text-[11px] font-medium text-slate-500 mt-1 uppercase tracking-wider">{hint}</span>}
+                <span className="block text-sm font-semibold text-[var(--text-primary)]">{label}</span>
+                {hint && <span className="block text-[11px] font-medium text-[var(--text-muted)] mt-1 uppercase tracking-wider">{hint}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
                 {options.map((opt) => {
@@ -171,7 +171,7 @@ function MultiPillSelect<T extends string>({
                             onClick={() => onToggle(opt)}
                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-300 ${active
                                 ? `${PILL_ACTIVE[color]} shadow-[0_0_12px_rgba(0,0,0,0.5)] shadow-${color}-500/30 scale-[1.02]`
-                                : `bg-[#0d1117]/80 text-slate-400 border-white/[0.05] hover:border-${color}-500/50 hover:bg-${color}-500/10 hover:text-${color}-400`
+                                : `bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)] hover:border-${color}-500/50 hover:bg-${color}-500/10 hover:text-${color}-400`
                                 }`}
                         >
                             {opt}
@@ -180,7 +180,7 @@ function MultiPillSelect<T extends string>({
                 })}
             </div>
             {selected.length > 0 && (
-                <p className="mt-3 text-[11px] font-medium text-slate-400 bg-white/[0.02] inline-block px-3 py-1.5 rounded-md border border-white/[0.05]">
+                <p className="mt-3 text-[11px] font-medium text-[var(--text-muted)] bg-[var(--bg-elevated)] inline-block px-3 py-1.5 rounded-md border border-[var(--border-soft)]">
                     <span className="text-emerald-400 mr-1.5">✓</span>
                     {selected.join(" • ")}
                 </p>
@@ -193,7 +193,7 @@ function SectionDivider({ label }: { label: string }) {
     return (
         <div className="flex items-center gap-4 py-2">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                 {label}
             </span>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
@@ -216,29 +216,29 @@ function CollapsibleSection({
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-        <div className="bg-[#0f1523]/80 backdrop-blur-md rounded-2xl border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-all duration-300 hover:border-blue-500/20 group">
+        <div className="bg-[var(--bg-card)] backdrop-blur-md rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden transition-all duration-300 hover:border-[var(--primary)] group">
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 
                 className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
             >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400 group-hover:bg-blue-500/20 group-hover:scale-110 transition-all duration-300">
+                    <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)] text-[var(--primary)] group-hover:bg-[var(--primary)]/20 group-hover:scale-110 transition-all duration-300">
                         {icon}
                     </div>
                     <div>
-                        <h3 className="text-base font-bold text-white tracking-wide">{title}</h3>
-                        <p className="text-[11px] font-medium text-slate-400 mt-1 uppercase tracking-wider">{description}</p>
+                        <h3 className="text-base font-bold text-[var(--text-primary)] tracking-wide">{title}</h3>
+                        <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1 uppercase tracking-wider">{description}</p>
                     </div>
                 </div>
-                <div className={`w-8 h-8 rounded-full bg-white/[0.03] flex items-center justify-center transition-transform duration-300 ${isOpen ? 'rotate-180 bg-white/[0.08]' : ''}`}>
-                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className={`w-8 h-8 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center transition-transform duration-300 ${isOpen ? 'rotate-180 bg-[var(--bg-elevated)]' : ''}`}>
+                    <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
             </button>
             <div className={`transition-all duration-500 ease-in-out origin-top ${isOpen ? 'max-h-[2000px] opacity-100 scale-y-100' : 'max-h-0 opacity-0 scale-y-95 pointer-events-none'}`}>
-                <div className="p-6 pt-2 border-t border-white/[0.05]">
+                <div className="p-6 pt-2 border-t border-[var(--border-soft)]">
                     {children}
                 </div>
             </div>
@@ -648,7 +648,7 @@ export default function ThreatModelingPage() {
     };
 
     const riskLabel = result ? getRiskLabel(result.riskScore) : "";
-    const barColor = SCORE_COLOR[riskLabel] ?? "bg-slate-600";
+    const barColor = SCORE_COLOR[riskLabel] ?? "bg-[var(--bg-elevated)]";
     const labelStyle = SCORE_LABEL_STYLE[riskLabel] ?? "";
 
     // Compact summary of selected options for the report header
@@ -659,41 +659,39 @@ export default function ThreatModelingPage() {
         <div className="space-y-8 print:p-8 max-w-4xl mx-auto pb-16">
 
             {/* ════════════════════ HERO ════════════════════ */}
-            <div className="relative rounded-2xl bg-[#0d1117] border border-white/[0.05] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] print:hidden">
+            <div className="relative rounded-2xl bg-[var(--bg-card)] border border-[var(--border-soft)] overflow-hidden shadow-sm print:hidden">
                 {/* Background glow effects */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl bg-blue-500/10 blur-[100px] pointer-events-none" />
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl bg-[var(--primary)]/5 blur-[80px] pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--border-strong)] to-transparent opacity-50" />
                 
                 <div className="relative px-8 py-14 flex flex-col items-center text-center">
                     <div className="relative w-16 h-16 mb-6">
-                        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-                        <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/30 flex items-center justify-center backdrop-blur-sm shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                            <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <div className="absolute inset-0 bg-[var(--primary)]/20 rounded-full blur-xl animate-pulse" />
+                        <div className="relative w-full h-full rounded-2xl bg-[var(--primary-soft)] border border-[var(--primary)] flex items-center justify-center shadow-sm">
+                            <svg className="w-8 h-8 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                         </div>
                     </div>
                     
-                    <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
-                        <span className="bg-gradient-to-r from-white via-blue-100 to-slate-300 bg-clip-text text-transparent">
-                            Threat Modeling
-                        </span>
-                        <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent ml-2">
+                    <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight text-[var(--text-primary)]">
+                        Threat Modeling
+                        <span className="text-[var(--primary)] ml-2">
                             as a Service
                         </span>
                     </h1>
                     
-                    <p className="text-slate-400 text-lg max-w-2xl mb-10 font-medium leading-relaxed">
+                    <p className="text-[var(--text-muted)] text-lg max-w-2xl mb-10 font-medium leading-relaxed">
                         Proactively discover architectural vulnerabilities and continuously adapt your defenses with AI-driven threat intelligence.
                     </p>
                     
                     {!result && (
                         <button
                             onClick={() => document.getElementById("tm-form")?.scrollIntoView({ behavior: "smooth" })}
-                            className="group relative inline-flex items-center justify-center gap-3 bg-blue-600 text-white font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transition-all duration-300"
+                            className="group relative inline-flex items-center justify-center gap-3 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-xl overflow-hidden shadow-md shadow-[var(--primary-soft)] transition-all duration-300"
                         >
                             <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                            <svg className="w-5 h-5 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             Start Analysis
@@ -715,20 +713,20 @@ export default function ThreatModelingPage() {
                         <div className="space-y-8 mt-2">
                             {/* Project name */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-200 mb-2">Project Name <span className="text-red-400">*</span></label>
+                                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Project Name <span className="text-red-400">*</span></label>
                                 <input
                                     type="text"
                                     placeholder="e.g. Project Phoenix"
                                     value={form.projectName}
                                     onChange={e => setForm(p => ({ ...p, projectName: e.target.value }))}
-                                    className={`w-full bg-[#0d1117] text-white border ${nameError ? 'border-red-500/50 focus:border-red-500' : 'border-white/[0.1] focus:border-blue-500'} rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors shadow-inner`}
+                                    className={`w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] border ${nameError ? 'border-red-500/50 focus:border-red-500' : 'border-[var(--border-strong)] focus:border-[var(--primary)]'} rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[var(--primary)] transition-colors shadow-inner`}
                                 />
                                 {nameError && <p className="mt-2 text-xs font-medium text-red-400">{nameError}</p>}
                             </div>
 
                             {/* App type - 2x2 Grid */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-200 mb-3">Application Architecture</label>
+                                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-3">Application Architecture</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { type: 'Web', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /> },
@@ -744,16 +742,16 @@ export default function ThreatModelingPage() {
                                                 onClick={() => setForm(p => ({ ...p, appType: type as AppType }))}
                                                 className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all duration-300 ${
                                                     isActive 
-                                                        ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/20' 
-                                                        : 'bg-[#0d1117] border-white/[0.05] hover:border-white/[0.15] hover:bg-white/[0.02]'
+                                                        ? 'bg-[var(--primary-soft)] border-[var(--primary)] shadow-sm' 
+                                                        : 'bg-[var(--bg-elevated)] border-[var(--border-soft)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-elevated)]'
                                                 }`}
                                             >
-                                                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-white/[0.05] text-slate-400'}`}>
+                                                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary-soft)]' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'}`}>
                                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                         {icon}
                                                     </svg>
                                                 </div>
-                                                <span className={`font-semibold ${isActive ? 'text-blue-100' : 'text-slate-300'}`}>{type} Application</span>
+                                                <span className={`font-semibold ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>{type} Application</span>
                                             </button>
                                         );
                                     })}
@@ -762,7 +760,7 @@ export default function ThreatModelingPage() {
 
                             {/* System characteristics - Modern Toggle Chips */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-200 mb-3">System Characteristics</label>
+                                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-3">System Characteristics</label>
                                 <div className="flex flex-wrap gap-2.5">
                                     {CHECKBOXES.map(({ key, label }) => {
                                         const isChecked = form[key] as boolean;
@@ -773,13 +771,13 @@ export default function ThreatModelingPage() {
                                                 onClick={() => toggleBool(key)}
                                                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
                                                     isChecked 
-                                                        ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.4)]' 
-                                                        : 'bg-[#0d1117] text-slate-400 border-white/[0.08] hover:border-slate-500 hover:text-slate-200'
+                                                        ? 'bg-[var(--primary-soft)] text-[var(--text-primary)] border-[var(--primary)] shadow-sm' 
+                                                        : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
                                                 }`}
                                             >
-                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center border transition-colors ${isChecked ? 'bg-white border-white' : 'bg-transparent border-slate-500'}`}>
+                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center border transition-colors ${isChecked ? 'bg-[var(--primary)] border-[var(--primary)]' : 'bg-transparent border-[var(--border-strong)]'}`}>
                                                     {isChecked && (
-                                                        <svg className="w-3 h-3 text-[#3B82F6]" viewBox="0 0 20 20" fill="currentColor">
+                                                        <svg className="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                         </svg>
                                                     )}
@@ -883,8 +881,8 @@ export default function ThreatModelingPage() {
                         </div>
                     )}
                     {isLoading && (
-                        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-200 px-5 py-4 mb-4 flex items-center gap-3 backdrop-blur-sm">
-                            <svg className="w-5 h-5 text-blue-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                        <div className="rounded-xl border border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary)] px-5 py-4 mb-4 flex items-center gap-3">
+                            <svg className="w-5 h-5 text-[var(--primary)] animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
@@ -899,18 +897,18 @@ export default function ThreatModelingPage() {
                             disabled={!canSubmit}
                             className={`relative w-full group overflow-hidden rounded-xl font-bold text-lg tracking-widest uppercase py-5 transition-all duration-500 ${
                                 canSubmit 
-                                    ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700 text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_50px_rgba(59,130,246,0.5)] border border-blue-400/30' 
-                                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                                    ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-sm hover:shadow-md border border-[var(--primary)]' 
+                                    : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-strong)]'
                             }`}
                         >
                             {canSubmit && (
                                 <>
                                     <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)] -translate-x-[150%] animate-[shimmer_2.5s_infinite]" />
-                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-blue-500/20 mix-blend-overlay transition-opacity duration-500" />
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-[var(--primary)]/20 mix-blend-overlay transition-opacity duration-500" />
                                 </>
                             )}
                             <div className="relative flex items-center justify-center gap-3">
-                                <svg className={`w-6 h-6 ${canSubmit ? 'animate-pulse text-blue-300' : 'text-slate-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg className={`w-6 h-6 ${canSubmit ? 'animate-pulse text-white' : 'text-[var(--text-muted)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
                                 Generate Threat Model
@@ -965,11 +963,11 @@ export default function ThreatModelingPage() {
                             {result.blocked !== true && (
                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
                                     <div>
-                                        <h2 className="text-xl font-bold text-white">
+                                        <h2 className="text-xl font-bold text-[var(--text-primary)]">
                                             Threat Report —{" "}
-                                            <span className="text-blue-400">{form.projectName}</span>
+                                            <span className="text-[var(--primary)]">{form.projectName}</span>
                                         </h2>
-                                        <p className="text-sm text-slate-400 mt-0.5">
+                                        <p className="text-sm text-[var(--text-muted)] mt-0.5">
                                             {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
                                         </p>
                                     </div>
@@ -987,7 +985,7 @@ export default function ThreatModelingPage() {
                                             Download JSON
                                         </Button>
                                         {isSaving ? (
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 px-3 py-2">
+                                            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] px-3 py-2">
                                                 <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                                 </svg>
@@ -1026,9 +1024,9 @@ export default function ThreatModelingPage() {
                             {/* ── Stack summary tags ── */}
                             {result.blocked !== true && stackTags.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 print:hidden">
-                                    <span className="text-xs font-medium text-slate-500 self-center mr-1">Stack:</span>
+                                    <span className="text-xs font-medium text-[var(--text-muted)] self-center mr-1">Stack:</span>
                                     {stackTags.map(tag => (
-                                        <span key={tag} className="text-xs bg-white/[0.06] text-slate-400 border border-white/[0.08] px-2.5 py-1 rounded-full font-medium">
+                                        <span key={tag} className="text-xs bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)] px-2.5 py-1 rounded-full font-medium">
                                             {tag}
                                         </span>
                                     ))}
@@ -1040,23 +1038,23 @@ export default function ThreatModelingPage() {
                                 <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
                                     <div className="flex items-center gap-6 mt-2">
                                         <div className="flex-shrink-0 text-center w-20">
-                                            <div className="text-5xl font-bold text-white leading-none">{result.riskScore ?? 0}</div>
-                                            <div className="text-sm text-slate-500 mt-1">/ 100</div>
+                                            <div className="text-5xl font-bold text-[var(--text-primary)] leading-none">{result.riskScore ?? 0}</div>
+                                            <div className="text-sm text-[var(--text-muted)] mt-1">/ 100</div>
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm font-medium text-slate-400">Risk Level</span>
+                                                <span className="text-sm font-medium text-[var(--text-muted)]">Risk Level</span>
                                                 <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
                                                     {riskLabel}
                                                 </span>
                                             </div>
-                                            <div className="w-full bg-white/[0.06] rounded-full h-3 overflow-hidden">
+                                            <div className="w-full bg-[var(--bg-elevated)] rounded-full h-3 overflow-hidden">
                                                 <div
                                                     className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
                                                     style={{ width: `${result.riskScore ?? 0}%` }}
                                                 />
                                             </div>
-                                            <div className="flex justify-between text-xs text-slate-500 mt-1.5">
+                                            <div className="flex justify-between text-xs text-[var(--text-muted)] mt-1.5">
                                                 <span>0 — Safe</span>
                                                 <span>100 — Critical</span>
                                             </div>
@@ -1071,10 +1069,10 @@ export default function ThreatModelingPage() {
                             {result.threats.length > 0 && (
                                 <div>
                                     <div className="flex items-center justify-between mb-3">
-                                        <h3 className="text-base font-semibold text-slate-200">
+                                        <h3 className="text-base font-semibold text-[var(--text-primary)]">
                                             Identified Threats
                                         </h3>
-                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                        <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
                                             <span className="flex items-center gap-1.5">
                                                 <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High
                                             </span>
@@ -1090,21 +1088,21 @@ export default function ThreatModelingPage() {
                                     <div className="space-y-3">
                                         {result.threats.map(threat => (
                                             <div key={threat.id}
-                                                className="bg-[#263554] border border-white/[0.08] rounded-xl shadow-lg shadow-black/25 overflow-hidden">
+                                                className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-xl shadow-lg shadow-black/5 overflow-hidden">
                                                 {/* Threat header */}
-                                                <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between gap-4">
+                                                <div className="px-5 py-3.5 border-b border-[var(--border-strong)] flex items-center justify-between gap-4">
                                                     <div className="flex items-center gap-3 min-w-0">
                                                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]}`} />
                                                         <div className="min-w-0">
-                                                            <h4 className="font-semibold text-white text-sm leading-tight truncate">
+                                                            <h4 className="font-semibold text-[var(--text-primary)] text-sm leading-tight truncate">
                                                                 {threat.title}
                                                             </h4>
-                                                            <span className="text-xs text-slate-500">{threat.category}</span>
+                                                            <span className="text-xs text-[var(--text-muted)]">{threat.category}</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 flex-shrink-0">
                                                         {threat.stride_category && (
-                                                            <span className="text-xs font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                                            <span className="text-xs font-medium px-2 py-1 rounded bg-[var(--primary)]/20 text-[var(--primary)] border border-[var(--primary)]">
                                                                 {threat.stride_category}
                                                             </span>
                                                         )}
@@ -1116,31 +1114,31 @@ export default function ThreatModelingPage() {
                                                 {/* Threat body */}
                                                 <div className="px-5 py-4 space-y-4">
                                                     <div>
-                                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                                                        <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
                                                             Description
                                                         </p>
-                                                        <p className="text-sm text-slate-300 leading-relaxed">
+                                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                                                             {threat.description}
                                                         </p>
                                                     </div>
-                                                    <div className="border-t border-white/[0.06] pt-4">
+                                                    <div className="border-t border-[var(--border-strong)] pt-4">
                                                         <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
                                                             ✓ Mitigation
                                                         </p>
-                                                        <p className="text-sm text-slate-300 leading-relaxed">
+                                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                                                             {threat.mitigation}
                                                         </p>
                                                     </div>
                                                     {threat.priority && (
                                                         <div className="flex items-center gap-2 text-xs">
-                                                            <span className="font-semibold text-slate-500">Priority Score:</span>
-                                                            <div className="flex-1 bg-white/[0.06] rounded-full h-2">
+                                                            <span className="font-semibold text-[var(--text-muted)]">Priority Score:</span>
+                                                            <div className="flex-1 bg-[var(--bg-elevated)] rounded-full h-2">
                                                                 <div
                                                                     className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
                                                                     style={{ width: `${Math.min(threat.priority, 100)}%` }}
                                                                 />
                                                             </div>
-                                                            <span className="text-slate-400">{threat.priority}</span>
+                                                            <span className="text-[var(--text-muted)]">{threat.priority}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1153,10 +1151,10 @@ export default function ThreatModelingPage() {
                             {/* ── Print-only header/footer ── */}
                             {result.blocked !== true && (
                                 <div className="hidden print:block border-t pt-4 mt-8">
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-[var(--text-muted)]">
                                         TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
                                     </p>
-                                    <p className="text-xs text-slate-500 mt-1">
+                                    <p className="text-xs text-[var(--text-muted)] mt-1">
                                         Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore ?? 0}/100 ({riskLabel})
                                     </p>
                                 </div>
@@ -1169,7 +1167,7 @@ export default function ThreatModelingPage() {
             {/* ════════════════════ SCAN HISTORY ════════════════════ */}
             {!result && (
                 <div className="print:hidden">
-                    <h2 className="text-xl font-bold text-white mb-4">Scan History</h2>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Scan History</h2>
                     <ScanHistory />
                 </div>
             )}

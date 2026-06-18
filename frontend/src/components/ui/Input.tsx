@@ -11,14 +11,14 @@ export function Input({ label, error, className = "", id, ...props }: InputProps
     return (
         <div className="w-full">
             {label && (
-                <label htmlFor={inputId} className="block text-sm font-medium text-slate-300 mb-1">
+                <label htmlFor={inputId} className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
                     {label}
                 </label>
             )}
             <input
                 id={inputId}
-                className={`w-full px-3 py-2.5 border rounded-lg text-sm text-slate-100 bg-[#263554] placeholder-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:border-blue-500/40 ${
-                    error ? "border-red-500/50" : "border-white/[0.08]"
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm text-[var(--text-primary)] bg-[var(--bg-elevated)] placeholder-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] ${
+                    error ? "border-red-500/50" : "border-[var(--border-strong)]"
                 } ${className}`}
                 {...props}
             />

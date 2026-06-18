@@ -173,25 +173,25 @@ export default function Dev1TestPage() {
         const s = sev.toLowerCase();
         if (s === "critical" || s === "high") return "bg-red-500/10 border-red-500/30 text-red-400";
         if (s === "medium") return "bg-amber-500/10 border-amber-500/30 text-amber-400";
-        if (s === "low") return "bg-blue-500/10 border-blue-500/30 text-blue-400";
-        return "bg-slate-500/10 border-slate-500/30 text-slate-400";
+        if (s === "low") return "bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]";
+        return "bg-[var(--bg-elevated)] border-[var(--border-soft)] text-[var(--text-muted)]";
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans">
+        <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-muted)] p-6 font-sans">
             {/* Header */}
-            <header className="max-w-7xl mx-auto flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+            <header className="max-w-7xl mx-auto flex items-center justify-between border-b border-[var(--border-strong)] pb-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
                         TIBSA Security Workspace
                     </h1>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-[var(--text-muted)] mt-1">
                         Isolated Sandbox Sandbox for verifying Developer 1 tasks in real-time
                     </p>
                 </div>
                 {isAuthenticated && (
                     <div className="flex items-center gap-3">
-                        <span className="text-xs text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+                        <span className="text-xs text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-strong)] px-3 py-1.5 rounded-full">
                             👤 {user?.email}
                         </span>
                         <button
@@ -209,26 +209,26 @@ export default function Dev1TestPage() {
                 <section className="lg:col-span-4 space-y-6">
                     {/* Authenticator */}
                     {!isAuthenticated ? (
-                        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm">
+                        <div className="bg-[var(--bg-card)]/50 border border-[var(--border-strong)]/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm">
                             <h2 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-4">
                                 🔐 Configure Session Credentials
                             </h2>
                             <form onSubmit={handleLoginSubmit} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs text-slate-400 font-medium mb-1.5">Supabase Account Email</label>
+                                    <label className="block text-xs text-[var(--text-muted)] font-medium mb-1.5">Supabase Account Email</label>
                                     <input
                                         type="email"
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+                                        className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-cyan-500 transition-colors"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-slate-400 font-medium mb-1.5">Account Password</label>
+                                    <label className="block text-xs text-[var(--text-muted)] font-medium mb-1.5">Account Password</label>
                                     <input
                                         type="password"
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+                                        className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-cyan-500 transition-colors"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -242,7 +242,7 @@ export default function Dev1TestPage() {
                                 <button
                                     type="submit"
                                     disabled={authSubmitting || authLoading}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-[var(--text-primary)] font-medium text-xs py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                                 >
                                     {authSubmitting ? "Authenticating Session..." : "Connect to Project DB"}
                                 </button>
@@ -250,21 +250,21 @@ export default function Dev1TestPage() {
                         </div>
                     ) : (
                         /* Control Panel */
-                        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
+                        <div className="bg-[var(--bg-card)]/50 border border-[var(--border-strong)]/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
                             <h2 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">
                                 🕹️ Threat Intelligence Pipeline
                             </h2>
                             
                             {/* History Selection */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs text-slate-400 font-medium">Select Past Pentest Investigation</label>
+                                <label className="block text-xs text-[var(--text-muted)] font-medium">Select Past Pentest Investigation</label>
                                 {isLoadingHistory ? (
-                                    <div className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-500 animate-pulse">
+                                    <div className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-lg px-3 py-2 text-sm text-[var(--text-muted)] animate-pulse">
                                         Loading investigations...
                                     </div>
                                 ) : (
                                     <select
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+                                        className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-cyan-500 transition-colors"
                                         value={selectedHistoryId}
                                         onChange={(e) => setSelectedHistoryId(e.target.value)}
                                         disabled={scanHistory.length === 0}
@@ -285,9 +285,9 @@ export default function Dev1TestPage() {
                             {/* Options */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs text-slate-400 font-medium font-sans">Scanning Mode (SAFE overrides UI)</label>
+                                    <label className="block text-xs text-[var(--text-muted)] font-medium font-sans">Scanning Mode (SAFE overrides UI)</label>
                                     <select
-                                        className="w-full bg-slate-950/50 border border-slate-800/50 rounded-lg px-2.5 py-2 text-xs text-slate-500 cursor-not-allowed"
+                                        className="w-full bg-[var(--bg-page)]/50 border border-[var(--border-strong)]/50 rounded-lg px-2.5 py-2 text-xs text-[var(--text-muted)] cursor-not-allowed"
                                         value={scanMode}
                                         disabled
                                     >
@@ -295,9 +295,9 @@ export default function Dev1TestPage() {
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-xs text-slate-400 font-medium">Threat Modeler</label>
+                                    <label className="block text-xs text-[var(--text-muted)] font-medium">Threat Modeler</label>
                                     <select
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition-colors"
+                                        className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-lg px-2.5 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-cyan-500 transition-colors"
                                         value={tmMode}
                                         onChange={(e) => setTmMode(e.target.value)}
                                     >
@@ -308,15 +308,15 @@ export default function Dev1TestPage() {
                             </div>
 
                             {/* Threat Intel Switch */}
-                            <div className="flex items-center justify-between bg-slate-950/60 p-3 rounded-lg border border-slate-800/40">
+                            <div className="flex items-center justify-between bg-[var(--bg-page)]/60 p-3 rounded-lg border border-[var(--border-strong)]/40">
                                 <div>
-                                    <span className="block text-xs font-semibold text-slate-200">Enforce TI Pipeline</span>
-                                    <span className="block text-[10px] text-slate-400">Process raw findings into TI findings</span>
+                                    <span className="block text-xs font-semibold text-[var(--text-primary)]">Enforce TI Pipeline</span>
+                                    <span className="block text-[10px] text-[var(--text-muted)]">Process raw findings into TI findings</span>
                                 </div>
                                 <button
                                     onClick={() => setIncludeTi(!includeTi)}
                                     className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                        includeTi ? "bg-cyan-500" : "bg-slate-700"
+                                        includeTi ? "bg-cyan-500" : "bg-[var(--bg-elevated)]"
                                     }`}
                                 >
                                     <span
@@ -331,7 +331,7 @@ export default function Dev1TestPage() {
                             <button
                                 onClick={generateTIReport}
                                 disabled={isLaunching || !selectedHistoryId || scanHistory.length === 0}
-                                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs py-3 rounded-lg shadow-lg hover:shadow-cyan-900/20 transition-all cursor-pointer disabled:opacity-40"
+                                className="w-full bg-cyan-600 hover:bg-cyan-500 text-[var(--text-primary)] font-semibold text-xs py-3 rounded-lg shadow-lg hover:shadow-cyan-900/20 transition-all cursor-pointer disabled:opacity-40"
                             >
                                 {isLaunching ? "Processing TI Layer..." : "Generate TI Report"}
                             </button>
@@ -343,7 +343,7 @@ export default function Dev1TestPage() {
                 <section className="lg:col-span-8 space-y-6">
                     {/* Live Tracker (Shows when flow starts) */}
                     {(investigationId || pollingError) && (
-                        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
+                        <div className="bg-[var(--bg-card)]/50 border border-[var(--border-strong)]/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">
                                     🔄 Real-Time Pipeline Tracker
@@ -362,24 +362,24 @@ export default function Dev1TestPage() {
                             </div>
 
                             {/* Details Row */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800/40 text-xs">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[var(--bg-page)]/60 p-4 rounded-xl border border-[var(--border-strong)]/40 text-xs">
                                 <div>
-                                    <span className="block text-slate-400">Investigation ID</span>
-                                    <span className="font-mono text-slate-200 truncate block">{investigationId || "-"}</span>
+                                    <span className="block text-[var(--text-muted)]">Investigation ID</span>
+                                    <span className="font-mono text-[var(--text-primary)] truncate block">{investigationId || "-"}</span>
                                 </div>
                                 <div>
-                                    <span className="block text-slate-400">Scan Ingestion Ref</span>
-                                    <span className="font-mono text-slate-200 block">{investigationId || "-"}</span>
+                                    <span className="block text-[var(--text-muted)]">Scan Ingestion Ref</span>
+                                    <span className="font-mono text-[var(--text-primary)] block">{investigationId || "-"}</span>
                                 </div>
                                 <div>
-                                    <span className="block text-slate-400">Total Findings (TI)</span>
-                                    <span className="font-semibold text-slate-200 block">
+                                    <span className="block text-[var(--text-muted)]">Total Findings (TI)</span>
+                                    <span className="font-semibold text-[var(--text-primary)] block">
                                         {statusInfo?.ti_findings?.length || 0}
                                     </span>
                                 </div>
                                 <div>
-                                    <span className="block text-slate-400">TI Risk Score</span>
-                                    <span className="font-semibold text-slate-200 block">
+                                    <span className="block text-[var(--text-muted)]">TI Risk Score</span>
+                                    <span className="font-semibold text-[var(--text-primary)] block">
                                         {statusInfo?.risk_score?.toFixed(1) || "-"}
                                     </span>
                                 </div>
@@ -397,9 +397,9 @@ export default function Dev1TestPage() {
 
                     {/* Results Explorer (Shows when results exist) */}
                     {fullResults ? (
-                        <div className="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
+                        <div className="bg-[var(--bg-card)]/50 border border-[var(--border-strong)]/80 rounded-xl p-5 shadow-2xl backdrop-blur-sm space-y-5">
                             {/* Tabs Header */}
-                            <div className="flex border-b border-slate-800 gap-1 overflow-x-auto">
+                            <div className="flex border-b border-[var(--border-strong)] gap-1 overflow-x-auto">
                                 {[
                                     { key: "findings", label: `TI Findings (${fullResults.ti_findings?.length || 0})` },
                                     { key: "reports", label: "Threat Summary" },
@@ -411,7 +411,7 @@ export default function Dev1TestPage() {
                                         className={`px-4 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                                             activeTab === tab.key
                                                 ? "border-cyan-500 text-cyan-400"
-                                                : "border-transparent text-slate-400 hover:text-slate-200"
+                                                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                                         }`}
                                     >
                                         {tab.label}
@@ -431,19 +431,19 @@ export default function Dev1TestPage() {
                                                 return (
                                                     <div
                                                         key={uniqueId}
-                                                        className="bg-slate-950/60 rounded-xl border border-slate-800/60 overflow-hidden shadow-md"
+                                                        className="bg-[var(--bg-page)]/60 rounded-xl border border-[var(--border-strong)]/60 overflow-hidden shadow-md"
                                                     >
                                                         {/* Accordion header */}
                                                         <div
                                                             onClick={() => setExpandedFinding(isExpanded ? null : uniqueId)}
-                                                            className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-950/90 transition-colors"
+                                                            className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-[var(--bg-page)]/90 transition-colors"
                                                         >
                                                             <div className="space-y-1">
                                                                 <div className="flex items-center gap-2 flex-wrap">
                                                                     <span className={`text-[9px] uppercase font-bold px-2 py-0.5 border rounded-md ${getSeverityColor(f.severity)}`}>
                                                                         {f.severity}
                                                                     </span>
-                                                                    <span className="text-[10px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-md">
+                                                                    <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-strong)] px-2 py-0.5 rounded-md">
                                                                         {f.category}
                                                                     </span>
                                                                     {f.verification_status && (
@@ -456,48 +456,48 @@ export default function Dev1TestPage() {
                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                <h3 className="text-xs font-bold text-slate-200 mt-1">{f.title}</h3>
+                                                                <h3 className="text-xs font-bold text-[var(--text-primary)] mt-1">{f.title}</h3>
                                                             </div>
                                                             <div className="flex items-center gap-4">
                                                                 <div className="text-right">
-                                                                    <span className="block text-[10px] text-slate-500">Confidence</span>
+                                                                    <span className="block text-[10px] text-[var(--text-muted)]">Confidence</span>
                                                                     <span className="text-xs font-bold text-cyan-400">{(f.confidence * 100).toFixed(0)}%</span>
                                                                 </div>
-                                                                <span className="text-slate-500 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                                                                <span className="text-[var(--text-muted)] text-xs">{isExpanded ? "▲" : "▼"}</span>
                                                             </div>
                                                         </div>
 
                                                         {/* Accordion body */}
                                                         {isExpanded && (
-                                                            <div className="p-4 border-t border-slate-900 bg-slate-950/40 space-y-3 text-xs">
+                                                            <div className="p-4 border-t border-[var(--border-strong)] bg-[var(--bg-page)]/40 space-y-3 text-xs">
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div>
-                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Affected Endpoint</span>
-                                                                        <span className="font-mono text-slate-300 break-all">{f.affected_asset}</span>
+                                                                        <span className="block text-[10px] text-[var(--text-muted)] font-semibold mb-1">Affected Endpoint</span>
+                                                                        <span className="font-mono text-[var(--text-secondary)] break-all">{f.affected_asset}</span>
                                                                     </div>
                                                                     <div>
-                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Exploitability</span>
-                                                                        <span className="font-mono text-slate-300 capitalize">{f.exploitability}</span>
+                                                                        <span className="block text-[10px] text-[var(--text-muted)] font-semibold mb-1">Exploitability</span>
+                                                                        <span className="font-mono text-[var(--text-secondary)] capitalize">{f.exploitability}</span>
                                                                     </div>
                                                                 </div>
                                                                 
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div>
-                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">FP Probability</span>
-                                                                        <span className="font-mono text-slate-300">{(f.false_positive_probability * 100).toFixed(0)}%</span>
+                                                                        <span className="block text-[10px] text-[var(--text-muted)] font-semibold mb-1">FP Probability</span>
+                                                                        <span className="font-mono text-[var(--text-secondary)]">{(f.false_positive_probability * 100).toFixed(0)}%</span>
                                                                     </div>
                                                                     <div>
-                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Risk Multiplier</span>
-                                                                        <span className="font-mono text-slate-300">{f.risk_multiplier}x</span>
+                                                                        <span className="block text-[10px] text-[var(--text-muted)] font-semibold mb-1">Risk Multiplier</span>
+                                                                        <span className="font-mono text-[var(--text-secondary)]">{f.risk_multiplier}x</span>
                                                                     </div>
                                                                 </div>
 
                                                                 {f.tags && f.tags.length > 0 && (
                                                                     <div>
-                                                                        <span className="block text-[10px] text-slate-400 font-semibold mb-1">Tags</span>
+                                                                        <span className="block text-[10px] text-[var(--text-muted)] font-semibold mb-1">Tags</span>
                                                                         <div className="flex flex-wrap gap-1">
                                                                             {f.tags.map((t, idx) => (
-                                                                                <span key={idx} className="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded">
+                                                                                <span key={idx} className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-card)] border border-[var(--border-strong)] px-2 py-0.5 rounded">
                                                                                     {t}
                                                                                 </span>
                                                                             ))}
@@ -505,8 +505,8 @@ export default function Dev1TestPage() {
                                                                     </div>
                                                                 )}
                                                                 <div>
-                                                                    <span className="block text-[10px] text-slate-400 font-semibold mb-1">Vulnerability Evidence Trace</span>
-                                                                    <pre className="w-full bg-slate-950 border border-slate-900 rounded-lg p-3 text-[11px] font-mono text-cyan-300 overflow-x-auto max-h-[150px] whitespace-pre-wrap">
+                                                                    <span className="block text-[10px] text-[var(--text-muted)] font-semibold mb-1">Vulnerability Evidence Trace</span>
+                                                                    <pre className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-lg p-3 text-[11px] font-mono text-cyan-300 overflow-x-auto max-h-[150px] whitespace-pre-wrap">
                                                                         {f.evidence || "No evidence details captured."}
                                                                     </pre>
                                                                 </div>
@@ -516,7 +516,7 @@ export default function Dev1TestPage() {
                                                 );
                                             })
                                         ) : (
-                                            <div className="text-center py-12 text-slate-500 text-xs">
+                                            <div className="text-center py-12 text-[var(--text-muted)] text-xs">
                                                 Zero vulnerability findings discovered for this target website.
                                             </div>
                                         )}
@@ -528,15 +528,15 @@ export default function Dev1TestPage() {
                                 {/* ─── REPORTS COMPLIANCE TAB ─── */}
                                 {activeTab === "reports" && (
                                     <div className="space-y-6">
-                                        <div className="bg-slate-950/60 border border-slate-800/60 p-5 rounded-xl space-y-3">
-                                            <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                                                <h3 className="text-xs font-bold text-slate-200">🔍 Threat Summary</h3>
+                                        <div className="bg-[var(--bg-page)]/60 border border-[var(--border-strong)]/60 p-5 rounded-xl space-y-3">
+                                            <div className="flex items-center justify-between border-b border-[var(--border-strong)] pb-2">
+                                                <h3 className="text-xs font-bold text-[var(--text-primary)]">🔍 Threat Summary</h3>
                                                 <span className="text-xs font-semibold text-cyan-400">
                                                     Risk Index: {fullResults.risk_score?.toFixed(1) || 0}
                                                 </span>
                                             </div>
                                             <div className="text-xs space-y-1">
-                                                <pre className="text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-900 whitespace-pre-wrap font-sans">
+                                                <pre className="text-[var(--text-secondary)] leading-relaxed bg-[var(--bg-page)] p-3 rounded-lg border border-[var(--border-strong)] whitespace-pre-wrap font-sans">
                                                     {JSON.stringify(fullResults.summary, null, 2)}
                                                 </pre>
                                             </div>
@@ -547,8 +547,8 @@ export default function Dev1TestPage() {
                                 {/* ─── RAW JSON TAB ─── */}
                                 {activeTab === "raw" && (
                                     <div className="space-y-2">
-                                        <span className="text-[10px] text-slate-400 block font-mono">Raw Investigation Schema Payload</span>
-                                        <pre className="w-full bg-slate-950 border border-slate-900 rounded-xl p-4 text-[11px] font-mono text-cyan-400 overflow-x-auto max-h-[360px] whitespace-pre">
+                                        <span className="text-[10px] text-[var(--text-muted)] block font-mono">Raw Investigation Schema Payload</span>
+                                        <pre className="w-full bg-[var(--bg-page)] border border-[var(--border-strong)] rounded-xl p-4 text-[11px] font-mono text-cyan-400 overflow-x-auto max-h-[360px] whitespace-pre">
                                             {JSON.stringify(fullResults, null, 2)}
                                         </pre>
                                     </div>
@@ -558,11 +558,11 @@ export default function Dev1TestPage() {
                     ) : (
                         /* Default state when not scanning */
                         !investigationId && (
-                            <div className="bg-slate-900/30 border border-slate-800/60 rounded-xl py-20 text-center text-slate-400 flex flex-col items-center justify-center space-y-4">
+                            <div className="bg-[var(--bg-card)]/30 border border-[var(--border-strong)]/60 rounded-xl py-20 text-center text-[var(--text-muted)] flex flex-col items-center justify-center space-y-4">
                                 <span className="text-4xl">🚀</span>
                                 <div>
-                                    <h3 className="text-sm font-bold text-slate-200">TI Pipeline Sandbox Ready</h3>
-                                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                                    <h3 className="text-sm font-bold text-[var(--text-primary)]">TI Pipeline Sandbox Ready</h3>
+                                    <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm mx-auto leading-relaxed">
                                         Select a past Pentest Investigation on the left panel to dynamically route its raw findings through the TI Normalization and Risk Inference engines, displaying ONLY the refined findings here.
                                     </p>
                                 </div>

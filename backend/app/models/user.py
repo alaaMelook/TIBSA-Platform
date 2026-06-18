@@ -67,7 +67,29 @@ class UserResponse(BaseModel):
 
 
 class TokenResponse(BaseModel):
-    access_token: str
+    access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     token_type: str = "bearer"
     user: Optional[UserResponse] = None
+    mfa_required: Optional[bool] = None
+    factor_id: Optional[str] = None
+    mfa_token: Optional[str] = None
+
+
+# ─── MFA Models ──────────────────────────────────────────────
+
+class MFAVerifyRequest(BaseModel):
+    """Verify a TOTP code to complete MFA login or enrollment."""
+    factor_id: str
+    code: str
+    mfa_token: Optional[str] = None
+
+class MFAChallengeRequest(BaseModel):
+    """Request a new MFA challenge for a given factor."""
+    factor_id: str
+
+class MFAEnrollResponse(BaseModel):
+    """Response when enrolling a new TOTP factor."""
+    factor_id: str
+    totp_uri: str
+    qr_code: str  # base64 SVG of the QR code

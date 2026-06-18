@@ -28,7 +28,7 @@ export default function AccountSuspendedPage() {
                 transition={{ duration: 0.4 }}
                 className="w-full max-w-md"
             >
-                <div className="bg-slate-800/50 border border-red-500/20 backdrop-blur-xl rounded-2xl p-8 shadow-2xl shadow-red-500/10">
+                <div className="bg-[var(--bg-elevated)]/50 border border-red-500/20 backdrop-blur-xl rounded-2xl p-8 shadow-2xl shadow-red-500/10">
                     {/* Icon */}
                     <div className="flex justify-center mb-6">
                         <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
@@ -39,8 +39,8 @@ export default function AccountSuspendedPage() {
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-2xl font-bold text-white text-center mb-2">Account Suspended</h1>
-                    <p className="text-sm text-slate-400 text-center mb-6">
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-2">Account Suspended</h1>
+                    <p className="text-sm text-[var(--text-muted)] text-center mb-6">
                         Your account has been deactivated by an administrator.
                     </p>
 
@@ -61,9 +61,9 @@ export default function AccountSuspendedPage() {
 
                     {/* User Info */}
                     {user && (
-                        <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-6 space-y-1">
-                            <p className="text-xs text-slate-500">Email:</p>
-                            <p className="text-sm font-mono text-slate-300 break-all">{user.email}</p>
+                        <div className="bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-lg p-4 mb-6 space-y-1">
+                            <p className="text-xs text-[var(--text-muted)]">Email:</p>
+                            <p className="text-sm font-mono text-[var(--text-secondary)] break-all">{user.email}</p>
                         </div>
                     )}
 
@@ -77,16 +77,16 @@ export default function AccountSuspendedPage() {
                         </button>
                         <Link
                             href="/"
-                            className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600/50 text-slate-300 hover:bg-slate-700 transition-colors rounded-lg text-sm font-medium text-center inline-block"
+                            className="w-full px-4 py-2 bg-[var(--bg-elevated)]/50 border border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors rounded-lg text-sm font-medium text-center inline-block"
                         >
                             Return Home
                         </Link>
                     </div>
 
                     {/* Support Info */}
-                    <div className="mt-6 p-4 bg-slate-700/20 rounded-lg border border-slate-600/20">
-                        <p className="text-xs text-slate-400 text-center">
-                            <span className="font-medium text-slate-300">Need help?</span>
+                    <div className="mt-6 p-4 bg-[var(--bg-elevated)]/20 rounded-lg border border-[var(--border-soft)]">
+                        <p className="text-xs text-[var(--text-muted)] text-center">
+                            <span className="font-medium text-[var(--text-secondary)]">Need help?</span>
                             <br />
                             Contact support@tibsa.com or your administrator.
                         </p>

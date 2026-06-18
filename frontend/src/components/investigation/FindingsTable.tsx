@@ -54,7 +54,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
       case "info":
       default:
         return (
-          <span className={`${commonStyles} border-blue-900 bg-blue-950/20 text-blue-400 flex items-center gap-1 w-fit`}>
+          <span className={`${commonStyles} border-blue-900 bg-blue-950/20 text-[var(--primary)] flex items-center gap-1 w-fit`}>
             <Info className="w-3.5 h-3.5" />
             Info
           </span>
@@ -91,7 +91,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
               ? "bg-orange-950/20 border-orange-500/20 text-orange-400 hover:bg-orange-950/30"
               : sev === "low"
               ? "bg-yellow-950/20 border-yellow-500/20 text-yellow-400 hover:bg-yellow-950/30"
-              : "bg-blue-950/20 border-blue-500/20 text-blue-400 hover:bg-blue-950/30";
+              : "bg-blue-950/20 border-[var(--primary)] text-[var(--primary)] hover:bg-blue-950/30";
 
           return (
             <button
@@ -113,7 +113,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="bg-slate-900/40 text-slate-400 font-medium border-b border-white/[0.06]">
+              <tr className="bg-[var(--bg-card)]/40 text-[var(--text-muted)] font-medium border-b border-[var(--border-strong)]">
                 <th className="py-3.5 px-4 w-10"></th>
                 <th className="py-3.5 px-4 w-32">Severity</th>
                 <th className="py-3.5 px-4">Finding Details</th>
@@ -124,7 +124,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
             <tbody className="divide-y divide-white/[0.06]">
               {filteredFindings.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                  <td colSpan={5} className="py-12 text-center text-[var(--text-muted)] font-medium">
                     No findings matches the selected filter.
                   </td>
                 </tr>
@@ -137,22 +137,22 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                       {/* Row Header */}
                       <tr
                         onClick={() => toggleRow(fid)}
-                        className="hover:bg-white/[0.02] cursor-pointer transition-colors"
+                        className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors"
                       >
                         <td className="py-4 px-4 text-center">
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-slate-400" />
+                            <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-slate-400" />
+                            <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
                           )}
                         </td>
                         <td className="py-4 px-4">{getSeverityBadge(finding.severity)}</td>
-                        <td className="py-4 px-4 font-semibold text-slate-100">{finding.title}</td>
-                        <td className="py-4 px-4 text-slate-400 font-mono text-xs max-w-xs truncate">
+                        <td className="py-4 px-4 font-semibold text-[var(--text-muted)]">{finding.title}</td>
+                        <td className="py-4 px-4 text-[var(--text-muted)] font-mono text-xs max-w-xs truncate">
                           {finding.affected_url}
                         </td>
                         <td className="py-4 px-4">
-                          <span className="text-[10px] bg-[#263554]/40 border border-white/[0.08] text-slate-300 font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                          <span className="text-[10px] bg-[var(--bg-card)] border border-[var(--border-soft)] text-[var(--text-secondary)] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
                             {finding.category || "General"}
                           </span>
                         </td>
@@ -160,16 +160,16 @@ export function FindingsTable({ findings }: FindingsTableProps) {
 
                       {/* Row Details Drawer */}
                       {isExpanded && (
-                        <tr className="bg-slate-950/20">
-                          <td colSpan={5} className="p-4 border-t border-white/[0.04] text-slate-300">
+                        <tr className="bg-[var(--bg-page)]/20">
+                          <td colSpan={5} className="p-4 border-t border-[var(--border-soft)] text-[var(--text-secondary)]">
                             <div className="space-y-3 font-sans text-xs">
                               {/* Evidence */}
                               {finding.evidence && (
                                 <div className="space-y-1">
-                                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                                  <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider">
                                     Evidence Details
                                   </span>
-                                  <pre className="bg-slate-950/80 p-3 rounded-lg border border-white/[0.06] font-mono text-slate-300 overflow-x-auto max-w-full">
+                                  <pre className="bg-[var(--bg-page)]/80 p-3 rounded-lg border border-[var(--border-strong)] font-mono text-[var(--text-secondary)] overflow-x-auto max-w-full">
                                     {finding.evidence}
                                   </pre>
                                 </div>
@@ -178,11 +178,11 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                               {/* Tags */}
                               {finding.tags && finding.tags.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  <Tag className="w-3.5 h-3.5 text-slate-500" />
+                                  <Tag className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                                   {finding.tags.map((tag) => (
                                     <span
                                       key={tag}
-                                      className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-full text-[10px] font-medium"
+                                      className="px-2 py-0.5 bg-[var(--bg-elevated)] text-[var(--text-muted)] rounded-full text-[10px] font-medium"
                                     >
                                       {tag}
                                     </span>

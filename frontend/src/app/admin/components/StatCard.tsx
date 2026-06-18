@@ -17,11 +17,11 @@ interface StatCardProps {
 
 
 const COLOR_MAP = {
-    blue:   { bg: "bg-blue-500/[0.07]", border: "border-blue-500/20",   text: "text-blue-400",   glow: "shadow-blue-500/10",   accent: "#3b82f6" },
+    blue:   { bg: "bg-[var(--primary)]/[0.07]", border: "border-[var(--primary)]",   text: "text-[var(--primary)]",   glow: "shadow-[var(--primary-soft)]",   accent: "#3b82f6" },
     green:  { bg: "bg-emerald-500/[0.07]", border: "border-emerald-500/20", text: "text-emerald-400", glow: "shadow-emerald-500/10", accent: "#10b981" },
     red:    { bg: "bg-red-500/[0.07]",     border: "border-red-500/20",     text: "text-red-400",     glow: "shadow-red-500/10",     accent: "#ef4444" },
     amber:  { bg: "bg-amber-500/[0.07]",   border: "border-amber-500/20",   text: "text-amber-400",   glow: "shadow-amber-500/10",   accent: "#f59e0b" },
-    purple: { bg: "bg-purple-500/[0.07]",  border: "border-purple-500/20",  text: "text-purple-400",  glow: "shadow-purple-500/10",  accent: "#a855f7" },
+    purple: { bg: "bg-purple-500/[0.07]",  border: "border-[var(--primary)]",  text: "text-[var(--primary)]",  glow: "shadow-[var(--primary-soft)]",  accent: "#a855f7" },
     cyan:   { bg: "bg-cyan-500/[0.07]",    border: "border-cyan-500/20",    text: "text-cyan-400",    glow: "shadow-cyan-500/10",    accent: "#06b6d4" },
 };
 
@@ -79,7 +79,7 @@ export function StatCard({ label, value, change, changeLabel, icon, color, trend
 
             <div className="relative flex items-start justify-between">
                 <div className="space-y-2">
-                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{label}</p>
+                    <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{label}</p>
                     <p className={`text-2xl font-bold ${colors.text} tracking-tight`}>
                         {isNumeric ? <AnimatedNumber value={value as number} /> : value}
                     </p>
@@ -101,11 +101,11 @@ export function StatCard({ label, value, change, changeLabel, icon, color, trend
                                 </svg>
                             )}
                             <span className={`text-[11px] font-semibold tabular-nums ${
-                                trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : "text-slate-500"
+                                trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : "text-[var(--text-muted)]"
                             }`}>
                                 {change > 0 ? "+" : ""}{change}%
                             </span>
-                            {changeLabel && <span className="text-[10px] text-slate-500">{changeLabel}</span>}
+                            {changeLabel && <span className="text-[10px] text-[var(--text-muted)]">{changeLabel}</span>}
                         </motion.div>
                     )}
                 </div>

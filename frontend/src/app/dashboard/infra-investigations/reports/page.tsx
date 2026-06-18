@@ -117,25 +117,25 @@ export default function InfraReportsPage() {
             
             {/* Search input */}
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
               <Input
                 placeholder="Search report by target..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-slate-950/40 border-white/[0.08]"
+                className="pl-9 bg-[var(--bg-page)]/40 border-[var(--border-soft)]"
               />
             </div>
 
             {isLoading ? (
-              <div className="py-12 text-center text-slate-500 font-medium">
-                <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-cyan-500 border-t-transparent rounded-full" />
+              <div className="py-12 text-center text-[var(--text-muted)] font-medium">
+                <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
                 Loading reports...
               </div>
             ) : filteredReports.length === 0 ? (
-              <div className="py-12 text-center text-slate-500">
+              <div className="py-12 text-center text-[var(--text-muted)]">
                 <FileText className="w-8 h-8 mx-auto mb-2 opacity-25" />
                 <p className="text-sm font-semibold">No completed AI reports found.</p>
-                <p className="text-[10px] text-slate-600 mt-1">Complete an investigation with AI Summaries enabled to generate a report briefing.</p>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">Complete an investigation with AI Summaries enabled to generate a report briefing.</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
@@ -149,14 +149,14 @@ export default function InfraReportsPage() {
                       onClick={() => handleViewReport(report.id)}
                       className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${
                         isActive
-                          ? "border-cyan-500/50 bg-cyan-500/[0.04]"
-                          : "border-white/[0.04] bg-slate-950/20 hover:bg-white/[0.02]"
+                          ? "border-[var(--primary)]/50 bg-emerald-500/[0.04]"
+                          : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-elevated)]"
                       }`}
                     >
                       <div className="min-w-0 space-y-1">
-                        <p className="text-xs font-bold text-slate-200 truncate font-mono">{report.target}</p>
+                        <p className="text-xs font-bold text-[var(--text-primary)] truncate font-mono">{report.target}</p>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[8px] font-extrabold uppercase px-1 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                          <span className="text-[8px] font-extrabold uppercase px-1 py-0.5 rounded bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)]">
                             {report.target_type}
                           </span>
                           <span className={`text-[10px] font-mono font-bold ${isHigh ? "text-red-400" : "text-emerald-400"}`}>
@@ -164,8 +164,8 @@ export default function InfraReportsPage() {
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 text-slate-500 transition-transform ${
-                        isActive ? "translate-x-0.5 text-cyan-400" : "group-hover:translate-x-0.5"
+                      <ChevronRight className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${
+                        isActive ? "translate-x-0.5 text-[var(--primary)]" : "group-hover:translate-x-0.5"
                       }`} />
                     </div>
                   );
@@ -184,22 +184,22 @@ export default function InfraReportsPage() {
             >
               {isDetailLoading ? (
                 <div className="py-32 flex flex-col items-center justify-center space-y-3">
-                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                  <p className="text-xs text-slate-500">Decrypting and assembling AI summaries...</p>
+                  <Loader2 className="w-8 h-8 text-[var(--primary)] animate-spin" />
+                  <p className="text-xs text-[var(--text-muted)]">Decrypting and assembling AI summaries...</p>
                 </div>
               ) : selectedReportDetails ? (
                 <div className="space-y-6 animate-fadeIn">
                   
                   {/* Detailed Summary Header */}
-                  <div className="flex flex-wrap items-center justify-between bg-slate-950/50 border border-white/[0.04] p-4 rounded-xl gap-4">
+                  <div className="flex flex-wrap items-center justify-between bg-[var(--bg-page)]/50 border border-[var(--border-soft)] p-4 rounded-xl gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-slate-200">{selectedReportDetails.target}</span>
-                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <span className="text-xs font-mono font-bold text-[var(--text-primary)]">{selectedReportDetails.target}</span>
+                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)]">
                           {selectedReportDetails.target_type}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-[10px] text-[var(--text-muted)]">
                         Scan ID: <span className="font-mono">{selectedReportDetails.id}</span>
                       </p>
                     </div>
@@ -216,7 +216,7 @@ export default function InfraReportsPage() {
                         variant="primary"
                         size="sm"
                         onClick={() => router.push(`/dashboard/infra-investigations/${selectedReportDetails.id}`)}
-                        className="!px-3 !py-1 text-[11px] font-bold gap-1 !bg-cyan-600 hover:!bg-cyan-500 shadow-lg shadow-cyan-600/20"
+                        className="!px-3 !py-1 text-[11px] font-bold gap-1 !bg-emerald-600 hover:!bg-emerald-500 shadow-lg shadow-emerald-600/20"
                       >
                         <ExternalLink className="w-3.5 h-3.5" /> Open Workspace
                       </Button>
@@ -229,14 +229,14 @@ export default function InfraReportsPage() {
                       
                       {/* Classification Badge Row */}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div className="bg-[#263554]/50 border border-white/[0.06] rounded-lg p-3">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Classification</p>
-                          <p className="text-xs font-bold text-white mt-1">
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg p-3">
+                          <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Classification</p>
+                          <p className="text-xs font-bold text-[var(--text-primary)] mt-1">
                             {selectedReportDetails.results.ai_summary.threat_classification || "Unknown IOC"}
                           </p>
                         </div>
-                        <div className="bg-[#263554]/50 border border-white/[0.06] rounded-lg p-3">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Risk Level</p>
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg p-3">
+                          <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Risk Level</p>
                           <p className={`text-xs font-extrabold mt-1 ${
                             selectedReportDetails.risk_score >= 75 ? "text-red-500" :
                             selectedReportDetails.risk_score >= 50 ? "text-red-400" : "text-emerald-400"
@@ -244,41 +244,41 @@ export default function InfraReportsPage() {
                             {selectedReportDetails.results.risk?.risk_label || "Unknown"} ({Math.round(selectedReportDetails.risk_score)}/100)
                           </p>
                         </div>
-                        <div className="bg-[#263554]/50 border border-white/[0.06] rounded-lg p-3 col-span-2 md:col-span-1">
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">AI Attribution Confidence</p>
-                          <p className="text-xs font-bold text-cyan-400 mt-1">
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg p-3 col-span-2 md:col-span-1">
+                          <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">AI Attribution Confidence</p>
+                          <p className="text-xs font-bold text-[var(--primary)] mt-1">
                             {selectedReportDetails.results.ai_summary.confidence || 85}%
                           </p>
                         </div>
                       </div>
 
                       {/* Executive Summary */}
-                      <div className="bg-slate-950/20 border border-white/[0.04] p-4 rounded-xl space-y-2.5 relative group">
+                      <div className="bg-[var(--bg-page)]/20 border border-[var(--border-soft)] p-4 rounded-xl space-y-2.5 relative group">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                          <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-[var(--primary)] animate-pulse" />
                             Executive Risk Summary
                           </h4>
                           <button
                             onClick={() => handleCopySummary(selectedReportDetails.results.ai_summary.executive_summary)}
-                            className="p-1 rounded bg-slate-900 border border-white/[0.08] text-slate-500 hover:text-slate-200 transition-colors"
+                            className="p-1 rounded bg-[var(--bg-card)] border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                           >
                             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed font-normal whitespace-pre-line">
+                        <p className="text-xs text-[var(--text-muted)] leading-relaxed font-normal whitespace-pre-line">
                           {selectedReportDetails.results.ai_summary.executive_summary}
                         </p>
                       </div>
 
                       {/* Attribution evidence details */}
                       <div className="space-y-3">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                           Risk Indicators & Evidence
                         </h4>
-                        <div className="border border-white/[0.04] bg-slate-950/15 rounded-xl p-4 space-y-2">
-                          <p className="text-xs text-slate-400 font-normal">
+                        <div className="border border-[var(--border-soft)] bg-[var(--bg-page)]/15 rounded-xl p-4 space-y-2">
+                          <p className="text-xs text-[var(--text-muted)] font-normal">
                             {selectedReportDetails.results.ai_summary.why_suspicious}
                           </p>
                         </div>
@@ -286,17 +286,17 @@ export default function InfraReportsPage() {
 
                       {/* Playbooks & recommendations */}
                       <div className="space-y-3">
-                        <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                           Priority Playbooks & Playlists
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {selectedReportDetails.results.ai_summary.recommended_actions?.map((act: string, idx: number) => (
-                            <div key={idx} className="bg-slate-950/20 border border-white/[0.04] rounded-lg p-3 flex items-start gap-2.5">
+                            <div key={idx} className="bg-[var(--bg-page)]/20 border border-[var(--border-soft)] rounded-lg p-3 flex items-start gap-2.5">
                               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-black">
                                 {idx + 1}
                               </span>
-                              <p className="text-[11px] text-slate-400 font-semibold leading-normal">{act}</p>
+                              <p className="text-[11px] text-[var(--text-muted)] font-semibold leading-normal">{act}</p>
                             </div>
                           ))}
                         </div>
@@ -304,10 +304,10 @@ export default function InfraReportsPage() {
 
                     </div>
                   ) : (
-                    <div className="py-20 text-center text-slate-500">
+                    <div className="py-20 text-center text-[var(--text-muted)]">
                       <AlertTriangle className="w-10 h-10 mx-auto mb-2 text-amber-500/60" />
                       <p className="text-sm font-semibold">No AI report summary generated.</p>
-                      <p className="text-xs text-slate-600 mt-1">This investigation may have been run without enabling the AI Synthesis block.</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">This investigation may have been run without enabling the AI Synthesis block.</p>
                     </div>
                   )}
 
@@ -315,10 +315,10 @@ export default function InfraReportsPage() {
               ) : null}
             </Card>
           ) : (
-            <div className="border border-dashed border-white/[0.06] rounded-2xl flex flex-col items-center justify-center p-20 text-center min-h-[450px]">
-              <Sparkles className="w-10 h-10 text-cyan-400/30 animate-pulse mb-3" />
-              <h3 className="text-slate-300 font-semibold">Executive Threat Briefing</h3>
-              <p className="text-xs text-slate-600 max-w-sm mt-1">Select an intelligence scan report on the left panel to load and analyze detailed attribution breakdowns.</p>
+            <div className="border border-dashed border-[var(--border-strong)] rounded-2xl flex flex-col items-center justify-center p-20 text-center min-h-[450px]">
+              <Sparkles className="w-10 h-10 text-[var(--primary)]/30 animate-pulse mb-3" />
+              <h3 className="text-[var(--text-secondary)] font-semibold">Executive Threat Briefing</h3>
+              <p className="text-xs text-[var(--text-muted)] max-w-sm mt-1">Select an intelligence scan report on the left panel to load and analyze detailed attribution breakdowns.</p>
             </div>
           )}
         </div>

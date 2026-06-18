@@ -34,17 +34,17 @@ import ReactMarkdown from "react-markdown";
 const LoadingDotsRing = () => (
   <div className="relative flex items-center justify-center select-none" style={{ width: 180, height: 180 }}>
     {/* Inner glowing pulse */}
-    <div className="absolute w-24 h-24 rounded-full bg-blue-500/5 border border-blue-500/10 animate-pulse flex items-center justify-center">
+    <div className="absolute w-24 h-24 rounded-full bg-[var(--primary)]/5 border border-[var(--primary)] animate-pulse flex items-center justify-center">
       <div className="flex space-x-1.5 justify-center items-center">
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.3s] shadow-lg shadow-blue-400/50" />
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.15s] shadow-lg shadow-blue-400/50" />
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce shadow-lg shadow-blue-400/50" />
+        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.3s] shadow-lg shadow-[var(--primary-soft)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.15s] shadow-lg shadow-[var(--primary-soft)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce shadow-lg shadow-[var(--primary-soft)]" />
       </div>
     </div>
     
     {/* Spinning dotted orbits */}
-    <div className="absolute inset-0 animate-spin [animation-duration:8s] rounded-full border border-dashed border-blue-500/20" />
-    <div className="absolute inset-2.5 animate-spin [animation-duration:12s] [animation-direction:reverse] rounded-full border border-dotted border-blue-500/30" />
+    <div className="absolute inset-0 animate-spin [animation-duration:8s] rounded-full border border-dashed border-[var(--primary)]" />
+    <div className="absolute inset-2.5 animate-spin [animation-duration:12s] [animation-direction:reverse] rounded-full border border-dotted border-[var(--primary)]" />
     
     {/* Sonar sweep SVG dots */}
     <svg className="absolute w-full h-full animate-spin [animation-duration:4s]" viewBox="0 0 100 100">
@@ -161,7 +161,7 @@ export default function LiveInvestigationWorkspace() {
     const unlocked = isTabUnlocked(tab);
     if (!unlocked) {
       return (
-        <span className="flex items-center gap-1.5 opacity-60 text-slate-500">
+        <span className="flex items-center gap-1.5 opacity-60 text-[var(--text-muted)]">
           <Lock className="w-3.5 h-3.5" />
           {label}
         </span>
@@ -211,8 +211,8 @@ export default function LiveInvestigationWorkspace() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-40 text-slate-500 gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="flex flex-col items-center justify-center py-40 text-[var(--text-muted)] gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
         <p className="text-sm font-semibold uppercase tracking-wider">Loading Investigation Workspace...</p>
       </div>
     );
@@ -226,8 +226,8 @@ export default function LiveInvestigationWorkspace() {
         </Button>
         <Card className="border border-red-500/20 bg-red-950/10 text-center py-12">
           <AlertOctagon className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-white">Workspace Loading Error</h3>
-          <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
+          <h3 className="text-lg font-bold text-[var(--text-primary)]">Workspace Loading Error</h3>
+          <p className="text-sm text-[var(--text-muted)] mt-2 max-w-md mx-auto">
             {error || "We could not fetch details for this investigation. Please check if it exists or try again."}
           </p>
         </Card>
@@ -248,8 +248,8 @@ export default function LiveInvestigationWorkspace() {
   const statusColors: Record<string, string> = {
     completed: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
     failed: "bg-red-500/10 text-red-400 border border-red-500/20",
-    pending: "bg-slate-800 text-slate-400 border border-slate-700",
-    running: "bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse",
+    pending: "bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-strong)]",
+    running: "bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)] animate-pulse",
     stopped: "bg-amber-500/10 text-amber-400 border border-amber-500/20"
   };
 
@@ -264,24 +264,24 @@ export default function LiveInvestigationWorkspace() {
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       {/* Top Identity Header */}
-      <div className="bg-[#1e293b]/30 rounded-xl border border-white/[0.04] py-3 px-5 shadow-lg flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] py-3 px-5 shadow-lg flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
         <div className="space-y-2">
           {/* Back CTA & Breadcrumbs */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/dashboard/investigations")}
-              className="text-xs text-slate-500 hover:text-slate-300 font-bold uppercase tracking-widest flex items-center gap-1 transition-colors cursor-pointer"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Workspace
             </button>
-            <span className="text-slate-600 font-mono text-xs">/</span>
-            <span className="text-xs text-slate-400 font-mono select-all">
+            <span className="text-[var(--text-muted)] font-mono text-xs">/</span>
+            <span className="text-xs text-[var(--text-muted)] font-mono select-all">
               {investigation.scan_id}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-black text-white tracking-tight break-all">
+            <h1 className="text-xl font-black text-[var(--text-primary)] tracking-tight break-all">
               Target: {investigation.target}
             </h1>
             <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${statusColors[investigation.status] || statusColors.running}`}>
@@ -289,16 +289,16 @@ export default function LiveInvestigationWorkspace() {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-500 font-mono">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-[var(--text-muted)] font-mono">
             <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-600" />
-              Runtime: <span className="text-slate-300 font-bold">{activeDuration}</span>
+              <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              Runtime: <span className="text-[var(--text-secondary)] font-bold">{activeDuration}</span>
             </div>
             <div>
-              Stage: <span className="text-slate-300 font-semibold">{investigation.current_stage}</span>
+              Stage: <span className="text-[var(--text-secondary)] font-semibold">{investigation.current_stage}</span>
             </div>
             <div className="hidden sm:block">
-              ID: <span className="text-slate-600 select-all">{investigation.id}</span>
+              ID: <span className="text-[var(--text-muted)] select-all">{investigation.id}</span>
             </div>
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function LiveInvestigationWorkspace() {
               size="sm"
               onClick={handleStop}
               disabled={stopLoading}
-              className="gap-2 bg-red-600 hover:bg-red-500 border border-red-500/20 text-white font-bold"
+              className="gap-2 bg-red-600 hover:bg-red-500 border border-red-500/20 text-[var(--text-primary)] font-bold"
             >
               {stopLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -361,8 +361,8 @@ export default function LiveInvestigationWorkspace() {
       {/* Live Activity & Gauge */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Progressive Risk Score */}
-        <div className="lg:col-span-4 flex flex-col justify-center items-center bg-[#1e293b]/30 rounded-xl border border-white/[0.04] p-4 shadow-md min-h-[260px]">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+        <div className="lg:col-span-4 flex flex-col justify-center items-center bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] p-4 shadow-md min-h-[260px]">
+          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-3">
             Live Risk Progression
           </h3>
           {investigation.status === "completed" || investigation.status === "failed" || investigation.status === "stopped" ? (
@@ -371,7 +371,7 @@ export default function LiveInvestigationWorkspace() {
             <LoadingDotsRing />
           )}
           {investigation.status !== "completed" && investigation.status !== "failed" && investigation.status !== "stopped" && (
-            <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider mt-4 animate-pulse flex items-center gap-1.5">
+            <p className="text-[10px] text-[var(--primary)] font-semibold uppercase tracking-wider mt-4 animate-pulse flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5" /> Calculating global threats...
             </p>
           )}
@@ -386,7 +386,7 @@ export default function LiveInvestigationWorkspace() {
       {/* Progressive Results Tabs */}
       <div className="space-y-4">
         {/* Tabs Bar */}
-        <div className="flex border-b border-white/[0.08] overflow-x-auto whitespace-nowrap scrollbar-none gap-2">
+        <div className="flex border-b border-[var(--border-soft)] overflow-x-auto whitespace-nowrap scrollbar-none gap-2">
           {[
             { key: "findings", label: "Findings" },
             { key: "intel", label: "Threat Intel" },
@@ -404,10 +404,10 @@ export default function LiveInvestigationWorkspace() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                   active
-                    ? "border-blue-500 text-blue-400"
+                    ? "border-blue-500 text-[var(--primary)]"
                     : unlocked
-                    ? "border-transparent text-slate-400 hover:text-slate-200"
-                    : "border-transparent text-slate-600 cursor-not-allowed"
+                    ? "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
                 }`}
               >
                 {getTabLabel(tab.key, tab.label)}
@@ -419,12 +419,12 @@ export default function LiveInvestigationWorkspace() {
         {/* Tab content panel */}
         <div className="min-h-[300px]">
           {!isTabUnlocked(activeTab) ? (
-            <Card className="border border-white/[0.06] bg-slate-900/10 text-center py-20">
-              <Lock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <h4 className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+            <Card className="border border-[var(--border-strong)] bg-[var(--bg-card)]/10 text-center py-20">
+              <Lock className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+              <h4 className="text-[var(--text-muted)] font-bold uppercase tracking-widest text-xs">
                 Pipeline Stage Pending
               </h4>
-              <p className="text-xs text-slate-500 mt-2.5 max-w-sm mx-auto leading-relaxed">
+              <p className="text-xs text-[var(--text-muted)] mt-2.5 max-w-sm mx-auto leading-relaxed">
                 This analytical model is currently queued. Results will populate automatically as the active pipeline runs and processes this phase.
               </p>
             </Card>
@@ -488,38 +488,38 @@ export default function LiveInvestigationWorkspace() {
               {activeTab === "correlations" && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="!p-5 bg-slate-900/20 border border-white/[0.04]">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                    <Card className="!p-5 bg-[var(--bg-card)]/20 border border-[var(--border-soft)]">
+                      <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
                         Correlation Analysis Summary
                       </span>
-                      <div className="text-3xl font-black text-white mt-1">
+                      <div className="text-3xl font-black text-[var(--text-primary)] mt-1">
                         {investigation.final_result?.correlation?.unique_threats_identified || 0}
                       </div>
-                      <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                      <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed">
                         The correlation engine reviews Cross-Site Scripting (XSS), missing configurations, server configurations, and VirusTotal IOC indicator checks. When vulnerabilities compile together, high-priority alarms trigger.
                       </p>
                     </Card>
 
-                    <Card className="!p-5 bg-slate-900/20 border border-white/[0.04]">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                    <Card className="!p-5 bg-[var(--bg-card)]/20 border border-[var(--border-soft)]">
+                      <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
                         Escalated Risk Counts
                       </span>
                       <div className="text-3xl font-black text-orange-400 mt-1">
                         {investigation.final_result?.correlation?.escalated_risks_count || 0}
                       </div>
-                      <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                      <p className="text-xs text-[var(--text-muted)] mt-2 leading-relaxed">
                         Risks that escalated due to compounding parameters. A simple vulnerability multiplied because no defence-in-depth mitigations (e.g. CSP policies) were present.
                       </p>
                     </Card>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    <h4 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">
                       Correlated Attack Chain Maps
                     </h4>
                     {(!investigation.final_result?.correlation?.correlated_threats ||
                       investigation.final_result.correlation.correlated_threats.length === 0) ? (
-                      <Card className="py-12 text-center text-slate-500">
+                      <Card className="py-12 text-center text-[var(--text-muted)]">
                         No combined threat indicators triggered the correlation engine filters.
                       </Card>
                     ) : (
@@ -541,7 +541,7 @@ export default function LiveInvestigationWorkspace() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="border-b border-white/[0.06] text-slate-400 font-semibold bg-slate-900/10">
+                          <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
                             <th className="py-3 px-4 w-40">STRIDE Category</th>
                             <th className="py-3 px-4">Threat Description</th>
                             <th className="py-3 px-4 w-32">Risk Level</th>
@@ -552,35 +552,35 @@ export default function LiveInvestigationWorkspace() {
                           {(!investigation.final_result?.stride?.stride_threats ||
                             investigation.final_result.stride.stride_threats.length === 0) ? (
                             <tr>
-                              <td colSpan={4} className="py-12 text-center text-slate-500">
+                              <td colSpan={4} className="py-12 text-center text-[var(--text-muted)]">
                                 No STRIDE threats generated for this workspace scan.
                               </td>
                             </tr>
                           ) : (
                             investigation.final_result.stride.stride_threats.map((t, idx) => (
-                              <tr key={t.stride_id || idx} className="hover:bg-white/[0.01]">
+                              <tr key={t.stride_id || idx} className="hover:bg-[var(--bg-elevated)]">
                                 <td className="py-4 px-4">
-                                  <span className="text-[10px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                  <span className="text-[10px] bg-[var(--primary)]/10 border border-[var(--primary)] text-[var(--primary)] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
                                     {t.category}
                                   </span>
                                 </td>
-                                  <td className="py-4 px-4 font-semibold text-slate-200">
+                                  <td className="py-4 px-4 font-semibold text-[var(--text-primary)]">
                                     {(() => {
                                       const parts = (t.attack_scenario || "").split("[Evidence Tracing]");
                                       const mainDesc = parts[0].trim();
                                       const evidence = parts.slice(1).join("[Evidence Tracing]").trim();
                                       return (
                                         <div className="space-y-1.5 font-normal">
-                                          <p className="text-slate-300 text-xs leading-relaxed">
+                                          <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                                             {mainDesc}
                                           </p>
                                           {evidence && (
                                             <details className="group mt-2">
-                                              <summary className="text-[11px] text-blue-400/80 hover:text-blue-300 cursor-pointer select-none font-medium outline-none flex items-center gap-1">
+                                              <summary className="text-[11px] text-[var(--primary)]/80 hover:text-[var(--primary)] cursor-pointer select-none font-medium outline-none flex items-center gap-1">
                                                 <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
                                                 View Technical Evidence
                                               </summary>
-                                              <pre className="mt-1.5 p-2.5 rounded bg-slate-950/50 border border-white/[0.04] text-[10px] text-slate-400 font-mono overflow-x-auto max-w-xl whitespace-pre-wrap leading-relaxed">
+                                              <pre className="mt-1.5 p-2.5 rounded bg-[var(--bg-page)]/50 border border-[var(--border-soft)] text-[10px] text-[var(--text-muted)] font-mono overflow-x-auto max-w-xl whitespace-pre-wrap leading-relaxed">
                                                 {evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}
                                               </pre>
                                             </details>
@@ -600,7 +600,7 @@ export default function LiveInvestigationWorkspace() {
                                     {t.severity}
                                   </span>
                                 </td>
-                                <td className="py-4 px-4 text-xs text-slate-300 leading-relaxed font-sans">
+                                <td className="py-4 px-4 text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
                                   {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations}
                                 </td>
                               </tr>
@@ -618,12 +618,12 @@ export default function LiveInvestigationWorkspace() {
                 <div className="space-y-6">
                   {/* Confidence Gauge */}
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <Card className="lg:col-span-3 !p-6 flex flex-col justify-center bg-slate-900/15 border border-white/[0.04]">
-                      <div className="flex items-center gap-2 text-blue-400 font-semibold text-sm">
+                    <Card className="lg:col-span-3 !p-6 flex flex-col justify-center bg-[var(--bg-card)]/15 border border-[var(--border-soft)]">
+                      <div className="flex items-center gap-2 text-[var(--primary)] font-semibold text-sm">
                         <Sparkles className="w-4 h-4 animate-bounce" />
                         AI Executive Summary
                       </div>
-                      <div className="text-slate-200 text-sm leading-relaxed mt-4 whitespace-pre-line font-sans">
+                      <div className="text-[var(--text-primary)] text-sm leading-relaxed mt-4 whitespace-pre-line font-sans">
                         <div className="markdown-content">
                           <ReactMarkdown>
                             {investigation.final_result?.reporter?.ai_summary?.executive_summary || "Generating summaries..."}
@@ -632,17 +632,17 @@ export default function LiveInvestigationWorkspace() {
                       </div>
                     </Card>
 
-                    <Card className="lg:col-span-1 !p-6 flex flex-col items-center justify-center bg-slate-900/15 border border-white/[0.04] text-center">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                    <Card className="lg:col-span-1 !p-6 flex flex-col items-center justify-center bg-[var(--bg-card)]/15 border border-[var(--border-soft)] text-center">
+                      <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
                         AI Confidence Index
                       </span>
-                      <div className="text-5xl font-black text-white tracking-tight mt-3">
+                      <div className="text-5xl font-black text-[var(--text-primary)] tracking-tight mt-3">
                         {investigation.final_result?.reporter?.confidence || 85}%
                       </div>
                       <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-2">
                         High Confidence
                       </span>
-                      <p className="text-[10px] text-slate-500 mt-4 leading-normal font-sans">
+                      <p className="text-[10px] text-[var(--text-muted)] mt-4 leading-normal font-sans">
                         Calculated by the LLM based on findings, technology profiles, and verified reputation indices.
                       </p>
                     </Card>
@@ -653,7 +653,7 @@ export default function LiveInvestigationWorkspace() {
                     {/* Technical details */}
                     <div className="lg:col-span-7">
                       <Card title="Technical Investigation Summary">
-                        <div className="text-slate-300 text-xs leading-relaxed whitespace-pre-line font-sans">
+                        <div className="text-[var(--text-secondary)] text-xs leading-relaxed whitespace-pre-line font-sans">
                           <div className="markdown-content">
                             <ReactMarkdown>
                               {investigation.final_result?.reporter?.ai_summary?.technical_summary || "Generating technical summaries..."}
@@ -666,19 +666,19 @@ export default function LiveInvestigationWorkspace() {
                     {/* Key Risks & Recommendations */}
                     <div className="lg:col-span-5 space-y-6">
                       <Card title="Prioritized Recommendations">
-                        <ol className="list-decimal list-inside space-y-2.5 text-xs text-slate-300 font-sans">
+                        <ol className="list-decimal list-inside space-y-2.5 text-xs text-[var(--text-secondary)] font-sans">
                           {investigation.final_result?.reporter?.ai_summary?.remediation_plan?.map((rec: any, idx: number) => (
-                            <li key={idx} className="leading-relaxed pl-1 text-slate-300">
-                              <span className="text-slate-200 font-bold">{rec.title}:</span>{" "}
+                            <li key={idx} className="leading-relaxed pl-1 text-[var(--text-secondary)]">
+                              <span className="text-[var(--text-primary)] font-bold">{rec.title}:</span>{" "}
                               {rec.description}{" "}
-                              <span className="text-slate-500 font-mono text-[10px] ml-1">({rec.estimated_effort})</span>
+                              <span className="text-[var(--text-muted)] font-mono text-[10px] ml-1">({rec.estimated_effort})</span>
                             </li>
-                          )) || <li className="text-slate-500 font-sans">No recommendations drafted.</li>}
+                          )) || <li className="text-[var(--text-muted)] font-sans">No recommendations drafted.</li>}
                         </ol>
                       </Card>
 
                       <Card title="AI Risk Explanation">
-                        <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
                           {investigation.final_result?.reporter?.ai_summary?.risk_explanation || "No risk explanation drafted."}
                         </p>
                       </Card>

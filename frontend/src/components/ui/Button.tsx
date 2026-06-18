@@ -19,10 +19,10 @@ export function Button({
         "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
-        primary: "bg-[#3b82f6] text-white hover:bg-[#60a5fa] focus:ring-blue-500 shadow-lg shadow-blue-600/25",
-        secondary: "bg-[#263554] text-slate-200 hover:bg-[#2d3f61] focus:ring-blue-500 border border-white/[0.08]",
-        danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-500",
-        ghost: "bg-transparent text-slate-300 hover:bg-white/[0.06] focus:ring-blue-500",
+        primary: "bg-[var(--primary)] text-[var(--text-primary)] hover:bg-[var(--primary-hover)] focus:ring-[var(--primary)] shadow-lg shadow-[var(--primary-soft)]",
+        secondary: "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] focus:ring-[var(--primary)] border border-[var(--border-soft)]",
+        danger: "bg-red-600 text-[var(--text-primary)] hover:bg-red-500 focus:ring-red-500",
+        ghost: "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] focus:ring-[var(--primary)]",
     };
 
     const sizes = {

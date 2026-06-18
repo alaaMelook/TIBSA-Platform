@@ -121,29 +121,29 @@ const CollapsibleSection = ({ title, content, icon: Icon, defaultOpen = false, m
   if (!content) return null;
 
   return (
-    <div className="border border-white/5 rounded-xl overflow-hidden bg-slate-950/20 mb-3">
+    <div className="border border-[var(--border-soft)] rounded-xl overflow-hidden bg-[var(--bg-page)]/20 mb-3">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-all group"
+        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--bg-elevated)] transition-all group"
       >
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 group-hover:text-slate-200">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
           <Icon className="w-3.5 h-3.5" />
           {title}
         </div>
-        {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+        {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
       </button>
       {isOpen && (
         <div className="px-4 pb-4">
-          <div className={`p-3 rounded-lg bg-black/40 border border-white/5 text-[11px] ${mono ? 'font-mono' : 'font-sans'} text-slate-300 break-all whitespace-pre-wrap relative group`}>
+          <div className={`p-3 rounded-lg bg-black/40 border border-[var(--border-soft)] text-[11px] ${mono ? 'font-mono' : 'font-sans'} text-[var(--text-secondary)] break-all whitespace-pre-wrap relative group`}>
             {content}
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard.writeText(content);
               }}
-              className="absolute top-2 right-2 p-1.5 bg-slate-800/50 hover:bg-purple-600/50 rounded-md transition-all opacity-0 group-hover:opacity-100"
+              className="absolute top-2 right-2 p-1.5 bg-[var(--bg-elevated)]/50 hover:bg-[var(--primary-soft)] rounded-md transition-all opacity-0 group-hover:opacity-100"
             >
-              <Copy className="w-3 h-3 text-white" />
+              <Copy className="w-3 h-3 text-[var(--text-primary)]" />
             </button>
           </div>
         </div>
@@ -171,7 +171,7 @@ const severityColors = {
   high: "bg-red-500/10 text-red-400 border-red-500/20",
   medium: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   low: "bg-yellow-500/10 text-yellow-400 border-yellow-400/20",
-  info: "bg-slate-500/10 text-slate-400 border-slate-500/20"
+  info: "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)]"
 };
 
 const getSqlmapEvidence = (evidence: any) => {
@@ -254,7 +254,7 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
             <div className="space-y-1.5 py-1 w-full">
               {Object.entries(parsed).map(([pk, pv]) => (
                 <div key={pk} className="flex flex-col sm:flex-row sm:gap-3 text-[10px] border-l border-emerald-500/20 pl-3">
-                  <span className="text-slate-500 font-bold sm:min-w-[120px]">{pk}:</span>
+                  <span className="text-[var(--text-muted)] font-bold sm:min-w-[120px]">{pk}:</span>
                   <span className="text-emerald-300 break-all">{String(pv)}</span>
                 </div>
               ))}
@@ -274,7 +274,7 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
         {isLong && (
           <button 
             onClick={() => toggleExpand(rowKey)}
-            className="ml-3 text-[9px] font-black text-purple-400/70 hover:text-purple-400 transition-colors uppercase underline underline-offset-2"
+            className="ml-3 text-[9px] font-black text-[var(--primary)]/70 hover:text-[var(--primary)] transition-colors uppercase underline underline-offset-2"
           >
             {isExpanded ? "[Collapse]" : "[Show Full]"}
           </button>
@@ -284,16 +284,16 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
   };
 
   return (
-    <div className="bg-[#050505]/40 border border-white/10 rounded-xl overflow-hidden shadow-2xl font-mono text-[11px]">
+    <div className="bg-[var(--bg-card)]/40 border border-[var(--border-strong)] rounded-xl overflow-hidden shadow-2xl font-mono text-[11px]">
       <div className="flex flex-col divide-y divide-white/5">
         {rows.map((row, idx) => {
           const rowKey = `${row.key}-${idx}`;
           const isCopyable = copyableFields.some(f => row.key.includes(f));
 
           return (
-            <div key={idx} className="flex flex-col md:grid md:grid-cols-[220px_1fr] group hover:bg-white/[0.02] transition-colors relative">
+            <div key={idx} className="flex flex-col md:grid md:grid-cols-[220px_1fr] group hover:bg-[var(--bg-elevated)] transition-colors relative">
               {/* Key Column */}
-              <div className="px-5 py-4 text-slate-500 bg-white/[0.01] border-b md:border-b-0 md:border-r border-white/5 font-sans uppercase text-[10px] font-black tracking-widest flex items-center whitespace-nowrap overflow-hidden text-ellipsis">
+              <div className="px-5 py-4 text-[var(--text-muted)] bg-[var(--bg-elevated)] border-b md:border-b-0 md:border-r border-[var(--border-soft)] font-sans uppercase text-[10px] font-black tracking-widest flex items-center whitespace-nowrap overflow-hidden text-ellipsis">
                 {row.key}
               </div>
               
@@ -305,7 +305,7 @@ const TechnicalEvidenceTable = ({ evidence }: { evidence: any }) => {
                 {isCopyable && (
                   <button 
                     onClick={() => copyToClipboard(row.value, rowKey)}
-                    className="absolute right-4 top-4 p-1.5 bg-slate-800/80 hover:bg-emerald-600/50 border border-white/10 rounded-md text-white transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 z-10"
+                    className="absolute right-4 top-4 p-1.5 bg-[var(--bg-elevated)]/80 hover:bg-emerald-600/50 border border-[var(--border-strong)] rounded-md text-[var(--text-primary)] transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 z-10"
                     title="Copy Value"
                   >
                     {copiedKey === rowKey ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -497,18 +497,18 @@ export default function WebsiteScannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050B14] text-slate-300 p-6 font-sans selection:bg-purple-500/30">
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-secondary)] p-6 font-sans selection:bg-[var(--primary-soft)]">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
+      <div className="flex items-center justify-between mb-8 pb-6 border-b border-[var(--border-soft)]">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
-              <Radar className="w-8 h-8 text-purple-400" />
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] flex items-center gap-3">
+            <div className="p-2 bg-[var(--primary-soft)] rounded-lg border border-[var(--primary)]">
+              <Radar className="w-8 h-8 text-[var(--primary)]" />
             </div>
             Enterprise Penetration Testing Module
           </h1>
-          <p className="text-slate-400 mt-2">Browser-verified vulnerability assessment and intelligence gathering.</p>
+          <p className="text-[var(--text-muted)] mt-2">Browser-verified vulnerability assessment and intelligence gathering.</p>
         </div>
       </div>
 
@@ -518,28 +518,28 @@ export default function WebsiteScannerPage() {
         <div className="space-y-6">
           
           {/* Scanner Controls */}
-          <div className="bg-[#0A101C] border border-white/5 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/5 blur-[100px] pointer-events-none" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--primary-soft)] blur-[100px] pointer-events-none" />
             
             <form onSubmit={handleScan} className="relative z-10">
               <div className="flex gap-4 mb-6">
                 <div className="flex-1 relative group">
                   <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                    <Target className="w-5 h-5 text-slate-500 group-focus-within:text-purple-400 transition-colors" />
+                    <Target className="w-5 h-5 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors" />
                   </div>
                   <input
                     type="text"
                     value={targetUrl}
                     onChange={(e) => setTargetUrl(e.target.value)}
                     placeholder="https://example.com"
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+                    className="w-full bg-[var(--bg-card)]/50 border border-[var(--border-strong)] rounded-xl py-4 pl-12 pr-4 text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                     disabled={isScanning}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isScanning || !targetUrl || selectedTests.length === 0}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-8 rounded-xl font-medium flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(147,51,234,0.3)] hover:shadow-[0_0_30px_rgba(147,51,234,0.5)]"
+                  className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white hover:opacity-90 px-8 rounded-xl font-medium flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--primary-soft)] hover:shadow-xl shadow-[var(--primary-light)]"
                 >
                   {isScanning ? (
                     <><Activity className="w-5 h-5 animate-pulse" /> Scanning...</>
@@ -549,19 +549,19 @@ export default function WebsiteScannerPage() {
                 </button>
               </div>
 
-              <div className="mb-6 p-4 bg-slate-900/30 border border-white/5 rounded-2xl">
+              <div className="mb-6 p-4 bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-2xl">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-purple-400" /> Authentication Configuration
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[var(--primary)]" /> Authentication Configuration
                   </h3>
-                  <div className="flex bg-slate-950/50 p-1 rounded-lg border border-white/5">
+                  <div className="flex bg-[var(--bg-page)]/50 p-1 rounded-lg border border-[var(--border-soft)]">
                     {(["none", "cookie", "auto"] as const).map(mode => (
                       <button
                         key={mode}
                         type="button"
                         onClick={() => setAuthMode(mode)}
                         className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${
-                          authMode === mode ? "bg-purple-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"
+                          authMode === mode ? "bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                         }`}
                       >
                         {mode === "none" ? "No Auth" : mode === "cookie" ? "Cookie" : "Auto Login"}
@@ -573,14 +573,14 @@ export default function WebsiteScannerPage() {
                 {authMode === "cookie" && (
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                      <FileKey className="w-4 h-4 text-slate-500" />
+                      <FileKey className="w-4 h-4 text-[var(--text-muted)]" />
                     </div>
                     <input
                       type="text"
                       value={sessionCookie}
                       onChange={(e) => setSessionCookie(e.target.value)}
                       placeholder="PHPSESSID=...; security=low"
-                      className="w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all text-xs"
+                      className="w-full bg-[var(--bg-page)]/50 border border-[var(--border-strong)] rounded-xl py-3 pl-12 pr-4 text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:border-[var(--primary)] transition-all text-xs"
                     />
                   </div>
                 )}
@@ -590,24 +590,24 @@ export default function WebsiteScannerPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="relative">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                          <Globe className="w-4 h-4 text-slate-500" />
+                          <Globe className="w-4 h-4 text-[var(--text-muted)]" />
                         </div>
                         <input
                           type="text"
                           value={loginUrl}
                           onChange={(e) => setLoginUrl(e.target.value)}
                           placeholder="Login URL"
-                          className="w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all text-xs"
+                          className="w-full bg-[var(--bg-page)]/50 border border-[var(--border-strong)] rounded-xl py-3 pl-12 pr-4 text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:border-[var(--primary)] transition-all text-xs"
                         />
                       </div>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                          <CheckCircle2 className="w-4 h-4 text-slate-500" />
+                          <CheckCircle2 className="w-4 h-4 text-[var(--text-muted)]" />
                         </div>
                         <select
                           value={securityLevel}
                           onChange={(e) => setSecurityLevel(e.target.value)}
-                          className="w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-purple-500/50 transition-all text-xs appearance-none"
+                          className="w-full bg-[var(--bg-page)]/50 border border-[var(--border-strong)] rounded-xl py-3 pl-12 pr-4 text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] transition-all text-xs appearance-none"
                         >
                           <option value="low">Security: Low</option>
                           <option value="medium">Security: Medium</option>
@@ -622,14 +622,14 @@ export default function WebsiteScannerPage() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder="Username"
-                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all text-xs"
+                        className="w-full bg-[var(--bg-page)]/50 border border-[var(--border-strong)] rounded-xl py-3 px-4 text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:border-[var(--primary)] transition-all text-xs"
                       />
                       <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password"
-                        className="w-full bg-slate-950/50 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 transition-all text-xs"
+                        className="w-full bg-[var(--bg-page)]/50 border border-[var(--border-strong)] rounded-xl py-3 px-4 text-[var(--text-primary)] placeholder-slate-500 focus:outline-none focus:border-[var(--primary)] transition-all text-xs"
                       />
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export default function WebsiteScannerPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-4 mb-6">
-                <span className="text-sm font-medium text-slate-400">Scan Mode:</span>
+                <span className="text-sm font-medium text-[var(--text-muted)]">Scan Mode:</span>
                 {(["passive", "safe", "aggressive"] as const).map(mode => (
                   <button
                     key={mode}
@@ -646,8 +646,8 @@ export default function WebsiteScannerPage() {
                     disabled={isScanning}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize border ${
                       scanMode === mode 
-                        ? mode === "aggressive" ? "bg-red-500/10 text-red-400 border-red-500/30" : "bg-purple-500/10 text-purple-400 border-purple-500/30"
-                        : "bg-slate-900/50 text-slate-400 border-white/5 hover:bg-white/5"
+                        ? mode === "aggressive" ? "bg-red-500/10 text-red-400 border-red-500/30" : "bg-[var(--primary-soft)] text-[var(--primary)] border-[var(--primary)]"
+                        : "bg-[var(--bg-card)]/50 text-[var(--text-muted)] border-[var(--border-soft)] hover:bg-[var(--bg-elevated)]"
                     }`}
                   >
                     {mode}
@@ -671,33 +671,33 @@ export default function WebsiteScannerPage() {
                         isScanning ? "opacity-60 cursor-not-allowed" : ""
                       } ${
                         isSelected 
-                          ? "bg-purple-500/5 border-purple-500/30" 
-                          : "bg-slate-900/30 border-white/5 hover:bg-white/5"
+                          ? "bg-[var(--primary-soft)] border-[var(--primary)]" 
+                          : "bg-[var(--bg-card)]/30 border-[var(--border-soft)] hover:bg-[var(--bg-elevated)]"
                       }`}
                     >
-                      <Icon className={`w-5 h-5 mb-2 ${isSelected ? "text-purple-400" : "text-slate-500"}`} />
-                      <div className={`font-medium text-sm mb-1 ${isSelected ? "text-white" : "text-slate-400"}`}>
+                      <Icon className={`w-5 h-5 mb-2 ${isSelected ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} />
+                      <div className={`font-medium text-sm mb-1 ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}`}>
                         {test.label}
                       </div>
-                      <div className="text-[10px] text-slate-500 line-clamp-1">{test.desc}</div>
+                      <div className="text-[10px] text-[var(--text-muted)] line-clamp-1">{test.desc}</div>
                       
                       {test.id === "sqli" && isSelected && (
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
-                          className={`mt-3 pt-3 border-t border-white/5 space-y-3 ${
+                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${
                             isSelected ? "opacity-100" : "opacity-50"
                           }`}
                         >
-                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
+                          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
                           
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-[11px] font-medium text-slate-300">
+                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">
                                 SQLMap Verification
                               </div>
-                              <div className="text-[10px] text-slate-500">
+                              <div className="text-[10px] text-[var(--text-muted)]">
                                 Confirm findings using sqlmap API
                               </div>
                             </div>
@@ -712,7 +712,7 @@ export default function WebsiteScannerPage() {
                               }}
                               disabled={isScanning}
                               className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${
-                                enableSqlmap ? "bg-purple-500" : "bg-slate-700"
+                                enableSqlmap ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"
                               }`}
                             >
                               <span
@@ -730,17 +730,17 @@ export default function WebsiteScannerPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                           }}
-                          className={`mt-3 pt-3 border-t border-white/5 space-y-3 ${
+                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${
                             isSelected ? "opacity-100" : "opacity-50"
                           }`}
                         >
-                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Advanced Auth Checks</div>
+                          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced Auth Checks</div>
                           
                           {/* Browser Auth Analysis */}
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-[11px] font-medium text-slate-300">Browser Auth Analysis</div>
-                              <div className="text-[10px] text-slate-500">Inspect storage, cookies, network auth signals</div>
+                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Browser Auth Analysis</div>
+                              <div className="text-[10px] text-[var(--text-muted)]">Inspect storage, cookies, network auth signals</div>
                             </div>
                             <button
                               type="button"
@@ -749,7 +749,7 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning) setAuthBrowserAnalysis(!authBrowserAnalysis);
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authBrowserAnalysis ? "bg-purple-500" : "bg-slate-700"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authBrowserAnalysis ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
                             >
                               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authBrowserAnalysis ? "left-4" : "left-0.5"}`} />
                             </button>
@@ -758,8 +758,8 @@ export default function WebsiteScannerPage() {
                           {/* Authorized Auth Flow Checks */}
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-[11px] font-medium text-slate-300">Authorized Auth Flow Checks</div>
-                              <div className="text-[10px] text-slate-500">Uses supplied auth/session for safe GET/HEAD checks only</div>
+                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Authorized Auth Flow Checks</div>
+                              <div className="text-[10px] text-[var(--text-muted)]">Uses supplied auth/session for safe GET/HEAD checks only</div>
                             </div>
                             <button
                               type="button"
@@ -776,7 +776,7 @@ export default function WebsiteScannerPage() {
                                 }
                               }}
                               disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authorizedAuthMode ? "bg-purple-500" : "bg-slate-700"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authorizedAuthMode ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
                             >
                               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authorizedAuthMode ? "left-4" : "left-0.5"}`} />
                             </button>
@@ -792,26 +792,26 @@ export default function WebsiteScannerPage() {
 
                           {/* Session Cookie Option */}
                           {authorizedAuthMode && (
-                            <div className="flex flex-col gap-1 mt-1 border-b border-white/5 pb-3">
-                              <label className="text-[11px] font-medium text-slate-300">Session Cookie</label>
+                            <div className="flex flex-col gap-1 mt-1 border-b border-[var(--border-soft)] pb-3">
+                              <label className="text-[11px] font-medium text-[var(--text-secondary)]">Session Cookie</label>
                               <input
                                 type="text"
                                 value={sessionCookie}
                                 onChange={(e) => setSessionCookie(e.target.value)}
                                 placeholder="session=abc123xyz; csrftoken=..."
-                                className="w-full bg-[#0A101C] border border-white/10 rounded-lg px-3 py-1.5 text-[10px] text-white placeholder-slate-600 focus:outline-none focus:border-purple-500/50 transition-colors"
+                                className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg px-3 py-1.5 text-[10px] text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:border-[var(--primary)] transition-colors"
                                 disabled={isScanning}
                                 onClick={(e) => e.stopPropagation()}
                               />
-                              <div className="text-[10px] text-slate-500">Used for authenticated GET/HEAD authorization checks.</div>
+                              <div className="text-[10px] text-[var(--text-muted)]">Used for authenticated GET/HEAD authorization checks.</div>
                             </div>
                           )}
 
                           {/* Token Lifecycle Checks */}
                           <div className={`flex items-center justify-between gap-3 ${authorizedAuthMode ? "" : "opacity-50"}`}>
                             <div>
-                              <div className="text-[11px] font-medium text-slate-300">Token Lifecycle Checks</div>
-                              <div className="text-[10px] text-slate-500">Logout invalidation and refresh-token rotation checks</div>
+                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Token Lifecycle Checks</div>
+                              <div className="text-[10px] text-[var(--text-muted)]">Logout invalidation and refresh-token rotation checks</div>
                             </div>
                             <button
                               type="button"
@@ -820,7 +820,7 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning && authorizedAuthMode) setAuthLifecycleChecks(!authLifecycleChecks);
                               }}
                               disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authLifecycleChecks ? "bg-purple-500" : "bg-slate-700"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authLifecycleChecks ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
                             >
                               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authLifecycleChecks ? "left-4" : "left-0.5"}`} />
                             </button>
@@ -829,8 +829,8 @@ export default function WebsiteScannerPage() {
                           {/* AuthZ Transition Checks */}
                           <div className={`flex items-center justify-between gap-3 ${authorizedAuthMode ? "" : "opacity-50"}`}>
                             <div>
-                              <div className="text-[11px] font-medium text-slate-300">AuthZ Transition Checks</div>
-                              <div className="text-[10px] text-slate-500">Compare unauthenticated vs authenticated protected routes</div>
+                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">AuthZ Transition Checks</div>
+                              <div className="text-[10px] text-[var(--text-muted)]">Compare unauthenticated vs authenticated protected routes</div>
                             </div>
                             <button
                               type="button"
@@ -839,7 +839,7 @@ export default function WebsiteScannerPage() {
                                 if (!isScanning && authorizedAuthMode) setAuthzTransitionChecks(!authzTransitionChecks);
                               }}
                               disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authzTransitionChecks ? "bg-purple-500" : "bg-slate-700"}`}
+                              className={`relative h-5 w-9 shrink-0 rounded-full transition-all ${authzTransitionChecks ? "bg-[var(--primary)] !text-white" : "bg-[var(--bg-elevated)]"}`}
                             >
                               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${authzTransitionChecks ? "left-4" : "left-0.5"}`} />
                             </button>
@@ -856,13 +856,13 @@ export default function WebsiteScannerPage() {
 
           {/* Results Area */}
           {currentResult && (
-            <div className="bg-[#0A101C] border border-white/5 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-2xl overflow-hidden">
               {/* Results Tabs + Export Button */}
-              <div className="flex border-b border-white/5 bg-slate-900/30 items-center">
+              <div className="flex border-b border-[var(--border-soft)] bg-[var(--bg-card)]/30 items-center">
                 <button
                   onClick={() => setActiveTab("overview")}
                   className={`px-6 py-4 font-medium text-sm flex items-center gap-2 border-b-2 transition-all ${
-                    activeTab === "overview" ? "border-purple-500 text-white bg-purple-500/5" : "border-transparent text-slate-400 hover:text-white"
+                    activeTab === "overview" ? "border-[var(--primary)] text-[var(--text-primary)] bg-[var(--primary-soft)]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   <Activity className="w-4 h-4" /> Overview
@@ -870,7 +870,7 @@ export default function WebsiteScannerPage() {
                 <button
                   onClick={() => setActiveTab("technology")}
                   className={`px-6 py-4 font-medium text-sm flex items-center gap-2 border-b-2 transition-all ${
-                    activeTab === "technology" ? "border-emerald-500 text-white bg-emerald-500/5" : "border-transparent text-slate-400 hover:text-white"
+                    activeTab === "technology" ? "border-emerald-500 text-[var(--text-primary)] bg-emerald-500/5" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   <Server className="w-4 h-4" /> Technologies
@@ -883,7 +883,7 @@ export default function WebsiteScannerPage() {
                 <button
                   onClick={() => setActiveTab("findings")}
                   className={`px-6 py-4 font-medium text-sm flex items-center gap-2 border-b-2 transition-all ${
-                    activeTab === "findings" ? "border-purple-500 text-white bg-purple-500/5" : "border-transparent text-slate-400 hover:text-white"
+                    activeTab === "findings" ? "border-[var(--primary)] text-[var(--text-primary)] bg-[var(--primary-soft)]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   <ShieldAlert className="w-4 h-4" /> Findings ({currentResult.findings?.length || 0})
@@ -906,7 +906,7 @@ export default function WebsiteScannerPage() {
                       </button>
                       <button
                         onClick={() => { navigator.clipboard.writeText(JSON.stringify(currentResult.scanner_json, null, 2)); }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-600/50 border border-white/10 text-slate-300 rounded-lg text-[11px] font-bold transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-elevated)]/50 hover:bg-[var(--bg-elevated)] border border-[var(--border-strong)] text-[var(--text-secondary)] rounded-lg text-[11px] font-bold transition-all"
                         title="Copy scanner JSON to clipboard"
                       >
                         <Copy className="w-3 h-3" /> Copy
@@ -918,7 +918,7 @@ export default function WebsiteScannerPage() {
                           localStorage.setItem('tibsa_scanner_json', JSON.stringify(currentResult.scanner_json));
                           window.location.href = `/dashboard/website-scanner/review`;
                         }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 text-purple-400 rounded-lg text-[11px] font-bold transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--primary-soft)] hover:opacity-90/20 border border-[var(--primary)] text-[var(--primary)] rounded-lg text-[11px] font-bold transition-all"
                       >
                         <Eye className="w-3 h-3" /> Client Review
                       </a>
@@ -931,11 +931,11 @@ export default function WebsiteScannerPage() {
                 {activeTab === "overview" && (
                    <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="bg-slate-900/50 border border-white/5 rounded-xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                      <div className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
                         <div className={`absolute inset-0 opacity-20 ${
                           (currentResult.risk_score ?? 0) > 70 ? "bg-red-500" : (currentResult.risk_score ?? 0) > 40 ? "bg-orange-500" : "bg-emerald-500"
                         } blur-[50px]`} />
-                        <div className="text-sm font-medium text-slate-400 mb-2 relative z-10">Risk Score</div>
+                        <div className="text-sm font-medium text-[var(--text-muted)] mb-2 relative z-10">Risk Score</div>
                         <div className={`text-6xl font-bold relative z-10 ${
                           (currentResult.risk_score ?? 0) > 70 ? "text-red-400" : (currentResult.risk_score ?? 0) > 40 ? "text-orange-400" : "text-emerald-400"
                         }`}>
@@ -945,29 +945,29 @@ export default function WebsiteScannerPage() {
 
                       <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
                          {(["critical", "high", "medium", "low"] as const).map(sev => (
-                           <div key={sev} className="bg-slate-900/50 border border-white/5 rounded-xl p-4 flex flex-col items-center justify-center">
-                             <div className="text-3xl font-bold text-white mb-1">{currentResult[sev as keyof ScanResult] as number}</div>
+                           <div key={sev} className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-4 flex flex-col items-center justify-center">
+                             <div className="text-3xl font-bold text-[var(--text-primary)] mb-1">{currentResult[sev as keyof ScanResult] as number}</div>
                              <div className={`text-[10px] font-bold uppercase tracking-widest ${
                                sev === "critical" ? "text-red-400" :
                                sev === "high" ? "text-orange-400" :
-                               sev === "medium" ? "text-yellow-400" : "text-blue-400"
+                               sev === "medium" ? "text-yellow-400" : "text-[var(--primary)]"
                              }`}>{sev}</div>
                            </div>
                          ))}
                       </div>
 
                       {currentResult.executions_confirmed !== undefined && (
-                        <div className="md:col-span-3 bg-purple-500/5 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between">
+                        <div className="md:col-span-3 bg-[var(--primary-soft)] border border-[var(--primary)] rounded-xl p-4 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-500/20 rounded-lg">
-                              <Zap className="w-5 h-5 text-purple-400" />
+                            <div className="p-2 bg-[var(--primary-soft)] rounded-lg">
+                              <Zap className="w-5 h-5 text-[var(--primary)]" />
                             </div>
                             <div>
-                              <div className="text-xs text-slate-400 font-medium">Verified Browser Executions</div>
-                              <div className="text-lg font-bold text-white">XSS Confirmation Signal</div>
+                              <div className="text-xs text-[var(--text-muted)] font-medium">Verified Browser Executions</div>
+                              <div className="text-lg font-bold text-[var(--text-primary)]">XSS Confirmation Signal</div>
                             </div>
                           </div>
-                          <div className="text-4xl font-black text-purple-400 mr-4">
+                          <div className="text-4xl font-black text-[var(--primary)] mr-4">
                             {currentResult.executions_confirmed}
                           </div>
                         </div>
@@ -975,16 +975,16 @@ export default function WebsiteScannerPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="bg-slate-900/30 p-3 rounded-lg border border-white/5 flex justify-between">
-                        <span className="text-slate-500">Target:</span>
-                        <span className="text-slate-300 truncate ml-4">{currentResult.target}</span>
+                      <div className="bg-[var(--bg-card)]/30 p-3 rounded-lg border border-[var(--border-soft)] flex justify-between">
+                        <span className="text-[var(--text-muted)]">Target:</span>
+                        <span className="text-[var(--text-secondary)] truncate ml-4">{currentResult.target}</span>
                       </div>
-                      <div className="bg-slate-900/30 p-3 rounded-lg border border-white/5 flex justify-between">
-                        <span className="text-slate-500">Mode:</span>
-                        <span className="text-slate-300 uppercase">{currentResult.mode}</span>
+                      <div className="bg-[var(--bg-card)]/30 p-3 rounded-lg border border-[var(--border-soft)] flex justify-between">
+                        <span className="text-[var(--text-muted)]">Mode:</span>
+                        <span className="text-[var(--text-secondary)] uppercase">{currentResult.mode}</span>
                       </div>
-                      <div className="bg-slate-900/30 p-3 rounded-lg border border-white/5 flex justify-between">
-                        <span className="text-slate-500">Attack Surface:</span>
+                      <div className="bg-[var(--bg-card)]/30 p-3 rounded-lg border border-[var(--border-soft)] flex justify-between">
+                        <span className="text-[var(--text-muted)]">Attack Surface:</span>
                         <span className="text-red-400 font-bold">{currentResult.attack_surface_endpoints_count ?? 0} endpoints</span>
                       </div>
                     </div>
@@ -998,20 +998,20 @@ export default function WebsiteScannerPage() {
                     {/* Detected Technologies */}
                     {(currentResult.detected_technologies?.length ?? 0) > 0 ? (
                       <div>
-                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                           <Server className="w-4 h-4 text-emerald-400" />
                           Detected Technologies
-                          <span className="text-xs font-normal text-slate-500">— evidence-based only</span>
+                          <span className="text-xs font-normal text-[var(--text-muted)]">— evidence-based only</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {currentResult.detected_technologies?.map((tech, i) => (
-                            <div key={i} className="bg-slate-900/50 border border-white/5 rounded-xl p-4 hover:border-emerald-500/20 transition-all group">
+                            <div key={i} className="bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-xl p-4 hover:border-emerald-500/20 transition-all group">
                               <div className="flex items-start justify-between mb-2">
                                 <div>
-                                  <div className="font-semibold text-white text-sm group-hover:text-emerald-400 transition-colors">{tech.name}</div>
+                                  <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-emerald-400 transition-colors">{tech.name}</div>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{tech.category.replace(/_/g, ' ')}</div>
-                                    <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{tech.category.replace(/_/g, ' ')}</div>
+                                    <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)]">
                                       SRC: {tech.source || "custom_detector"}
                                     </span>
                                   </div>
@@ -1019,10 +1019,10 @@ export default function WebsiteScannerPage() {
                                 <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
                                   tech.confidence === 'high' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
                                   tech.confidence === 'medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
-                                  'bg-slate-500/10 text-slate-400 border-slate-500/30'
+                                  'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-soft)]'
                                 }`}>{tech.confidence}</span>
                               </div>
-                              <div className="text-[11px] text-slate-400 font-mono leading-relaxed bg-black/20 rounded-lg p-2 border border-white/5">
+                              <div className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed bg-black/20 rounded-lg p-2 border border-[var(--border-soft)]">
                                 {tech.evidence}
                               </div>
                             </div>
@@ -1030,7 +1030,7 @@ export default function WebsiteScannerPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-slate-500">
+                      <div className="text-center py-8 text-[var(--text-muted)]">
                         <Server className="w-8 h-8 mx-auto mb-3 opacity-30" />
                         <p className="text-sm">No technologies detected — insufficient evidence in target response.</p>
                       </div>
@@ -1038,42 +1038,42 @@ export default function WebsiteScannerPage() {
 
                     {/* Technical Metadata Collapsible Section */}
                     {(currentResult.technology_metadata?.length ?? 0) > 0 && (
-                      <div className="bg-slate-950/40 border border-white/5 rounded-2xl overflow-hidden shadow-2xl transition-all hover:border-white/10">
+                      <div className="bg-[var(--bg-page)]/40 border border-[var(--border-soft)] rounded-2xl overflow-hidden shadow-2xl transition-all hover:border-[var(--border-strong)]">
                         <button
                           onClick={() => setShowMetadata(!showMetadata)}
-                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/[0.02] transition-all group/meta-btn"
+                          className="w-full flex items-center justify-between px-6 py-4 hover:bg-[var(--bg-elevated)] transition-all group/meta-btn"
                         >
-                          <div className="flex items-center gap-2 text-sm font-bold text-white">
-                            <Layers className="w-4 h-4 text-purple-400" />
+                          <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                            <Layers className="w-4 h-4 text-[var(--primary)]" />
                             Technical Metadata
-                            <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/5 ml-1">
+                            <span className="text-[10px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded border border-[var(--border-soft)] ml-1">
                               {currentResult.technology_metadata?.length} items
                             </span>
                           </div>
                           {showMetadata ? (
-                            <ChevronUp className="w-4 h-4 text-slate-400 group-hover/meta-btn:text-white transition-colors" />
+                            <ChevronUp className="w-4 h-4 text-[var(--text-muted)] group-hover/meta-btn:text-[var(--text-primary)] transition-colors" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-slate-400 group-hover/meta-btn:text-white transition-colors" />
+                            <ChevronDown className="w-4 h-4 text-[var(--text-muted)] group-hover/meta-btn:text-[var(--text-primary)] transition-colors" />
                           )}
                         </button>
                         
                         {showMetadata && (
-                          <div className="px-6 pb-6 pt-2 border-t border-white/5 bg-slate-900/10">
+                          <div className="px-6 pb-6 pt-2 border-t border-[var(--border-soft)] bg-[var(--bg-card)]/10">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {currentResult.technology_metadata?.map((meta, i) => (
-                                <div key={i} className="bg-slate-900/30 border border-white/5 rounded-xl p-4 hover:border-purple-500/20 transition-all group">
+                                <div key={i} className="bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-xl p-4 hover:border-[var(--primary)] transition-all group">
                                   <div className="flex items-start justify-between mb-2">
                                     <div>
-                                      <div className="font-semibold text-white text-sm group-hover:text-purple-400 transition-colors">{meta.name}</div>
+                                      <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-[var(--primary)] transition-colors">{meta.name}</div>
                                       <div className="flex items-center gap-2 mt-0.5">
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{meta.category}</div>
-                                        <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">{meta.category}</div>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)]">
                                           SRC: {meta.source || "wappalyzer"}
                                         </span>
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="text-[11px] text-slate-400 font-mono leading-relaxed bg-black/20 rounded-lg p-2 border border-white/5 break-all max-h-24 overflow-y-auto">
+                                  <div className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed bg-black/20 rounded-lg p-2 border border-[var(--border-soft)] break-all max-h-24 overflow-y-auto">
                                     {meta.evidence}
                                   </div>
                                 </div>
@@ -1109,24 +1109,24 @@ export default function WebsiteScannerPage() {
 
                       return (
                         <div className="space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
+                            <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                               <Target className="w-4 h-4 text-orange-400" />
                               Attack Surface Assets
-                              <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                              <span className="text-[10px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded border border-[var(--border-soft)]">
                                 {totalCount}
                               </span>
                             </h3>
                             
                             <div className="flex items-center gap-2">
                               <div className="relative">
-                                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                   type="text"
                                   placeholder="Search assets..."
                                   value={assetSearch}
                                   onChange={(e) => setAssetSearch(e.target.value)}
-                                  className="pl-9 pr-4 py-1.5 bg-slate-950/60 border border-white/5 rounded-lg text-xs text-white placeholder-slate-500 focus:border-orange-500/50 focus:outline-none transition-all w-48 sm:w-64 font-medium"
+                                  className="pl-9 pr-4 py-1.5 bg-[var(--bg-page)]/60 border border-[var(--border-soft)] rounded-lg text-xs text-[var(--text-primary)] placeholder-slate-500 focus:border-orange-500/50 focus:outline-none transition-all w-48 sm:w-64 font-medium"
                                 />
                               </div>
 
@@ -1135,7 +1135,7 @@ export default function WebsiteScannerPage() {
                                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                                   assetGrouped 
                                     ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' 
-                                    : 'bg-slate-900/50 text-slate-400 border-white/5 hover:border-white/10'
+                                    : 'bg-[var(--bg-card)]/50 text-[var(--text-muted)] border-[var(--border-soft)] hover:border-[var(--border-strong)]'
                                 }`}
                               >
                                 {assetGrouped ? "Ungroup" : "Group by Type"}
@@ -1153,16 +1153,16 @@ export default function WebsiteScannerPage() {
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.2 }}
-                                    className="flex items-center justify-between bg-slate-900/50 border border-white/5 rounded-lg px-4 py-3 hover:border-orange-500/20 transition-all group overflow-hidden"
+                                    className="flex items-center justify-between bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-lg px-4 py-3 hover:border-orange-500/20 transition-all group overflow-hidden"
                                   >
                                     <div className="flex items-center gap-3">
                                       <div className={`w-2 h-2 rounded-full ${
                                         asset.confidence === 'high' ? 'bg-orange-400' : 'bg-yellow-400'
                                       }`} />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-white/5">
+                                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--bg-elevated)] text-[var(--text-muted)] border border-[var(--border-soft)]">
                                         {asset.type.replace(/_/g, ' ')}
                                       </span>
-                                      <span className="text-xs font-mono text-slate-300 truncate max-w-xs sm:max-w-md md:max-w-lg">{asset.url}</span>
+                                      <span className="text-xs font-mono text-[var(--text-secondary)] truncate max-w-xs sm:max-w-md md:max-w-lg">{asset.url}</span>
                                     </div>
                                     <span className={`text-[10px] font-bold ${
                                       asset.confidence === 'high' ? 'text-orange-400' : 'text-yellow-400'
@@ -1181,7 +1181,7 @@ export default function WebsiteScannerPage() {
                                         setAssetLimit(prev => prev + 50);
                                       }
                                     }}
-                                    className="px-4 py-2 bg-slate-950/60 border border-white/5 hover:border-orange-500/30 rounded-xl text-xs font-bold text-slate-400 hover:text-orange-400 transition-all flex items-center gap-2 shadow-lg cursor-pointer"
+                                    className="px-4 py-2 bg-[var(--bg-page)]/60 border border-[var(--border-soft)] hover:border-orange-500/30 rounded-xl text-xs font-bold text-[var(--text-muted)] hover:text-orange-400 transition-all flex items-center gap-2 shadow-lg cursor-pointer"
                                   >
                                     {assetLimit >= filteredAssets.length ? (
                                       <>
@@ -1197,7 +1197,7 @@ export default function WebsiteScannerPage() {
                               )}
 
                               {filteredAssets.length === 0 && (
-                                <div className="text-center py-8 text-slate-500 font-medium">
+                                <div className="text-center py-8 text-[var(--text-muted)] font-medium">
                                   No assets match your search filters.
                                 </div>
                               )}
@@ -1207,26 +1207,26 @@ export default function WebsiteScannerPage() {
                               {Object.entries(groupedAssets).map(([groupTitle, groupItems]: [string, any]) => {
                                 const isGroupExpanded = expandedGroups[groupTitle] !== false;
                                 return (
-                                  <div key={groupTitle} className="bg-slate-950/20 border border-white/5 rounded-xl overflow-hidden">
+                                  <div key={groupTitle} className="bg-[var(--bg-page)]/20 border border-[var(--border-soft)] rounded-xl overflow-hidden">
                                     <button
                                       onClick={() => setExpandedGroups(prev => ({ ...prev, [groupTitle]: !isGroupExpanded }))}
-                                      className="w-full flex items-center justify-between px-4 py-3 bg-white/[0.01] hover:bg-white/[0.02] transition-colors border-b border-white/5 cursor-pointer"
+                                      className="w-full flex items-center justify-between px-4 py-3 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] transition-colors border-b border-[var(--border-soft)] cursor-pointer"
                                     >
-                                      <span className="text-xs font-bold text-white flex items-center gap-2">
+                                      <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-2">
                                         <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
                                         {groupTitle}
-                                        <span className="text-[9px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded border border-white/5 ml-1">
+                                        <span className="text-[9px] font-bold text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-0.5 rounded border border-[var(--border-soft)] ml-1">
                                           {groupItems.length} items
                                         </span>
                                       </span>
-                                      {isGroupExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+                                      {isGroupExpanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
                                     </button>
 
                                     {isGroupExpanded && (
                                       <div className="p-3 space-y-2">
                                         {groupItems.map((asset: any, idx: number) => (
-                                          <div key={idx} className="flex items-center justify-between bg-slate-900/30 border border-white/5 rounded-lg px-4 py-2 hover:border-orange-500/10 transition-all">
-                                            <span className="text-xs font-mono text-slate-300 truncate max-w-xs sm:max-w-md md:max-w-lg">{asset.url}</span>
+                                          <div key={idx} className="flex items-center justify-between bg-[var(--bg-card)]/30 border border-[var(--border-soft)] rounded-lg px-4 py-2 hover:border-orange-500/10 transition-all">
+                                            <span className="text-xs font-mono text-[var(--text-secondary)] truncate max-w-xs sm:max-w-md md:max-w-lg">{asset.url}</span>
                                             <span className={`text-[10px] font-bold ${
                                               asset.confidence === 'high' ? 'text-orange-400' : 'text-yellow-400'
                                             }`}>{asset.confidence}</span>
@@ -1239,7 +1239,7 @@ export default function WebsiteScannerPage() {
                               })}
 
                               {Object.keys(groupedAssets).length === 0 && (
-                                <div className="text-center py-8 text-slate-500 font-medium">
+                                <div className="text-center py-8 text-[var(--text-muted)] font-medium">
                                   No assets match your search filters.
                                 </div>
                               )}
@@ -1252,21 +1252,21 @@ export default function WebsiteScannerPage() {
                     {/* Scanner JSON Preview */}
                     {currentResult.scanner_json && (
                       <div>
-                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                          <Code className="w-4 h-4 text-purple-400" />
+                        <h3 className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                          <Code className="w-4 h-4 text-[var(--primary)]" />
                           Scanner JSON Preview
                         </h3>
-                        <div className="bg-black/60 border border-white/5 rounded-xl overflow-hidden">
-                          <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
-                            <span className="text-[10px] font-bold text-slate-500 font-mono">scanner_context.json</span>
+                        <div className="bg-black/60 border border-[var(--border-soft)] rounded-xl overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-soft)]">
+                            <span className="text-[10px] font-bold text-[var(--text-muted)] font-mono">scanner_context.json</span>
                             <button
                               onClick={() => navigator.clipboard.writeText(JSON.stringify(currentResult.scanner_json, null, 2))}
-                              className="p-1 hover:bg-white/10 rounded transition-all"
+                              className="p-1 hover:bg-[var(--bg-elevated)] rounded transition-all"
                             >
-                              <Copy className="w-3 h-3 text-slate-400" />
+                              <Copy className="w-3 h-3 text-[var(--text-muted)]" />
                             </button>
                           </div>
-                          <pre className="text-[11px] font-mono text-slate-300 p-4 overflow-auto max-h-96 leading-relaxed">
+                          <pre className="text-[11px] font-mono text-[var(--text-secondary)] p-4 overflow-auto max-h-96 leading-relaxed">
                             {JSON.stringify(currentResult.scanner_json, null, 2)}
                           </pre>
                         </div>
@@ -1278,12 +1278,12 @@ export default function WebsiteScannerPage() {
                 {activeTab === "findings" && (
                   <div className="space-y-8">
                     {(currentResult.findings || []).map((finding: any) => (
-                      <div key={finding.id} className="bg-[#0D1525] border border-white/5 rounded-2xl overflow-hidden shadow-2xl relative group/card transition-all hover:border-white/10">
+                      <div key={finding.id} className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl overflow-hidden shadow-2xl relative group/card transition-all hover:border-[var(--border-strong)]">
                         {/* Header Section */}
-                        <div className="px-6 py-5 bg-gradient-to-r from-slate-900/80 to-transparent border-b border-white/5 flex items-center justify-between">
+                        <div className="px-6 py-5 bg-gradient-to-r from-slate-900/80 to-transparent border-b border-[var(--border-soft)] flex items-center justify-between">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-bold text-white group-hover/card:text-purple-400 transition-colors">
+                              <h3 className="text-lg font-bold text-[var(--text-primary)] group-hover/card:text-[var(--primary)] transition-colors">
                                 {finding.title}
                               </h3>
                               <div className="flex gap-2">
@@ -1301,30 +1301,30 @@ export default function WebsiteScannerPage() {
                                 ) : null}
                               </div>
                             </div>
-                            <div className="text-xs font-mono text-slate-500 truncate max-w-md">
+                            <div className="text-xs font-mono text-[var(--text-muted)] truncate max-w-md">
                               {finding.url}
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-4">
                             {finding.cwe_id && (
-                              <span className="text-[10px] font-bold font-mono text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-white/5">
+                              <span className="text-[10px] font-bold font-mono text-[var(--text-muted)] bg-[var(--bg-elevated)]/50 px-2 py-1 rounded border border-[var(--border-soft)]">
                                 {finding.cwe_id}
                               </span>
                             )}
-                            <div className="p-2 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer transition-all" onClick={() => copyToClipboard(finding.url)}>
-                              <ExternalLink className="w-4 h-4 text-slate-400" />
+                            <div className="p-2 rounded-lg bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] cursor-pointer transition-all" onClick={() => copyToClipboard(finding.url)}>
+                              <ExternalLink className="w-4 h-4 text-[var(--text-muted)]" />
                             </div>
                           </div>
                         </div>
 
                         {/* Badges Ribbon */}
-                        <div className="px-6 py-2 bg-slate-900/30 flex flex-wrap gap-2 border-b border-white/5">
+                        <div className="px-6 py-2 bg-[var(--bg-card)]/30 flex flex-wrap gap-2 border-b border-[var(--border-soft)]">
                            {finding.tags?.map((tag: string) => (
                               <span key={tag} className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-[0.1em] border ${
                                 tag === "PLAYWRIGHT-VERIFIED" || tag === "VERIFIED"
-                                  ? "bg-blue-600/10 text-blue-400 border-blue-500/20" 
-                                  : "bg-slate-800/40 text-slate-500 border-white/5"
+                                  ? "bg-[var(--primary-hover)]/10 text-[var(--primary)] border-[var(--primary)]" 
+                                  : "bg-[var(--bg-elevated)]/40 text-[var(--text-muted)] border-[var(--border-soft)]"
                               }`}>
                                 {tag}
                               </span>
@@ -1335,12 +1335,12 @@ export default function WebsiteScannerPage() {
                         <div className="grid lg:grid-cols-[1.2fr_1fr] gap-0">
                           
                           {/* Left Column: Evidence & Reproduction */}
-                          <div className="p-6 border-r border-white/5 space-y-6">
+                          <div className="p-6 border-r border-[var(--border-soft)] space-y-6">
                             <div>
-                              <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 mb-3 flex items-center gap-2">
+                              <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--text-muted)] mb-3 flex items-center gap-2">
                                 <Search className="w-3 h-3" /> Summary
                               </h4>
-                              <p className="text-sm text-slate-300 leading-relaxed bg-slate-950/20 p-4 rounded-xl border border-white/5 italic">
+                              <p className="text-sm text-[var(--text-secondary)] leading-relaxed bg-[var(--bg-page)]/20 p-4 rounded-xl border border-[var(--border-soft)] italic">
                                 {finding.description}
                               </p>
                             </div>
@@ -1351,8 +1351,8 @@ export default function WebsiteScannerPage() {
 
                               return (
                                 <div className="space-y-3">
-                                  <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 mb-2 flex items-center gap-2">
-                                    <ShieldAlert className="w-3 h-3 text-purple-400" /> SQLMAP VERIFICATION
+                                  <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--text-muted)] mb-2 flex items-center gap-2">
+                                    <ShieldAlert className="w-3 h-3 text-[var(--primary)]" /> SQLMAP VERIFICATION
                                   </h4>
                                   <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all duration-300 ${
                                     sqlmap.verified
@@ -1366,7 +1366,7 @@ export default function WebsiteScannerPage() {
                                           {sqlmap.verified ? "SQLMap: Confirmed" : "SQLMap: Not Confirmed"}
                                         </div>
                                       </div>
-                                      <div className="text-[11px] text-slate-400">
+                                      <div className="text-[11px] text-[var(--text-muted)]">
                                         {sqlmap.verified 
                                           ? "Verified by sqlmap exploitation checks" 
                                           : "Scanner detected a possible issue but sqlmap could not fully confirm exploitation."}
@@ -1374,7 +1374,7 @@ export default function WebsiteScannerPage() {
                                     </div>
                                     {!sqlmap.verified && sqlmap.verification_reason && (
                                       <div className="text-left sm:text-right shrink-0">
-                                        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">REASON</div>
+                                        <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">REASON</div>
                                         <div className="text-xs font-mono font-semibold text-amber-300 mt-0.5">
                                           {mapVerificationReason(sqlmap.verification_reason)}
                                         </div>
@@ -1386,7 +1386,7 @@ export default function WebsiteScannerPage() {
                             })()}
 
                             <div>
-                              <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 mb-3 flex items-center gap-2">
+                              <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--text-muted)] mb-3 flex items-center gap-2">
                                 <Terminal className="w-3 h-3" /> Technical Evidence
                               </h4>
                               <TechnicalEvidenceTable evidence={finding.evidence} />
@@ -1395,7 +1395,7 @@ export default function WebsiteScannerPage() {
                             {/* Reproduction Details */}
                             {finding.reproduction_data && (
                               <div>
-                                <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-500 mb-3 flex items-center gap-2">
+                                <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--text-muted)] mb-3 flex items-center gap-2">
                                   <Zap className="w-3 h-3" /> Reproduction Details
                                 </h4>
                                 <div className="space-y-3">
@@ -1427,16 +1427,16 @@ export default function WebsiteScannerPage() {
                           </div>
 
                           {/* Right Column: Remediation & Implementation */}
-                          <div className="p-6 bg-slate-950/10 space-y-8">
+                          <div className="p-6 bg-[var(--bg-page)]/10 space-y-8">
                             <div>
-                              <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-purple-400 mb-4 flex items-center gap-2">
+                              <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--primary)] mb-4 flex items-center gap-2">
                                 <ShieldCheck className="w-3 h-3" /> Remediation Plan
                               </h4>
                               <div className="space-y-3">
                                 {finding.recommendation?.split('\n').filter((l: string) => l.trim()).map((line: string, i: number) => (
-                                  <div key={i} className="flex gap-3 items-start bg-white/5 p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
-                                    <span className="text-[13px] text-slate-300 leading-snug">{line.replace(/^- /, '').replace(/\*\*/g, '')}</span>
+                                  <div key={i} className="flex gap-3 items-start bg-[var(--bg-elevated)] p-3 rounded-lg border border-[var(--border-soft)] hover:border-[var(--border-strong)] transition-all">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] !text-white mt-1.5 shrink-0" />
+                                    <span className="text-[13px] text-[var(--text-secondary)] leading-snug">{line.replace(/^- /, '').replace(/\*\*/g, '')}</span>
                                   </div>
                                 ))}
                               </div>
@@ -1447,18 +1447,18 @@ export default function WebsiteScannerPage() {
                                 <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-emerald-400 mb-4 flex items-center gap-2">
                                   <Code className="w-3 h-3" /> Implementation Fix
                                 </h4>
-                                <div className="bg-[#020202] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
-                                  <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
-                                    <div className="text-[10px] font-bold text-slate-500 font-mono">CODE SNIPPET</div>
+                                <div className="bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-xl overflow-hidden shadow-2xl">
+                                  <div className="flex items-center justify-between px-4 py-2 bg-[var(--bg-elevated)] border-b border-[var(--border-soft)]">
+                                    <div className="text-[10px] font-bold text-[var(--text-muted)] font-mono">CODE SNIPPET</div>
                                     <button 
                                       onClick={() => copyToClipboard(finding.auto_fix)}
-                                      className="p-1.5 bg-slate-800/50 hover:bg-emerald-600/50 rounded-md transition-all"
+                                      className="p-1.5 bg-[var(--bg-elevated)]/50 hover:bg-emerald-600/50 rounded-md transition-all"
                                     >
-                                      <Copy className="w-3 h-3 text-white" />
+                                      <Copy className="w-3 h-3 text-[var(--text-primary)]" />
                                     </button>
                                   </div>
                                   <div className="p-4 overflow-x-auto">
-                                    <pre className="text-[11px] font-mono text-slate-300 leading-relaxed">
+                                    <pre className="text-[11px] font-mono text-[var(--text-secondary)] leading-relaxed">
                                       {finding.auto_fix.replace(/```[a-z]*\n/g, '').replace(/```/g, '')}
                                     </pre>
                                   </div>
@@ -1470,13 +1470,13 @@ export default function WebsiteScannerPage() {
                             <div className="pt-4 flex gap-3">
                                <button 
                                  onClick={() => copyToClipboard(finding.reproduction_data?.payload || "")}
-                                 className="flex-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg py-2.5 text-[11px] font-bold text-slate-400 flex items-center justify-center gap-2 transition-all"
+                                 className="flex-1 bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated)] border border-[var(--border-soft)] rounded-lg py-2.5 text-[11px] font-bold text-[var(--text-muted)] flex items-center justify-center gap-2 transition-all"
                                >
                                  <Copy className="w-3 h-3" /> COPY PAYLOAD
                                </button>
                                <button 
                                  onClick={() => window.open(finding.reproduction_data?.verification_url || finding.url, '_blank')}
-                                 className="flex-1 bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/20 rounded-lg py-2.5 text-[11px] font-bold text-purple-400 flex items-center justify-center gap-2 transition-all"
+                                 className="flex-1 bg-[var(--primary-soft)] hover:opacity-90/20 border border-[var(--primary)] rounded-lg py-2.5 text-[11px] font-bold text-[var(--primary)] flex items-center justify-center gap-2 transition-all"
                                >
                                  <ExternalLink className="w-3 h-3" /> TEST MANUAL
                                </button>
@@ -1493,26 +1493,26 @@ export default function WebsiteScannerPage() {
         </div>
 
         {/* Sidebar: History */}
-        <div className="bg-[#0A101C] border border-white/5 rounded-2xl flex flex-col h-[calc(100vh-8rem)] sticky top-6">
-          <div className="p-6 border-b border-white/5">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Activity className="w-5 h-5 text-purple-400" />
+        <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl flex flex-col h-[calc(100vh-8rem)] sticky top-6">
+          <div className="p-6 border-b border-[var(--border-soft)]">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[var(--primary)]" />
               Scan History
             </h2>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             {history.length === 0 ? (
-              <p className="text-center text-slate-500 text-sm mt-10">No past scans found.</p>
+              <p className="text-center text-[var(--text-muted)] text-sm mt-10">No past scans found.</p>
             ) : (
               history.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => loadPastScan(item.id)}
                   disabled={isScanning}
-                  className="w-full text-left bg-slate-900/50 hover:bg-slate-800/50 border border-white/5 rounded-xl p-4 transition-all group"
+                  className="w-full text-left bg-[var(--bg-card)]/50 hover:bg-[var(--bg-elevated)]/50 border border-[var(--border-soft)] rounded-xl p-4 transition-all group"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="font-medium text-white truncate pr-2 group-hover:text-purple-400 transition-colors">
+                    <div className="font-medium text-[var(--text-primary)] truncate pr-2 group-hover:text-[var(--primary)] transition-colors">
                       {item.target.replace(/^https?:\/\//, '')}
                     </div>
                     {item.summary.risk_score != null && (
@@ -1525,7 +1525,7 @@ export default function WebsiteScannerPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                  <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
                     <span className="capitalize">{item.summary.mode}</span>
                     <span>{new Date(item.created_at).toLocaleDateString()}</span>
                   </div>

@@ -139,31 +139,31 @@ export default function InvestigationsDashboard() {
         return <span className={`${common} border-amber-500/20 bg-amber-500/10 text-amber-400`}>Stopped</span>;
       case "pending":
       case "created":
-        return <span className={`${common} border-slate-700 bg-slate-800 text-slate-400`}>Pending</span>;
+        return <span className={`${common} border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text-muted)]`}>Pending</span>;
       default:
-        return <span className={`${common} border-blue-500/20 bg-blue-500/10 text-blue-400 animate-pulse`}>{status || "Running"}</span>;
+        return <span className={`${common} border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] animate-pulse`}>{status || "Running"}</span>;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-blue-900/20 via-[#263554]/30 to-[#0f172a] border border-white/[0.04] p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
+      <div className="bg-gradient-to-r from-blue-900/20 via-[#263554]/30 to-[#0f172a] border border-[var(--border-soft)] p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
-            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] animate-ping" />
+            <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">
               AI Security Ingestion
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
+          <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
             Security Investigations
           </h1>
-          <p className="text-slate-400 max-w-xl text-sm leading-relaxed">
+          <p className="text-[var(--text-muted)] max-w-xl text-sm leading-relaxed">
             Run automated endpoint intelligence pipelines. Discover assets, normalise vulnerabilities, run external reputation lookups, build STRIDE models, and compose AI analysis.
           </p>
         </div>
-        <Shield className="w-12 h-12 text-blue-500/20 hidden md:block" />
+        <Shield className="w-12 h-12 text-[var(--primary)]/20 hidden md:block" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -173,24 +173,24 @@ export default function InvestigationsDashboard() {
             <form onSubmit={handleStartScan} className="space-y-4">
               {/* Target URL */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                   Target Endpoint
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
                   <Input
                     placeholder="https://example.com"
                     value={target}
                     onChange={(e) => setTarget(e.target.value)}
                     required
-                    className="pl-9 bg-slate-950/40 border-white/[0.08]"
+                    className="pl-9 bg-[var(--bg-page)]/40 border-[var(--border-soft)]"
                   />
                 </div>
               </div>
 
               {/* Mode Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                   Scan Mode
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -201,8 +201,8 @@ export default function InvestigationsDashboard() {
                       onClick={() => setMode(m)}
                       className={`py-1.5 px-3 rounded-lg border text-xs font-bold capitalize transition-all cursor-pointer ${
                         mode === m
-                          ? "border-blue-500 bg-blue-950/30 text-blue-400"
-                          : "border-white/[0.06] bg-slate-950/20 text-slate-500 hover:text-slate-300"
+                          ? "border-blue-500 bg-blue-950/30 text-[var(--primary)]"
+                          : "border-[var(--border-strong)] bg-[var(--bg-page)]/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                       }`}
                     >
                       {m}
@@ -218,15 +218,15 @@ export default function InvestigationsDashboard() {
                     type="checkbox"
                     checked={includeTi}
                     onChange={(e) => setIncludeTi(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-500 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-[var(--border-strong)] bg-[var(--bg-page)] text-[var(--primary)] focus:ring-[var(--primary)]"
                   />
-                  <div className="text-xs font-semibold text-slate-300">
+                  <div className="text-xs font-semibold text-[var(--text-secondary)]">
                     Enable Threat Intel Integration
                   </div>
                 </label>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  <label className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                     STRIDE Modeling Mode
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -237,8 +237,8 @@ export default function InvestigationsDashboard() {
                         onClick={() => setTmMode(tm)}
                         className={`py-1 px-2.5 rounded border text-[10px] font-bold capitalize transition-all cursor-pointer ${
                           tmMode === tm
-                            ? "border-blue-500/50 bg-blue-950/20 text-blue-400"
-                            : "border-white/[0.06] bg-slate-950/20 text-slate-500"
+                            ? "border-[var(--primary)] bg-blue-950/20 text-[var(--primary)]"
+                            : "border-[var(--border-strong)] bg-[var(--bg-page)]/20 text-[var(--text-muted)]"
                         }`}
                       >
                         {tm}
@@ -249,8 +249,8 @@ export default function InvestigationsDashboard() {
               </div>
 
               {/* Scans config block */}
-              <div className="border-t border-white/[0.06] pt-4 space-y-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+              <div className="border-t border-[var(--border-strong)] pt-4 space-y-3">
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest block">
                   Select Vulnerability Scans
                 </span>
                 <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto pr-1">
@@ -259,8 +259,8 @@ export default function InvestigationsDashboard() {
                     
                     const getOptionIcon = (key: string, selected: boolean) => {
                       const colorClass = selected 
-                        ? "text-blue-400 bg-blue-500/10 border-blue-500/20" 
-                        : "text-slate-500 bg-slate-900/40 border-white/[0.04]";
+                        ? "text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]" 
+                        : "text-[var(--text-muted)] bg-[var(--bg-card)]/40 border-[var(--border-soft)]";
                       
                       switch (key) {
                         case "security_headers":
@@ -290,22 +290,22 @@ export default function InvestigationsDashboard() {
                         onClick={() => handleTestToggle(opt.key)}
                         className={`flex flex-col p-2.5 rounded-xl border transition-all duration-200 select-none cursor-pointer ${
                           isSelected 
-                            ? "border-blue-500/40 bg-blue-500/[0.03] shadow-md shadow-blue-500/[0.02]" 
-                            : "border-white/[0.05] bg-slate-950/20 hover:bg-slate-900/30"
+                            ? "border-[var(--primary)] bg-[var(--primary)]/[0.03] shadow-md shadow-blue-500/[0.02]" 
+                            : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-card)]/30"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
                             {getOptionIcon(opt.key, isSelected)}
                             <div className="flex flex-col text-left">
-                              <span className="text-[11px] font-bold text-slate-200">{opt.label}</span>
-                              <span className="text-[9px] text-slate-500 mt-0.5 leading-tight font-medium max-w-[190px]">{opt.desc}</span>
+                              <span className="text-[11px] font-bold text-[var(--text-primary)]">{opt.label}</span>
+                              <span className="text-[9px] text-[var(--text-muted)] mt-0.5 leading-tight font-medium max-w-[190px]">{opt.desc}</span>
                             </div>
                           </div>
                           
                           {/* iOS-like Custom Switch */}
                           <div className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out ${
-                            isSelected ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700"
+                            isSelected ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
                           }`}>
                             <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
                               isSelected ? "translate-x-3" : "translate-x-0"
@@ -318,16 +318,16 @@ export default function InvestigationsDashboard() {
                             onClick={(e) => {
                               e.stopPropagation();
                             }}
-                            className="mt-3 pt-3 border-t border-white/5 space-y-3 text-left w-full"
+                            className="mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 text-left w-full"
                           >
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
+                            <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
                             
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <div className="text-[11px] font-medium text-slate-300">
+                                <div className="text-[11px] font-medium text-[var(--text-secondary)]">
                                   SQLMap Verification
                                 </div>
-                                <div className="text-[10px] text-slate-500">
+                                <div className="text-[10px] text-[var(--text-muted)]">
                                   Confirm findings using sqlmap API
                                 </div>
                               </div>
@@ -339,7 +339,7 @@ export default function InvestigationsDashboard() {
                                   setEnableSqlmap(!enableSqlmap);
                                 }}
                                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  enableSqlmap ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700"
+                                  enableSqlmap ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
                                 }`}
                               >
                                 <span
@@ -357,15 +357,15 @@ export default function InvestigationsDashboard() {
                             onClick={(e) => {
                               e.stopPropagation();
                             }}
-                            className="mt-3 pt-3 border-t border-white/5 space-y-3 text-left w-full"
+                            className="mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 text-left w-full"
                           >
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Advanced Auth Checks</div>
+                            <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced Auth Checks</div>
                             
                             {/* Browser Auth Analysis */}
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <div className="text-[11px] font-medium text-slate-300">Browser Auth Analysis</div>
-                                <div className="text-[10px] text-slate-500">Inspect storage, cookies, network auth signals</div>
+                                <div className="text-[11px] font-medium text-[var(--text-secondary)]">Browser Auth Analysis</div>
+                                <div className="text-[10px] text-[var(--text-muted)]">Inspect storage, cookies, network auth signals</div>
                               </div>
                               <button
                                 type="button"
@@ -374,7 +374,7 @@ export default function InvestigationsDashboard() {
                                   setAuthBrowserAnalysis(!authBrowserAnalysis);
                                 }}
                                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authBrowserAnalysis ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700"
+                                  authBrowserAnalysis ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
                                 }`}
                               >
                                 <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
@@ -386,8 +386,8 @@ export default function InvestigationsDashboard() {
                             {/* Authorized Auth Flow Checks */}
                             <div className="flex items-center justify-between gap-3">
                               <div>
-                                <div className="text-[11px] font-medium text-slate-300">Authorized Auth Flow Checks</div>
-                                <div className="text-[10px] text-slate-500">Uses supplied auth/session for safe GET/HEAD checks only</div>
+                                <div className="text-[11px] font-medium text-[var(--text-secondary)]">Authorized Auth Flow Checks</div>
+                                <div className="text-[10px] text-[var(--text-muted)]">Uses supplied auth/session for safe GET/HEAD checks only</div>
                               </div>
                               <button
                                 type="button"
@@ -402,7 +402,7 @@ export default function InvestigationsDashboard() {
                                   }
                                 }}
                                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authorizedAuthMode ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700"
+                                  authorizedAuthMode ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
                                 }`}
                               >
                                 <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
@@ -421,25 +421,25 @@ export default function InvestigationsDashboard() {
 
                             {/* Session Cookie Option */}
                             {authorizedAuthMode && (
-                              <div className="flex flex-col gap-1 mt-1 border-b border-white/5 pb-3">
-                                <label className="text-[11px] font-medium text-slate-300">Session Cookie</label>
+                              <div className="flex flex-col gap-1 mt-1 border-b border-[var(--border-soft)] pb-3">
+                                <label className="text-[11px] font-medium text-[var(--text-secondary)]">Session Cookie</label>
                                 <input
                                   type="text"
                                   value={sessionCookie}
                                   onChange={(e) => setSessionCookie(e.target.value)}
                                   placeholder="session=abc123xyz; csrftoken=..."
-                                  className="w-full bg-slate-950/40 border border-white/[0.08] rounded-lg px-3 py-1.5 text-[10px] text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                                  className="w-full bg-[var(--bg-page)]/40 border border-[var(--border-soft)] rounded-lg px-3 py-1.5 text-[10px] text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:border-[var(--primary)] transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                 />
-                                <div className="text-[10px] text-slate-500">Used for authenticated GET/HEAD authorization checks.</div>
+                                <div className="text-[10px] text-[var(--text-muted)]">Used for authenticated GET/HEAD authorization checks.</div>
                               </div>
                             )}
 
                             {/* Token Lifecycle Checks */}
                             <div className={`flex items-center justify-between gap-3 ${authorizedAuthMode ? "" : "opacity-50"}`}>
                               <div>
-                                <div className="text-[11px] font-medium text-slate-300">Token Lifecycle Checks</div>
-                                <div className="text-[10px] text-slate-500">Logout invalidation and refresh-token rotation checks</div>
+                                <div className="text-[11px] font-medium text-[var(--text-secondary)]">Token Lifecycle Checks</div>
+                                <div className="text-[10px] text-[var(--text-muted)]">Logout invalidation and refresh-token rotation checks</div>
                               </div>
                               <button
                                 type="button"
@@ -449,7 +449,7 @@ export default function InvestigationsDashboard() {
                                 }}
                                 disabled={!authorizedAuthMode}
                                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authLifecycleChecks ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700"
+                                  authLifecycleChecks ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
                                 }`}
                               >
                                 <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
@@ -461,8 +461,8 @@ export default function InvestigationsDashboard() {
                             {/* AuthZ Transition Checks */}
                             <div className={`flex items-center justify-between gap-3 ${authorizedAuthMode ? "" : "opacity-50"}`}>
                               <div>
-                                <div className="text-[11px] font-medium text-slate-300">AuthZ Transition Checks</div>
-                                <div className="text-[10px] text-slate-500">Compare unauthenticated vs authenticated protected routes</div>
+                                <div className="text-[11px] font-medium text-[var(--text-secondary)]">AuthZ Transition Checks</div>
+                                <div className="text-[10px] text-[var(--text-muted)]">Compare unauthenticated vs authenticated protected routes</div>
                               </div>
                               <button
                                 type="button"
@@ -472,7 +472,7 @@ export default function InvestigationsDashboard() {
                                 }}
                                 disabled={!authorizedAuthMode}
                                 className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  authzTransitionChecks ? "bg-blue-600 border-blue-500" : "bg-slate-800 border-slate-700"
+                                  authzTransitionChecks ? "bg-[var(--primary-hover)] border-blue-500" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"
                                 }`}
                               >
                                 <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${
@@ -513,21 +513,21 @@ export default function InvestigationsDashboard() {
         <div className="lg:col-span-2">
           <Card title="Investigation Pipeline Logs" description="Review and monitor status logs">
             {isHistoryLoading ? (
-              <div className="py-20 text-center text-slate-500 font-medium font-sans">
+              <div className="py-20 text-center text-[var(--text-muted)] font-medium font-sans">
                 <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
                 Loading logs...
               </div>
             ) : history.length === 0 ? (
-              <div className="py-20 text-center text-slate-500 flex flex-col items-center justify-center">
+              <div className="py-20 text-center text-[var(--text-muted)] flex flex-col items-center justify-center">
                 <Database className="w-8 h-8 mb-2 opacity-20" />
                 <p className="text-sm font-semibold">No investigations started yet.</p>
-                <p className="text-xs text-slate-500 mt-1">Configure parameters and start your first security scan.</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">Configure parameters and start your first security scan.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-white/[0.06] text-slate-400 font-semibold bg-slate-900/10">
+                    <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
                       <th className="py-3 px-4">Investigation ID / Scan</th>
                       <th className="py-3 px-4">Target</th>
                       <th className="py-3 px-4">Risk</th>
@@ -547,22 +547,22 @@ export default function InvestigationsDashboard() {
                         <tr
                           key={inv.id}
                           onClick={() => router.push(`/dashboard/investigations/${inv.id}`)}
-                          className="hover:bg-white/[0.02] cursor-pointer transition-colors group"
+                          className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors group"
                         >
-                          <td className="py-4 px-4 font-mono text-xs font-semibold text-slate-300">
+                          <td className="py-4 px-4 font-mono text-xs font-semibold text-[var(--text-secondary)]">
                             <div>{inv.scan_id || "SCAN-INF"}</div>
-                            <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">
+                            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
                               ID: {idShort}
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-slate-200 font-medium max-w-[180px] truncate">
+                          <td className="py-4 px-4 text-[var(--text-primary)] font-medium max-w-[180px] truncate">
                             {inv.target}
                           </td>
                           <td className="py-4 px-4">
                             <span
                               className={`font-bold font-mono text-xs ${
                                 isFailed
-                                  ? "text-slate-500"
+                                  ? "text-[var(--text-muted)]"
                                   : inv.risk_score > 60
                                   ? "text-red-400"
                                   : inv.risk_score > 30
@@ -573,18 +573,18 @@ export default function InvestigationsDashboard() {
                               {isFailed ? "—" : Math.round(inv.risk_score)}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-xs text-slate-400 font-medium">
+                          <td className="py-4 px-4 text-xs text-[var(--text-muted)] font-medium">
                             {inv.current_stage || "Queued"}
                           </td>
                           <td className="py-4 px-4">{getStatusBadge(inv.status)}</td>
-                          <td className="py-4 px-4 text-[10px] text-slate-500 font-medium">
+                          <td className="py-4 px-4 text-[10px] text-[var(--text-muted)] font-medium">
                             <div className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5" />
                               {new Date(inv.started_at).toLocaleDateString()}
                             </div>
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
                           </td>
                         </tr>
                       );

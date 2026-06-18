@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AdminSectionCard, ConfirmationModal } from "../components";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { notifySuccess, notifyError, notifyInfo } from "@/lib/notify";
 
 interface SettingToggle {
     key: string;
@@ -58,14 +59,6 @@ export default function SettingsPage() {
     const [activeModal, setActiveModal] = useState<"reset_feeds" | "purge_data" | null>(null);
     const [isConfirmingDanger, setIsConfirmingDanger] = useState(false);
 
-    // Toast Notifications
-    const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
-
-    const showToast = (message: string, type: "success" | "error" | "info") => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 5000);
-    };
-
     // Hydrate from Backend Settings API
     useEffect(() => {
         if (!token) return;
@@ -81,7 +74,7 @@ export default function SettingsPage() {
                 }
             } catch (err: any) {
                 console.error("Failed to load settings:", err);
-                showToast(err.message || "Failed to load settings from Supabase", "error");
+                notifyError("Load Failed", err.message || "Failed to load settings from Supabase");
             } finally {
                 setIsLoadingSettings(false);
                 setIsLoaded(true);
@@ -148,10 +141,10 @@ export default function SettingsPage() {
             setOriginalToggles(toggles);
             setOriginalInputs(inputs);
             setSaveStatus("saved");
-            showToast("Settings saved successfully", "success");
+            notifySuccess("Settings saved successfully");
         } catch (err: any) {
             console.error("Failed to save settings:", err);
-            showToast(err.message || "Failed to save settings to Supabase", "error");
+            notifyError("Save Failed", err.message || "Failed to save settings to Supabase");
             setSaveStatus("idle");
         } finally {
             setTimeout(() => setSaveStatus("idle"), 2000);
@@ -167,15 +160,15 @@ export default function SettingsPage() {
             const res = await api.post<{ success: boolean, message: string }>("/api/v1/admin/settings/test-webhook", { webhook_url: webhookUrl }, token);
             if (res && res.success) {
                 setWebhookStatus("success");
-                showToast(res.message || "Webhook test payload delivered successfully", "success");
+                notifySuccess("Test Success", res.message || "Webhook test payload delivered successfully");
             } else {
                 setWebhookStatus("error");
-                showToast(res.message || "Webhook test failed", "error");
+                notifyError("Test Failed", res.message || "Webhook test failed");
             }
         } catch (err: any) {
             console.error("Webhook connection test failed:", err);
             setWebhookStatus("error");
-            showToast(err.message || "Webhook test connection failed", "error");
+            notifyError("Test Connection Failed", err.message || "Webhook test connection failed");
         } finally {
             setTimeout(() => setWebhookStatus("idle"), 4000);
         }
@@ -187,14 +180,14 @@ export default function SettingsPage() {
         try {
             if (action === "reset_feeds") {
                 const res = await api.post<{ success: boolean, message: string }>("/api/v1/admin/settings/reset-feeds", {}, token);
-                showToast(res.message || "Threat feeds reset to defaults", "success");
+                notifySuccess("Feeds Reset", res.message || "Threat feeds reset to defaults");
             } else {
                 const res = await api.post<{ success: boolean, message: string }>("/api/v1/admin/settings/purge-data", {}, token);
-                showToast(res.message || "Scan history purged successfully", "success");
+                notifySuccess("Data Purged", res.message || "Scan history purged successfully");
             }
         } catch (err: any) {
             console.error(`Danger action ${action} failed:`, err);
-            showToast(err.message || "Action failed to execute on server", "error");
+            notifyError("Action Failed", err.message || "Action failed to execute on server");
         } finally {
             setIsConfirmingDanger(false);
             setActiveModal(null);
@@ -206,59 +199,29 @@ export default function SettingsPage() {
             <div className="space-y-6 max-w-[900px] animate-pulse">
                 <div className="flex items-center justify-between">
                     <div>
-                        <div className="h-7 w-48 bg-white/[0.04] rounded-lg" />
-                        <div className="h-4 w-72 bg-white/[0.03] rounded mt-2" />
+                        <div className="h-7 w-48 bg-[var(--bg-elevated)] rounded-lg" />
+                        <div className="h-4 w-72 bg-[var(--bg-elevated)] rounded mt-2" />
                     </div>
-                    <div className="h-10 w-32 bg-white/[0.03] rounded-lg" />
+                    <div className="h-10 w-32 bg-[var(--bg-elevated)] rounded-lg" />
                 </div>
-                <div className="h-64 bg-white/[0.02] border border-white/[0.04] rounded-xl" />
-                <div className="h-80 bg-white/[0.02] border border-white/[0.04] rounded-xl" />
+                <div className="h-64 bg-[var(--bg-elevated)] border border-[var(--border-soft)] rounded-xl" />
+                <div className="h-80 bg-[var(--bg-elevated)] border border-[var(--border-soft)] rounded-xl" />
             </div>
         );
     }
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-6 max-w-[900px]">
-            {/* ── Toast Notifications ── */}
-            <AnimatePresence>
-                {toast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="fixed top-6 right-6 z-50 pointer-events-none"
-                    >
-                        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border backdrop-blur-md ${
-                            toast.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                            toast.type === "error" ? "bg-red-500/10 border-red-500/20 text-red-400" :
-                            "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                        }`}>
-                            {toast.type === "success" && (
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            )}
-                            {toast.type === "error" && (
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            )}
-                            <p className="text-sm font-medium">{toast.message}</p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* ── Header ── */}
             <div className="flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-white">System Settings</h1>
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-slate-500/20 to-blue-500/20 border border-slate-500/20 text-slate-400 rounded-full">
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">System Settings</h1>
+                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-slate-500/20 to-blue-500/20 border border-[var(--border-soft)] text-[var(--text-muted)] rounded-full">
                             Config
                         </span>
                     </div>
-                    <p className="text-sm text-slate-400">Configure platform security, rate limits, and integrations</p>
+                    <p className="text-sm text-[var(--text-muted)]">Configure platform security, rate limits, and integrations</p>
                 </div>
                 <div className="flex items-center gap-4">
                     {isDirty && !hasErrors && (
@@ -274,8 +237,8 @@ export default function SettingsPage() {
                             saveStatus === "saved"
                                 ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400"
                                 : !isDirty || hasErrors
-                                ? "bg-white/[0.04] text-slate-500 cursor-not-allowed border border-transparent"
-                                : "bg-blue-500 text-white hover:bg-blue-400 shadow-lg shadow-blue-500/20"
+                                ? "bg-[var(--bg-elevated)] text-[var(--text-muted)] cursor-not-allowed border border-transparent"
+                                : "bg-[var(--primary)] text-[var(--text-primary)] hover:bg-blue-400 shadow-lg shadow-[var(--primary-soft)]"
                         }`}
                     >
                         {saveStatus === "saving" && (
@@ -303,16 +266,16 @@ export default function SettingsPage() {
                     {toggles.map((toggle) => (
                         <div
                             key={toggle.key}
-                            className="flex items-center justify-between px-3 py-3 rounded-lg hover:bg-white/[0.02] transition-colors"
+                            className="flex items-center justify-between px-3 py-3 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors"
                         >
                             <div>
-                                <p className="text-sm font-medium text-slate-200">{toggle.label}</p>
-                                <p className="text-xs text-slate-500 mt-0.5">{toggle.description}</p>
+                                <p className="text-sm font-medium text-[var(--text-primary)]">{toggle.label}</p>
+                                <p className="text-xs text-[var(--text-muted)] mt-0.5">{toggle.description}</p>
                             </div>
                             <button
                                 onClick={() => handleToggle(toggle.key)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-                                    toggle.enabled ? "bg-blue-500" : "bg-white/[0.1]"
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 ${
+                                    toggle.enabled ? "bg-[var(--primary)]" : "bg-[var(--bg-elevated)]"
                                 }`}
                             >
                                 <span
@@ -336,21 +299,21 @@ export default function SettingsPage() {
                         const error = getValidationErrors[input.key];
                         return (
                             <div key={input.key} className="space-y-1.5">
-                                <label className="block text-sm font-medium text-slate-200 flex items-center justify-between">
+                                <label className="block text-sm font-medium text-[var(--text-primary)] flex items-center justify-between">
                                     {input.label}
                                     {error && <span className="text-xs text-red-400">{error}</span>}
                                 </label>
-                                <p className="text-xs text-slate-500">{input.description}</p>
+                                <p className="text-xs text-[var(--text-muted)]">{input.description}</p>
                                 <div className="relative">
                                     <input
                                         type={input.type}
                                         value={input.value}
                                         onChange={(e) => handleInputChange(input.key, e.target.value)}
                                         placeholder={input.placeholder}
-                                        className={`w-full px-4 py-2.5 bg-white/[0.02] border rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 transition-colors ${
+                                        className={`w-full px-4 py-2.5 bg-[var(--bg-elevated)] border rounded-lg text-sm text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:ring-1 transition-colors ${
                                             error
                                                 ? "border-red-500/50 focus:border-red-500 focus:ring-red-500/50"
-                                                : "border-white/[0.08] focus:border-blue-500/40 focus:ring-blue-500/20"
+                                                : "border-[var(--border-soft)] focus:border-[var(--primary)] focus:ring-[var(--primary)]/20"
                                         }`}
                                     />
                                     {input.key === "webhook_url" && input.value.trim() !== "" && !error && (
@@ -359,10 +322,10 @@ export default function SettingsPage() {
                                                 onClick={handleWebhookTest}
                                                 disabled={webhookStatus === "testing"}
                                                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                                    webhookStatus === "testing" ? "bg-white/[0.04] text-slate-400" :
+                                                    webhookStatus === "testing" ? "bg-[var(--bg-elevated)] text-[var(--text-muted)]" :
                                                     webhookStatus === "success" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" :
                                                     webhookStatus === "error" ? "bg-red-500/20 text-red-400 border border-red-500/20" :
-                                                    "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                                                    "bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20"
                                                 }`}
                                             >
                                                 {webhookStatus === "testing" ? "Testing..." : webhookStatus === "success" ? "Success" : webhookStatus === "error" ? "Failed" : "Test Connection"}
@@ -386,7 +349,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between px-4 py-4 rounded-lg bg-red-500/[0.03] border border-red-500/10">
                         <div>
                             <p className="text-sm font-medium text-red-400">Reset All Threat Feeds</p>
-                            <p className="text-xs text-slate-500 mt-0.5 max-w-sm">Remove all custom threat feed configurations and reset the platform to default sources.</p>
+                            <p className="text-xs text-[var(--text-muted)] mt-0.5 max-w-sm">Remove all custom threat feed configurations and reset the platform to default sources.</p>
                         </div>
                         <button
                             onClick={() => setActiveModal("reset_feeds")}
@@ -398,7 +361,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between px-4 py-4 rounded-lg bg-red-500/[0.03] border border-red-500/10">
                         <div>
                             <p className="text-sm font-medium text-red-400">Purge Scan History</p>
-                            <p className="text-xs text-slate-500 mt-0.5 max-w-sm">Permanently delete all historical scan data older than 90 days. This action cannot be undone.</p>
+                            <p className="text-xs text-[var(--text-muted)] mt-0.5 max-w-sm">Permanently delete all historical scan data older than 90 days. This action cannot be undone.</p>
                         </div>
                         <button
                             onClick={() => setActiveModal("purge_data")}

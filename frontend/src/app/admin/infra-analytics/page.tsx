@@ -18,13 +18,13 @@ import { Globe, Clock, ShieldAlert, Cpu, Activity, Play, TrendingUp, Skull, Help
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#0f172a]/95 backdrop-blur-xl border border-white/[0.1] rounded-lg px-3.5 py-2.5 shadow-2xl shadow-black/40">
-      <p className="text-[11px] font-medium text-slate-300 mb-1.5 border-b border-white/[0.06] pb-1.5">{label}</p>
+    <div className="bg-[var(--bg-main)]/95 backdrop-blur-xl border border-[var(--border-strong)] rounded-lg px-3.5 py-2.5 shadow-2xl shadow-black/5">
+      <p className="text-[11px] font-medium text-[var(--text-secondary)] mb-1.5 border-b border-[var(--border-strong)] pb-1.5">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 py-0.5">
           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color || entry.stroke }} />
-          <span className="text-[10px] text-slate-400 capitalize">{entry.name}</span>
-          <span className="text-[11px] font-bold text-white ml-auto tabular-nums">{entry.value.toLocaleString()}</span>
+          <span className="text-[10px] text-[var(--text-muted)] capitalize">{entry.name}</span>
+          <span className="text-[11px] font-bold text-[var(--text-primary)] ml-auto tabular-nums">{entry.value.toLocaleString()}</span>
         </div>
       ))}
     </div>
@@ -121,18 +121,18 @@ export default function InfraAnalyticsPage() {
       <div className="space-y-6 max-w-[1400px] animate-pulse">
         <div className="flex items-center justify-between">
           <div>
-            <div className="h-7 w-64 bg-white/[0.04] rounded-lg" />
-            <div className="h-4 w-96 bg-white/[0.03] rounded mt-2" />
+            <div className="h-7 w-64 bg-[var(--bg-elevated)] rounded-lg" />
+            <div className="h-4 w-96 bg-[var(--bg-elevated)] rounded mt-2" />
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
+            <div key={i} className="h-28 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-80 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-          <div className="h-80 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
+          <div className="lg:col-span-2 h-80 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
+          <div className="h-80 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-soft)]" />
         </div>
       </div>
     );
@@ -149,17 +149,17 @@ export default function InfraAnalyticsPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-white">Infrastructure Intelligence Analytics</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">Infrastructure Intelligence Analytics</h1>
             <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 text-cyan-400 rounded-full">
               Flow 2
             </span>
           </div>
-          <p className="text-sm text-slate-400">Analysis metrics, IOC distributions, trends, and risk tracking for passive threat profiling</p>
+          <p className="text-sm text-[var(--text-muted)]">Analysis metrics, IOC distributions, trends, and risk tracking for passive threat profiling</p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
         >
           <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -187,11 +187,11 @@ export default function InfraAnalyticsPage() {
           description="Daily overview of total scan runs and high-risk findings"
           className="lg:col-span-2"
           action={
-            <div className="flex bg-slate-900 border border-white/[0.08] p-0.5 rounded-lg">
+            <div className="flex bg-[var(--bg-card)] border border-[var(--border-soft)] p-0.5 rounded-lg">
               <button
                 onClick={() => setTimeRange("7d")}
                 className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${
-                  timeRange === "7d" ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:text-white"
+                  timeRange === "7d" ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 7 Days
@@ -199,7 +199,7 @@ export default function InfraAnalyticsPage() {
               <button
                 onClick={() => setTimeRange("30d")}
                 className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${
-                  timeRange === "30d" ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20" : "text-slate-400 hover:text-white"
+                  timeRange === "30d" ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 30 Days
@@ -257,12 +257,12 @@ export default function InfraAnalyticsPage() {
                     if (!active || !payload?.length) return null;
                     const d = payload[0];
                     return (
-                      <div className="bg-[#0f172a]/95 backdrop-blur-xl border border-white/[0.1] rounded-lg px-3.5 py-2.5 shadow-2xl">
+                      <div className="bg-[var(--bg-main)]/95 backdrop-blur-xl border border-[var(--border-strong)] rounded-lg px-3.5 py-2.5 shadow-2xl">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.payload?.color }} />
-                          <span className="text-xs text-slate-200 font-medium">{d.name}</span>
+                          <span className="text-xs text-[var(--text-primary)] font-medium">{d.name}</span>
                         </div>
-                        <p className="text-lg font-bold text-white mt-1">{(d.value as number).toLocaleString()} runs</p>
+                        <p className="text-lg font-bold text-[var(--text-primary)] mt-1">{(d.value as number).toLocaleString()} runs</p>
                       </div>
                     );
                   }}
@@ -273,7 +273,7 @@ export default function InfraAnalyticsPage() {
                   content={({ payload }) => (
                     <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
                       {payload?.map((entry, i) => (
-                        <span key={i} className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold uppercase">
+                        <span key={i} className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] font-semibold uppercase">
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
                           {entry.value}
                         </span>
@@ -284,7 +284,7 @@ export default function InfraAnalyticsPage() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="py-20 text-center text-slate-500 text-sm">No data available</div>
+            <div className="py-20 text-center text-[var(--text-muted)] text-sm">No data available</div>
           )}
         </AdminSectionCard>
       </div>
@@ -303,20 +303,20 @@ export default function InfraAnalyticsPage() {
               topIocs.map((ioc, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/[0.01] border border-white/[0.04] hover:bg-white/[0.03] transition-colors group"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-soft)] hover:bg-[var(--bg-elevated)] transition-colors group"
                 >
                   <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black ${
-                    i < 3 ? "bg-cyan-500/15 text-cyan-400" : "bg-white/[0.04] text-slate-500"
+                    i < 3 ? "bg-cyan-500/15 text-cyan-400" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
                   }`}>
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-200 font-mono truncate group-hover:text-white transition-colors">{ioc.target}</p>
+                    <p className="text-xs text-[var(--text-primary)] font-mono truncate group-hover:text-[var(--text-primary)] transition-colors">{ioc.target}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1 rounded uppercase tracking-wider">
                         {ioc.type}
                       </span>
-                      <span className="text-[10px] text-slate-500">{ioc.count} investigations</span>
+                      <span className="text-[10px] text-[var(--text-muted)]">{ioc.count} investigations</span>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
@@ -325,7 +325,7 @@ export default function InfraAnalyticsPage() {
                 </div>
               ))
             ) : (
-              <div className="py-20 text-center text-slate-500 text-xs">No records found.</div>
+              <div className="py-20 text-center text-[var(--text-muted)] text-xs">No records found.</div>
             )}
           </div>
         </AdminSectionCard>
@@ -340,7 +340,7 @@ export default function InfraAnalyticsPage() {
             {topHighRisk.length > 0 ? (
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-slate-400 font-semibold text-[10px] uppercase tracking-wider bg-slate-950/20">
+                  <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wider bg-[var(--bg-page)]/20">
                     <th className="py-2 px-3">Target Indicator</th>
                     <th className="py-2 px-3">Type</th>
                     <th className="py-2 px-3">Risk Index</th>
@@ -352,10 +352,10 @@ export default function InfraAnalyticsPage() {
                   {topHighRisk.map((inv) => (
                     <tr
                       key={inv.id}
-                      className="hover:bg-white/[0.02] transition-colors cursor-pointer"
+                      className="hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
                       onClick={() => window.open(`/dashboard/infra-investigations/${inv.id}`, "_blank")}
                     >
-                      <td className="py-3 px-3 font-mono text-slate-200 max-w-[200px] truncate">{inv.target}</td>
+                      <td className="py-3 px-3 font-mono text-[var(--text-primary)] max-w-[200px] truncate">{inv.target}</td>
                       <td className="py-3 px-3">
                         <span className="text-[9px] font-bold bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded text-cyan-400 uppercase">
                           {inv.type}
@@ -364,8 +364,8 @@ export default function InfraAnalyticsPage() {
                       <td className="py-3 px-3">
                         <RiskScoreBadge score={inv.risk_score} />
                       </td>
-                      <td className="py-3 px-3 text-slate-400">{inv.analyst}</td>
-                      <td className="py-3 px-3 text-right text-slate-500 font-mono">
+                      <td className="py-3 px-3 text-[var(--text-muted)]">{inv.analyst}</td>
+                      <td className="py-3 px-3 text-right text-[var(--text-muted)] font-mono">
                         {inv.started_at ? new Date(inv.started_at).toLocaleDateString() : "System"}
                       </td>
                     </tr>
@@ -373,7 +373,7 @@ export default function InfraAnalyticsPage() {
                 </tbody>
               </table>
             ) : (
-              <div className="py-20 text-center text-slate-500 text-xs">No high-risk investigations found.</div>
+              <div className="py-20 text-center text-[var(--text-muted)] text-xs">No high-risk investigations found.</div>
             )}
           </div>
         </AdminSectionCard>
@@ -388,7 +388,7 @@ export default function InfraAnalyticsPage() {
           {recent.length > 0 ? (
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-white/[0.06] text-slate-400 font-semibold text-[10px] uppercase tracking-wider bg-slate-950/20">
+                <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wider bg-[var(--bg-page)]/20">
                   <th className="py-2.5 px-4">Target IOC</th>
                   <th className="py-2.5 px-4">Type</th>
                   <th className="py-2.5 px-4">Risk score</th>
@@ -403,17 +403,17 @@ export default function InfraAnalyticsPage() {
                   const statusColors: Record<string, string> = {
                     completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
                     failed: "bg-red-500/10 text-red-400 border-red-500/20",
-                    running: "bg-blue-500/10 text-blue-400 border-blue-500/20 animate-pulse",
-                    pending: "bg-slate-800 text-slate-400 border-slate-700",
+                    running: "bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)] animate-pulse",
+                    pending: "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-strong)]",
                     stopped: "bg-amber-500/10 text-amber-400 border-amber-500/20",
                   };
                   return (
                     <tr
                       key={inv.id}
-                      className="hover:bg-white/[0.02] transition-colors cursor-pointer"
+                      className="hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
                       onClick={() => window.open(`/dashboard/infra-investigations/${inv.id}`, "_blank")}
                     >
-                      <td className="py-3 px-4 font-mono text-slate-200 max-w-[240px] truncate">{inv.target}</td>
+                      <td className="py-3 px-4 font-mono text-[var(--text-primary)] max-w-[240px] truncate">{inv.target}</td>
                       <td className="py-3 px-4">
                         <span className="text-[9px] font-bold bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded text-cyan-400 uppercase">
                           {inv.type}
@@ -423,19 +423,19 @@ export default function InfraAnalyticsPage() {
                         {inv.status === "completed" ? (
                           <RiskScoreBadge score={inv.risk_score} />
                         ) : (
-                          <span className="text-slate-600 font-mono">—</span>
+                          <span className="text-[var(--text-muted)] font-mono">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-slate-400 font-medium">{inv.current_stage || "Queued"}</td>
+                      <td className="py-3 px-4 text-[var(--text-muted)] font-medium">{inv.current_stage || "Queued"}</td>
                       <td className="py-3 px-4">
                         <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border ${
-                          statusColors[inv.status] || "bg-slate-800 text-slate-400 border-slate-700"
+                          statusColors[inv.status] || "bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-strong)]"
                         }`}>
                           {inv.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-slate-300 font-medium">{inv.analyst}</td>
-                      <td className="py-3 px-4 text-right text-slate-500 font-mono">
+                      <td className="py-3 px-4 text-[var(--text-secondary)] font-medium">{inv.analyst}</td>
+                      <td className="py-3 px-4 text-right text-[var(--text-muted)] font-mono">
                         {inv.started_at ? new Date(inv.started_at).toLocaleString() : "System"}
                       </td>
                     </tr>
@@ -444,7 +444,7 @@ export default function InfraAnalyticsPage() {
               </tbody>
             </table>
           ) : (
-            <div className="py-20 text-center text-slate-500 text-sm">No investigations found.</div>
+            <div className="py-20 text-center text-[var(--text-muted)] text-sm">No investigations found.</div>
           )}
         </div>
       </AdminSectionCard>

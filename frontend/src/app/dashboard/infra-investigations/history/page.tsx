@@ -31,8 +31,8 @@ function StatusBadge({ status }: { status: string }) {
     case "completed": return <span className={`${base} border-emerald-500/20 bg-emerald-500/10 text-emerald-400`}>Completed</span>;
     case "failed":    return <span className={`${base} border-red-500/20 bg-red-500/10 text-red-400`}>Failed</span>;
     case "stopped":   return <span className={`${base} border-amber-500/20 bg-amber-500/10 text-amber-400`}>Stopped</span>;
-    case "pending":   return <span className={`${base} border-slate-700 bg-slate-800 text-slate-400`}>Pending</span>;
-    default:          return <span className={`${base} border-blue-500/20 bg-blue-500/10 text-blue-400 animate-pulse`}>{status || "Running"}</span>;
+    case "pending":   return <span className={`${base} border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text-muted)]`}>Pending</span>;
+    default:          return <span className={`${base} border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] animate-pulse`}>{status || "Running"}</span>;
   }
 }
 
@@ -212,9 +212,9 @@ export function InfraHistoryContent() {
           {
             label: "Total Investigations",
             value: stats.total,
-            color: "text-cyan-400",
-            bg: "bg-cyan-500/5 border-cyan-500/20",
-            icon: <Activity className="w-5 h-5 text-cyan-400" />,
+            color: "text-[var(--primary)]",
+            bg: "bg-[var(--primary)]/10 border-[var(--primary)]/20",
+            icon: <Activity className="w-5 h-5 text-[var(--primary)]" />,
             desc: "Active & completed scans"
           },
           {
@@ -228,7 +228,7 @@ export function InfraHistoryContent() {
           {
             label: "Critical Threats Detected",
             value: stats.critical,
-            color: stats.critical > 0 ? "text-red-500" : "text-slate-400",
+            color: stats.critical > 0 ? "text-red-500" : "text-[var(--text-muted)]",
             bg: "bg-red-500/5 border-red-500/20",
             icon: <Skull className="w-5 h-5 text-red-500" />,
             desc: "Risk index ≥ 75"
@@ -236,19 +236,19 @@ export function InfraHistoryContent() {
           {
             label: "Terminated / Errors",
             value: stats.failedOrStopped,
-            color: "text-slate-400",
-            bg: "bg-slate-500/5 border-slate-500/10",
-            icon: <HeartCrack className="w-5 h-5 text-slate-400" />,
+            color: "text-[var(--text-muted)]",
+            bg: "bg-[var(--bg-elevated)] border-[var(--border-soft)]",
+            icon: <HeartCrack className="w-5 h-5 text-[var(--text-muted)]" />,
             desc: "Failed or manually stopped"
           }
         ].map((s, idx) => (
           <div key={idx} className={`border rounded-xl p-4 flex items-center justify-between shadow-sm ${s.bg}`}>
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</p>
+              <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
               <h3 className={`text-2xl font-black ${s.color}`}>{isLoading ? "—" : s.value}</h3>
-              <p className="text-[9px] text-slate-500 leading-none">{s.desc}</p>
+              <p className="text-[9px] text-[var(--text-muted)] leading-none">{s.desc}</p>
             </div>
-            <div className="p-3 bg-slate-900/50 border border-white/[0.04] rounded-lg">{s.icon}</div>
+            <div className="p-3 bg-[var(--bg-card)]/50 border border-[var(--border-soft)] rounded-lg">{s.icon}</div>
           </div>
         ))}
       </div>
@@ -260,29 +260,29 @@ export function InfraHistoryContent() {
             
             {/* Search */}
             <div className="lg:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                 Fuzzy Search Value
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3 top-3 w-4 h-4 text-[var(--text-muted)]" />
                 <Input
                   placeholder="Filter by target value, domain, IP, or hash..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-slate-950/40 border-white/[0.08]"
+                  className="pl-9 bg-[var(--bg-page)]/40 border-[var(--border-soft)]"
                 />
               </div>
             </div>
 
             {/* Status Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                 Job Status
               </label>
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full h-10 px-3 border border-white/[0.08] rounded-lg text-xs bg-slate-950 text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className="w-full h-10 px-3 border border-[var(--border-soft)] rounded-lg text-xs bg-[var(--bg-page)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="all">All States</option>
                 <option value="completed">Completed</option>
@@ -295,13 +295,13 @@ export function InfraHistoryContent() {
 
             {/* Risk Category Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                 Risk Classification
               </label>
               <select
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value)}
-                className="w-full h-10 px-3 border border-white/[0.08] rounded-lg text-xs bg-slate-950 text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className="w-full h-10 px-3 border border-[var(--border-soft)] rounded-lg text-xs bg-[var(--bg-page)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="all">All Risk Levels</option>
                 <option value="critical">Critical (≥ 75)</option>
@@ -313,11 +313,11 @@ export function InfraHistoryContent() {
 
           </div>
 
-          <div className="flex flex-wrap items-center justify-between border-t border-white/[0.04] pt-4 gap-4">
+          <div className="flex flex-wrap items-center justify-between border-t border-[var(--border-soft)] pt-4 gap-4">
             
             {/* Target Type Filter Toggles */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mr-2">
                 IOC Classes:
               </span>
               {(["domain", "ip", "url", "hash", "email"] as InfraTargetType[]).map((t) => {
@@ -329,8 +329,8 @@ export function InfraHistoryContent() {
                     onClick={() => toggleTypeFilter(t)}
                     className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold capitalize transition-all cursor-pointer ${
                       isSelected
-                        ? "border-cyan-500 bg-cyan-950/30 text-cyan-400"
-                        : "border-white/[0.05] bg-slate-950/20 text-slate-500 hover:text-slate-300"
+                        ? "border-emerald-500 bg-emerald-950/30 text-[var(--primary)]"
+                        : "border-[var(--border-soft)] bg-[var(--bg-page)]/20 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                     }`}
                   >
                     {t}
@@ -341,7 +341,7 @@ export function InfraHistoryContent() {
 
             {/* Sort controls */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                 Sort:
               </span>
               <button
@@ -352,8 +352,8 @@ export function InfraHistoryContent() {
                 }}
                 className={`px-2.5 py-1.5 rounded border text-[10px] font-bold transition-all cursor-pointer ${
                   sortBy === "date"
-                    ? "border-white/[0.1] bg-slate-900 text-slate-200"
-                    : "border-transparent text-slate-500"
+                    ? "border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-primary)]"
+                    : "border-transparent text-[var(--text-muted)]"
                 }`}
               >
                 Date {sortBy === "date" && (sortOrder === "desc" ? "↓" : "↑")}
@@ -366,8 +366,8 @@ export function InfraHistoryContent() {
                 }}
                 className={`px-2.5 py-1.5 rounded border text-[10px] font-bold transition-all cursor-pointer ${
                   sortBy === "risk"
-                    ? "border-white/[0.1] bg-slate-900 text-slate-200"
-                    : "border-transparent text-slate-500"
+                    ? "border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-primary)]"
+                    : "border-transparent text-[var(--text-muted)]"
                 }`}
               >
                 Risk Score {sortBy === "risk" && (sortOrder === "desc" ? "↓" : "↑")}
@@ -381,21 +381,21 @@ export function InfraHistoryContent() {
       {/* ── Table / Grid View ── */}
       <Card title="Audited Scans Logging" description="Detailed registry of threat intelligence runs">
         {isLoading ? (
-          <div className="py-20 text-center text-slate-500 font-medium">
-            <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-cyan-500 border-t-transparent rounded-full" />
+          <div className="py-20 text-center text-[var(--text-muted)] font-medium">
+            <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
             Loading historical scans...
           </div>
         ) : filteredHistory.length === 0 ? (
-          <div className="py-20 text-center text-slate-500 flex flex-col items-center justify-center">
+          <div className="py-20 text-center text-[var(--text-muted)] flex flex-col items-center justify-center">
             <Globe className="w-8 h-8 mb-2 opacity-20" />
             <p className="text-sm font-semibold">No investigations match active filters.</p>
-            <p className="text-xs text-slate-600 mt-1">Adjust search parameters or trigger a new scanning pipeline run.</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Adjust search parameters or trigger a new scanning pipeline run.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-slate-400 font-semibold bg-slate-900/10 text-[11px] uppercase tracking-wider">
+                <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10 text-[11px] uppercase tracking-wider">
                   <th className="py-3 px-4">Target Value</th>
                   <th className="py-3 px-4">IOC Class</th>
                   <th className="py-3 px-4">Threat Risk</th>
@@ -409,7 +409,7 @@ export function InfraHistoryContent() {
                 {paginatedHistory.map((inv) => {
                   const isFailed    = inv.status === "failed";
                   const riskColor   =
-                    isFailed        ? "text-slate-500" :
+                    isFailed        ? "text-[var(--text-muted)]" :
                     inv.risk_score >= 75 ? "text-red-500" :
                     inv.risk_score >= 50 ? "text-red-400" :
                     inv.risk_score >= 25 ? "text-orange-400" : "text-emerald-400";
@@ -418,45 +418,45 @@ export function InfraHistoryContent() {
                     <tr
                       key={inv.id}
                       onClick={() => router.push(`/dashboard/infra-investigations/${inv.id}`)}
-                      className="hover:bg-white/[0.02] cursor-pointer transition-colors group animate-fadeIn"
+                      className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors group animate-fadeIn"
                     >
-                      <td className="py-4 px-4 text-slate-200 font-medium max-w-[240px] truncate">
+                      <td className="py-4 px-4 text-[var(--text-primary)] font-medium max-w-[240px] truncate">
                         <div className="flex items-center gap-2">
-                          <Globe className="w-3.5 h-3.5 text-cyan-500/60 flex-shrink-0" />
+                          <Globe className="w-3.5 h-3.5 text-[var(--primary)]/10 flex-shrink-0" />
                           <span className="truncate font-mono">{inv.target}</span>
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)]">
                           {inv.target_type}
                         </span>
                       </td>
                       <td className="py-4 px-4">
                         {isFailed ? (
-                          <span className="text-slate-600 font-semibold font-mono text-xs">—</span>
+                          <span className="text-[var(--text-muted)] font-semibold font-mono text-xs">—</span>
                         ) : (
                           <div className="flex items-center gap-1.5">
                             <span className={`font-black font-mono text-xs ${riskColor}`}>
                               {Math.round(inv.risk_score)}
                             </span>
-                            <span className="text-[9px] text-slate-500 font-medium uppercase">/100</span>
+                            <span className="text-[9px] text-[var(--text-muted)] font-medium uppercase">/100</span>
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-xs text-slate-400 font-medium">
+                      <td className="py-4 px-4 text-xs text-[var(--text-muted)] font-medium">
                         {inv.current_stage || "Queued"}
                       </td>
                       <td className="py-4 px-4">
                         <StatusBadge status={inv.status} />
                       </td>
-                      <td className="py-4 px-4 text-[10px] text-slate-500 font-medium">
+                      <td className="py-4 px-4 text-[10px] text-[var(--text-muted)] font-medium">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
                           {new Date(inv.started_at).toLocaleString()}
                         </div>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                        <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
                       </td>
                     </tr>
                   );
@@ -465,19 +465,19 @@ export function InfraHistoryContent() {
             </table>
 
             {/* ── Pagination Controls ── */}
-            <div className="flex items-center justify-between border-t border-white/[0.06] pt-4 mt-2 px-2">
+            <div className="flex items-center justify-between border-t border-[var(--border-strong)] pt-4 mt-2 px-2">
               {/* Left: record count */}
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className="text-[11px] text-[var(--text-muted)] font-medium">
                 Showing{" "}
-                <span className="text-slate-300 font-bold">
+                <span className="text-[var(--text-secondary)] font-bold">
                   {Math.min((currentPage - 1) * PAGE_SIZE + 1, filteredHistory.length)}
                 </span>
                 {"–"}
-                <span className="text-slate-300 font-bold">
+                <span className="text-[var(--text-secondary)] font-bold">
                   {Math.min(currentPage * PAGE_SIZE, filteredHistory.length)}
                 </span>
                 {" of "}
-                <span className="text-slate-300 font-bold">{filteredHistory.length}</span>
+                <span className="text-[var(--text-secondary)] font-bold">{filteredHistory.length}</span>
                 {" records"}
               </p>
 
@@ -490,8 +490,8 @@ export function InfraHistoryContent() {
                   onClick={() => setCurrentPage(1)}
                   className={`p-1.5 rounded-lg border transition-all ${
                     canPrev
-                      ? "border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
-                      : "border-transparent text-slate-700 cursor-not-allowed"
+                      ? "border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
+                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
                   }`}
                   title="First page"
                 >
@@ -505,8 +505,8 @@ export function InfraHistoryContent() {
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                     canPrev
-                      ? "border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.06] cursor-pointer"
-                      : "border-transparent text-slate-700 cursor-not-allowed"
+                      ? "border-[var(--border-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
+                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
                   }`}
                 >
                   <span className="flex items-center gap-1">
@@ -530,7 +530,7 @@ export function InfraHistoryContent() {
                     }, [])
                     .map((item, idx) =>
                       item === "..." ? (
-                        <span key={`dots-${idx}`} className="text-slate-600 text-xs px-1">…</span>
+                        <span key={`dots-${idx}`} className="text-[var(--text-muted)] text-xs px-1">…</span>
                       ) : (
                         <button
                           key={item}
@@ -538,8 +538,8 @@ export function InfraHistoryContent() {
                           onClick={() => setCurrentPage(item as number)}
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                             currentPage === item
-                              ? "bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 shadow-sm shadow-cyan-500/10"
-                              : "border border-white/[0.06] text-slate-500 hover:text-slate-200 hover:bg-white/[0.06]"
+                              ? "bg-[var(--primary)]/20 border border-[var(--primary)]/40 text-[var(--primary)] shadow-sm shadow-[var(--primary)]/10"
+                              : "border border-[var(--border-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
                           }`}
                         >
                           {item}
@@ -555,8 +555,8 @@ export function InfraHistoryContent() {
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                     canNext
-                      ? "border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.06] cursor-pointer"
-                      : "border-transparent text-slate-700 cursor-not-allowed"
+                      ? "border-[var(--border-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
+                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
                   }`}
                 >
                   <span className="flex items-center gap-1">
@@ -571,8 +571,8 @@ export function InfraHistoryContent() {
                   onClick={() => setCurrentPage(totalPages)}
                   className={`p-1.5 rounded-lg border transition-all ${
                     canNext
-                      ? "border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.06] cursor-pointer"
-                      : "border-transparent text-slate-700 cursor-not-allowed"
+                      ? "border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
+                      : "border-transparent text-[var(--text-muted)] cursor-not-allowed"
                   }`}
                   title="Last page"
                 >

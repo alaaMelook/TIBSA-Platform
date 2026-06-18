@@ -55,7 +55,7 @@ export function PassiveDNSTab({ results }: Props) {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <GitBranch className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-bold text-white">Passive DNS History</span>
+          <span className="text-sm font-bold text-[var(--text-primary)]">Passive DNS History</span>
         </div>
         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
           {pDNS.count} records
@@ -65,11 +65,11 @@ export function PassiveDNSTab({ results }: Props) {
       {entries.length === 0 ? (
         <InfoState icon="🕒" title="No Data Found" detail="No passive DNS history found for this target." />
       ) : (
-        <div className="bg-[#1e293b]/40 border border-white/[0.05] rounded-xl overflow-hidden">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/[0.05] bg-slate-900/30 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-[var(--border-soft)] bg-[var(--bg-card)]/30 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   <th className="px-4 py-3">Hostname</th>
                   <th className="px-4 py-3">IP Address</th>
                   <th className="px-4 py-3">ASN</th>
@@ -80,27 +80,27 @@ export function PassiveDNSTab({ results }: Props) {
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
                 {entries.map((entry, i) => (
-                  <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-200 max-w-[220px] truncate">
+                  <tr key={i} className="hover:bg-[var(--bg-elevated)] transition-colors group">
+                    <td className="px-4 py-3 font-mono text-xs text-[var(--text-primary)] max-w-[220px] truncate">
                       {entry.hostname}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-cyan-400 font-semibold">
                       {entry.address}
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">
+                    <td className="px-4 py-3 text-xs text-[var(--text-muted)]">
                       {entry.asn || "—"}
                     </td>
                     <td className="px-4 py-3">
                       {entry.country_code ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 border border-white/[0.05] text-slate-300">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-secondary)]">
                           {entry.country_code}
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-slate-500 font-mono">
+                    <td className="px-4 py-3 text-[11px] text-[var(--text-muted)] font-mono">
                       {entry.first ? new Date(entry.first).toLocaleDateString() : "—"}
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-slate-400 font-mono">
+                    <td className="px-4 py-3 text-[11px] text-[var(--text-muted)] font-mono">
                       {entry.last ? new Date(entry.last).toLocaleDateString() : "—"}
                     </td>
                   </tr>
@@ -128,10 +128,10 @@ function InfoState({
   return (
     <div className="py-20 text-center flex flex-col items-center gap-3">
       <span className="text-3xl select-none">{icon}</span>
-      <p className={`text-sm font-semibold ${isWarning ? "text-amber-400" : "text-slate-400"}`}>
+      <p className={`text-sm font-semibold ${isWarning ? "text-amber-400" : "text-[var(--text-muted)]"}`}>
         {title}
       </p>
-      <p className="text-xs text-slate-500 max-w-xs leading-relaxed">{detail}</p>
+      <p className="text-xs text-[var(--text-muted)] max-w-xs leading-relaxed">{detail}</p>
     </div>
   );
 }

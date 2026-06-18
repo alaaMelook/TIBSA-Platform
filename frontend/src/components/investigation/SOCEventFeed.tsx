@@ -29,7 +29,7 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
         return <CheckCircle className={`${sizeClass} text-emerald-400`} />;
       case "info":
       default:
-        return <Info className={`${sizeClass} text-blue-400`} />;
+        return <Info className={`${sizeClass} text-[var(--primary)]`} />;
     }
   };
 
@@ -45,21 +45,21 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
         return "bg-emerald-500/10 border-emerald-500/20 text-emerald-200";
       case "info":
       default:
-        return "bg-blue-500/10 border-blue-500/20 text-blue-200";
+        return "bg-[var(--primary)]/10 border-[var(--primary)] text-blue-200";
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950/70 rounded-xl border border-white/[0.06] shadow-inner">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]/70 rounded-xl border border-[var(--border-strong)] shadow-inner">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-slate-900/40">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-strong)] bg-[var(--bg-card)]/40">
         <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-blue-400 animate-pulse" />
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+          <Terminal className="w-4 h-4 text-[var(--primary)] animate-pulse" />
+          <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">
             SOC Live Stream
           </span>
         </div>
-        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">
+        <span className="text-[10px] bg-[var(--bg-elevated)] text-[var(--text-muted)] px-2 py-0.5 rounded font-mono">
           {events.length} logs
         </span>
       </div>
@@ -70,7 +70,7 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
         className="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-2.5 max-h-[260px]"
       >
         {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-600 py-12">
+          <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] py-12">
             <Shield className="w-8 h-8 mb-2 opacity-20" />
             <p className="text-[11px] uppercase tracking-wider">Awaiting pipeline trigger...</p>
           </div>
@@ -86,17 +86,17 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
             return (
               <div
                 key={evt.id + idx}
-                className={`flex items-start gap-2.5 p-2 rounded border transition-all duration-200 hover:bg-slate-900/50 ${getEventBg(
+                className={`flex items-start gap-2.5 p-2 rounded border transition-all duration-200 hover:bg-[var(--bg-card)]/50 ${getEventBg(
                   evt.severity
                 )}`}
               >
                 {/* Time stamp */}
-                <span className="text-slate-500 font-semibold select-none flex-shrink-0">
+                <span className="text-[var(--text-muted)] font-semibold select-none flex-shrink-0">
                   [{timeStr}]
                 </span>
 
                 {/* Tag label */}
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-900/60 border border-white/[0.04] text-slate-400 flex-shrink-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--bg-card)]/60 border border-[var(--border-soft)] text-[var(--text-muted)] flex-shrink-0">
                   {evt.stage}
                 </span>
 

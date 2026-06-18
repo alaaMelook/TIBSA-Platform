@@ -40,12 +40,12 @@ const IconWarn = () => (
 
 // ─── Action Style Map ───────────────────────────────────────
 const ACTION_STYLES: Record<string, { bg: string; text: string }> = {
-    LOGIN: { bg: "bg-blue-500/10", text: "text-blue-400" },
+    LOGIN: { bg: "bg-[var(--primary)]/10", text: "text-[var(--primary)]" },
     LOGIN_FAILED: { bg: "bg-red-500/10", text: "text-red-400" },
     SIGNUP: { bg: "bg-teal-500/10", text: "text-teal-400" },
     SIGNUP_FAILED: { bg: "bg-rose-500/10", text: "text-rose-400" },
     SCAN_CREATED: { bg: "bg-cyan-500/10", text: "text-cyan-400" },
-    USER_ROLE_CHANGE: { bg: "bg-purple-500/10", text: "text-purple-400" },
+    USER_ROLE_CHANGE: { bg: "bg-[var(--primary-soft)]", text: "text-[var(--primary)]" },
     THREAT_FEED_UPDATE: { bg: "bg-amber-500/10", text: "text-amber-400" },
     REPORT_EXPORTED: { bg: "bg-emerald-500/10", text: "text-emerald-400" },
     SYSTEM_CONFIG_CHANGE: { bg: "bg-orange-500/10", text: "text-orange-400" },
@@ -167,10 +167,10 @@ export default function AuditLogPage() {
             sortable: true,
             render: (entry) => (
                 <div className="space-y-0.5">
-                    <p className="text-xs text-slate-300 tabular-nums">
+                    <p className="text-xs text-[var(--text-secondary)] tabular-nums">
                         {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                     </p>
-                    <p className="text-[10px] text-slate-500">
+                    <p className="text-[10px] text-[var(--text-muted)]">
                         {new Date(entry.timestamp).toLocaleDateString()}
                     </p>
                 </div>
@@ -182,15 +182,15 @@ export default function AuditLogPage() {
             sortable: true,
             render: (entry) => (
                 <div 
-                    className="flex items-center gap-2 cursor-pointer group hover:bg-white/[0.04] p-1.5 -m-1.5 rounded transition-colors"
+                    className="flex items-center gap-2 cursor-pointer group hover:bg-[var(--bg-elevated)] p-1.5 -m-1.5 rounded transition-colors"
                     onClick={() => setDrawerContext({ type: "user", value: entry.user_name })}
                 >
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-bold text-white">{entry.user_name.charAt(0)}</span>
+                        <span className="text-[10px] font-bold text-[var(--text-primary)]">{entry.user_name.charAt(0)}</span>
                     </div>
                     <div>
-                        <p className="text-sm text-slate-200 group-hover:text-blue-400 transition-colors">{entry.user_name}</p>
-                        <p className="text-[10px] text-slate-500">{entry.user_email}</p>
+                        <p className="text-sm text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{entry.user_name}</p>
+                        <p className="text-[10px] text-[var(--text-muted)]">{entry.user_email}</p>
                     </div>
                 </div>
             ),
@@ -200,7 +200,7 @@ export default function AuditLogPage() {
             label: "Action",
             sortable: true,
             render: (entry) => {
-                const style = ACTION_STYLES[entry.action] || { bg: "bg-slate-500/10", text: "text-slate-400" };
+                const style = ACTION_STYLES[entry.action] || { bg: "bg-[var(--bg-elevated)]", text: "text-[var(--text-muted)]" };
                 return (
                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${style.bg} ${style.text}`}>
                         {entry.action}
@@ -213,12 +213,12 @@ export default function AuditLogPage() {
             label: "Details",
             render: (entry) => (
                 <div className="space-y-0.5 max-w-[350px]">
-                    <p className="text-xs text-slate-300 whitespace-normal" title={entry.details}>
+                    <p className="text-xs text-[var(--text-secondary)] whitespace-normal" title={entry.details}>
                         {entry.details}
                     </p>
                     {entry.user_agent && entry.user_agent !== "Unknown Device" && (
-                        <p className="text-[10px] text-slate-500 flex items-center gap-1 font-mono" title="Device Details">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                        <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 font-mono" title="Device Details">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--bg-elevated)]" />
                             {entry.user_agent}
                         </p>
                     )}
@@ -230,7 +230,7 @@ export default function AuditLogPage() {
             label: "IP Address",
             render: (entry) => (
                 <span 
-                    className="text-xs text-blue-400 font-mono cursor-pointer hover:underline"
+                    className="text-xs text-[var(--primary)] font-mono cursor-pointer hover:underline"
                     onClick={() => setDrawerContext({ type: "ip", value: entry.ip_address })}
                 >
                     {entry.ip_address}
@@ -284,30 +284,30 @@ export default function AuditLogPage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-white">Security Event Timeline</h1>
+                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Security Event Timeline</h1>
                         <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/20 text-amber-400 rounded-full">
                             Security
                         </span>
                     </div>
-                    <p className="text-sm text-slate-400">Track all security events, admin actions, and system changes</p>
+                    <p className="text-sm text-[var(--text-muted)]">Track all security events, admin actions, and system changes</p>
                 </div>
-                <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] rounded-lg p-2 backdrop-blur-md">
+                <div className="flex items-center gap-4 bg-black/40 border border-[var(--border-strong)] rounded-lg p-2 backdrop-blur-md">
                     <button
                         onClick={handleRefresh}
                         disabled={refreshing}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
                     >
                         <svg className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         {refreshing ? "Refreshing..." : "Refresh"}
                     </button>
-                    <div className="w-px h-4 bg-white/[0.1]" />
+                    <div className="w-px h-4 bg-[var(--bg-elevated)]" />
                     <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-400 font-mono">AUTO-REFRESH</span>
+                        <span className="text-[var(--text-muted)] font-mono">AUTO-REFRESH</span>
                         <button 
                             onClick={() => setIsLive(!isLive)}
-                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-slate-700'}`}
+                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-[var(--bg-elevated)]'}`}
                         >
                             <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isLive ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>

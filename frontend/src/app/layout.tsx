@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { InactivityTracker } from "@/components/InactivityTracker";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,7 +56,15 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          {children}
+          <InactivityTracker>
+            {children}
+            <Toaster
+              position="top-center"
+              duration={5000}
+              richColors={false}
+              closeButton
+            />
+          </InactivityTracker>
         </AuthProvider>
       </body>
     </html>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { Card } from "@/components/ui";
+import { Card, Button } from "@/components/ui";
+import Link from "next/link";
 
 export default function ProfilePage() {
     const { user } = useAuth();
@@ -9,43 +10,43 @@ export default function ProfilePage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-white">Profile</h1>
-                <p className="text-slate-400 mt-1">Your account information</p>
+                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Profile</h1>
+                <p className="text-[var(--text-muted)] mt-1">Your account information</p>
             </div>
 
-            <div className="max-w-2xl">
+            <div className="max-w-2xl space-y-6">
                 <Card>
                     <div className="space-y-6">
                         {/* Avatar and Name */}
                         <div className="flex items-center gap-4">
-                            <div className="h-16 w-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                            <div className="h-16 w-16 rounded-full bg-[var(--primary-hover)] flex items-center justify-center text-[var(--text-primary)] text-2xl font-bold">
                                 {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">{user?.full_name}</h2>
-                                <p className="text-slate-400 text-sm">{user?.email}</p>
+                                <h2 className="text-xl font-bold text-[var(--text-primary)]">{user?.full_name}</h2>
+                                <p className="text-[var(--text-muted)] text-sm">{user?.email}</p>
                             </div>
                         </div>
 
-                        <hr className="border-white/[0.06]" />
+                        <hr className="border-[var(--border-strong)]" />
 
                         {/* Info Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Full Name</label>
-                                <p className="text-slate-200 mt-1">{user?.full_name || "—"}</p>
+                                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Full Name</label>
+                                <p className="text-[var(--text-primary)] mt-1">{user?.full_name || "—"}</p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Email</label>
-                                <p className="text-slate-200 mt-1">{user?.email || "—"}</p>
+                                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Email</label>
+                                <p className="text-[var(--text-primary)] mt-1">{user?.email || "—"}</p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Role</label>
+                                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Role</label>
                                 <p className="mt-1">
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${user?.role === "admin"
-                                                ? "bg-purple-500/15 text-purple-400"
-                                                : "bg-blue-500/15 text-blue-400"
+                                                ? "bg-[var(--primary-soft)] text-[var(--primary)]"
+                                                : "bg-[var(--primary)]/15 text-[var(--primary)]"
                                             }`}
                                     >
                                         {user?.role || "user"}
@@ -53,7 +54,7 @@ export default function ProfilePage() {
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Status</label>
+                                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Status</label>
                                 <p className="mt-1">
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${user?.is_active
@@ -66,8 +67,8 @@ export default function ProfilePage() {
                                 </p>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider">Joined</label>
-                                <p className="text-slate-200 mt-1">
+                                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Joined</label>
+                                <p className="text-[var(--text-primary)] mt-1">
                                     {user?.created_at
                                         ? new Date(user.created_at).toLocaleDateString("en-US", {
                                             year: "numeric",
@@ -78,6 +79,20 @@ export default function ProfilePage() {
                                 </p>
                             </div>
                         </div>
+                    </div>
+                </Card>
+
+                <Card>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-lg font-medium text-[var(--text-primary)]">Security & Authentication</h3>
+                            <p className="text-sm text-[var(--text-muted)] mt-1">Manage Two-Factor Authentication (2FA) and password settings.</p>
+                        </div>
+                        <Link href="/dashboard/settings/security">
+                            <Button variant="secondary" className="whitespace-nowrap">
+                                Security Settings & 2FA
+                            </Button>
+                        </Link>
                     </div>
                 </Card>
             </div>

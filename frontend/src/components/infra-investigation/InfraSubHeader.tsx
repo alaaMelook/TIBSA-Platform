@@ -17,26 +17,26 @@ export function InfraSubHeader() {
   return (
     <div className="space-y-4">
       {/* Dynamic Glassmorphic Hero Title Section */}
-      <div className="bg-gradient-to-r from-cyan-900/20 via-[#263554]/30 to-[#0f172a] border border-white/[0.04] p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">
+      <div className="bg-gradient-to-r from-blue-900/10 via-[#1c2942]/20 to-[#0f172a] border border-[var(--border-soft)] p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-md">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] animate-ping" />
+            <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">
               Threat Intelligence Pipeline
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
+          <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
             Threat Infrastructure Intelligence
           </h1>
-          <p className="text-slate-400 max-w-xl text-sm leading-relaxed">
+          <p className="text-[var(--text-muted)] mt-1 max-w-xl text-sm leading-relaxed">
             Passive profiling of Domains, URLs, IP addresses, ASNs, CIDRs, and hashes. Real-time enrichment via passive DNS, RDAP WHOIS, SSL records, and AI attribution.
           </p>
         </div>
-        <Globe className="w-12 h-12 text-cyan-500/20 hidden md:block" />
+        <Globe className="w-12 h-12 text-[var(--primary)]/20 hidden md:block" />
       </div>
 
       {/* Glassmorphic Tabbed Navigation Row */}
-      <div className="flex bg-slate-950/40 border border-white/[0.05] p-1 rounded-xl w-fit max-w-full overflow-x-auto gap-1">
+      <div className="flex bg-[var(--bg-page)]/40 border border-[var(--border-soft)] p-1 rounded-xl w-fit max-w-full overflow-x-auto gap-1">
         {NAV_ITEMS.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -47,8 +47,8 @@ export function InfraSubHeader() {
               href={item.href}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? "bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-inner shadow-cyan-500/5"
-                  : "border border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]"
+                  ? "bg-[var(--primary-soft)] border border-[var(--primary)] text-[var(--primary)] shadow-sm"
+                  : "border border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
               }`}
             >
               {item.icon}

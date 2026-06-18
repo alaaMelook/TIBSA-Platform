@@ -382,7 +382,7 @@ export default function ReportsHistoryPage() {
       high: "text-red-400 border-red-500/20 bg-red-500/10",
       critical: "text-red-500 border-red-600/20 bg-red-600/10"
     };
-    return colors[level || "safe"] || "text-slate-500 border-slate-700 bg-slate-800";
+    return colors[level || "safe"] || "text-[var(--text-muted)] border-[var(--border-strong)] bg-[var(--bg-elevated)]";
   };
 
   const getStatusBadge = (status: string) => {
@@ -394,29 +394,29 @@ export default function ReportsHistoryPage() {
         return <span className={`${common} border-red-500/20 bg-red-500/10 text-red-400`}>Failed</span>;
       case "pending":
       case "created":
-        return <span className={`${common} border-slate-700 bg-slate-800 text-slate-400`}>Pending</span>;
+        return <span className={`${common} border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text-muted)]`}>Pending</span>;
       default:
-        return <span className={`${common} border-blue-500/20 bg-blue-500/10 text-blue-400 animate-pulse`}>{status || "Running"}</span>;
+        return <span className={`${common} border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] animate-pulse`}>{status || "Running"}</span>;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Title & Service Selector Header */}
-      <div className="bg-gradient-to-r from-blue-900/10 via-[#1c2942]/20 to-[#0f172a] border border-white/[0.04] p-6 rounded-xl shadow-md">
+      <div className="bg-gradient-to-r from-blue-900/10 via-[#1c2942]/20 to-[#0f172a] border border-[var(--border-soft)] p-6 rounded-xl shadow-md">
         <div className="flex items-center gap-2 mb-2">
-          <Clock className="w-4 h-4 text-blue-500" />
-          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+          <Clock className="w-4 h-4 text-[var(--primary)]" />
+          <span className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest">
             Platform History Logs
           </span>
         </div>
-        <h1 className="text-2xl font-black text-white tracking-tight">Reports History</h1>
-        <p className="text-slate-400 mt-1 max-w-xl text-sm leading-relaxed">
+        <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Reports History</h1>
+        <p className="text-[var(--text-muted)] mt-1 max-w-xl text-sm leading-relaxed">
           Unified audit logs and security posture records compiled across all standalone services and ingestion pipelines.
         </p>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-white/[0.08] overflow-x-auto whitespace-nowrap scrollbar-none gap-2 mt-6">
+        <div className="flex border-b border-[var(--border-soft)] overflow-x-auto whitespace-nowrap scrollbar-none gap-2 mt-6">
           {[
             { key: "investigations", label: "Security Investigations", count: investigations.length, icon: Shield },
             { key: "pentest", label: "Penetration Testing", count: pentestScans.length, icon: Globe },
@@ -436,14 +436,14 @@ export default function ReportsHistoryPage() {
                 }}
                 className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
                   active
-                    ? "border-blue-500 text-blue-400"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "border-blue-500 text-[var(--primary)]"
+                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
                 <span className={`px-1.5 py-0.5 rounded text-[10px] ${
-                  active ? "bg-blue-500/25 text-blue-300 font-black" : "bg-white/[0.04] text-slate-500"
+                  active ? "bg-[var(--primary)]/25 text-[var(--primary)] font-black" : "bg-[var(--bg-elevated)] text-[var(--text-muted)]"
                 }`}>
                   {tab.count}
                 </span>
@@ -454,7 +454,7 @@ export default function ReportsHistoryPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-24 text-center text-slate-500 font-medium">
+        <div className="py-24 text-center text-[var(--text-muted)] font-medium">
           <span className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
           Loading reports history...
         </div>
@@ -464,14 +464,14 @@ export default function ReportsHistoryPage() {
           {activeTab === "investigations" && (
             <Card title="Security Investigations Logs" description="Audit log of Ingestion scans running across endpoints">
               {investigations.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-sm">
+                <div className="py-12 text-center text-[var(--text-muted)] text-sm">
                   No pipeline investigations found in history.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/[0.06] text-slate-400 font-semibold bg-slate-900/10">
+                      <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
                         <th className="py-3 px-4">Scan ID / Ingestion</th>
                         <th className="py-3 px-4">Target</th>
                         <th className="py-3 px-4">Risk Score</th>
@@ -486,35 +486,35 @@ export default function ReportsHistoryPage() {
                         <tr
                           key={inv.id}
                           onClick={() => router.push(`/dashboard/investigations/${inv.id}`)}
-                          className="hover:bg-white/[0.02] cursor-pointer transition-colors group"
+                          className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors group"
                         >
-                          <td className="py-4 px-4 font-mono text-xs font-semibold text-slate-300">
+                          <td className="py-4 px-4 font-mono text-xs font-semibold text-[var(--text-secondary)]">
                             <div>{inv.scan_id || "SCAN-INF"}</div>
-                            <div className="text-[10px] text-slate-500 uppercase mt-0.5 font-sans">
+                            <div className="text-[10px] text-[var(--text-muted)] uppercase mt-0.5 font-sans">
                               ID: {inv.id.substring(0, 8)}
                             </div>
                           </td>
-                          <td className="py-4 px-4 text-slate-200 font-medium truncate max-w-[200px]">
+                          <td className="py-4 px-4 text-[var(--text-primary)] font-medium truncate max-w-[200px]">
                             {inv.target}
                           </td>
                           <td className="py-4 px-4">
                             <span className={`font-bold font-mono text-xs ${
-                              inv.status === "failed" ? "text-slate-500" :
+                              inv.status === "failed" ? "text-[var(--text-muted)]" :
                               inv.risk_score > 60 ? "text-red-400" :
                               inv.risk_score > 30 ? "text-orange-400" : "text-emerald-400"
                             }`}>
                               {inv.status === "failed" ? "—" : Math.round(inv.risk_score)}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-xs text-slate-400 font-medium">
+                          <td className="py-4 px-4 text-xs text-[var(--text-muted)] font-medium">
                             {inv.current_stage || "Queued"}
                           </td>
                           <td className="py-4 px-4">{getStatusBadge(inv.status)}</td>
-                          <td className="py-4 px-4 text-xs text-slate-500">
+                          <td className="py-4 px-4 text-xs text-[var(--text-muted)]">
                             {new Date(inv.started_at).toLocaleDateString()}
                           </td>
                           <td className="py-4 px-4 text-right">
-                            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                            <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] group-hover:translate-x-1 transition-all" />
                           </td>
                         </tr>
                       ))}
@@ -529,14 +529,14 @@ export default function ReportsHistoryPage() {
           {activeTab === "pentest" && (
             <Card title="Penetration Testing Logs" description="Logs of technological fingerprints, vulnerability scans, and endpoint maps">
               {pentestScans.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-sm">
+                <div className="py-12 text-center text-[var(--text-muted)] text-sm">
                   No penetration testing runs found in history.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/[0.06] text-slate-400 font-semibold bg-slate-900/10">
+                      <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
                         <th className="py-3 px-4">Scan Target</th>
                         <th className="py-3 px-4">Technologies</th>
                         <th className="py-3 px-4">Assets Logged</th>
@@ -555,21 +555,21 @@ export default function ReportsHistoryPage() {
                           <tr
                             key={pt.id}
                             onClick={() => handleViewPentestReview(pt.id)}
-                            className="hover:bg-white/[0.02] cursor-pointer transition-colors group"
+                            className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors group"
                           >
-                            <td className="py-4 px-4 text-slate-200 font-semibold">
+                            <td className="py-4 px-4 text-[var(--text-primary)] font-semibold">
                               <div className="flex items-center gap-1.5">
-                                <Globe className="w-3.5 h-3.5 text-blue-400/70" />
+                                <Globe className="w-3.5 h-3.5 text-[var(--primary)]/70" />
                                 {pt.target}
                               </div>
-                              <div className="text-[10px] text-slate-500 mt-0.5 font-mono select-all">
+                              <div className="text-[10px] text-[var(--text-muted)] mt-0.5 font-mono select-all">
                                 ID: {pt.id}
                               </div>
                             </td>
-                            <td className="py-4 px-4 text-slate-300 text-xs">
+                            <td className="py-4 px-4 text-[var(--text-secondary)] text-xs">
                               {techsCount} service{techsCount !== 1 ? "s" : ""}
                             </td>
-                            <td className="py-4 px-4 text-slate-300 text-xs">
+                            <td className="py-4 px-4 text-[var(--text-secondary)] text-xs">
                               {assetsCount} asset{assetsCount !== 1 ? "s" : ""}
                             </td>
                             <td className="py-4 px-4">
@@ -579,11 +579,11 @@ export default function ReportsHistoryPage() {
                                 {findingsCount} finding{findingsCount !== 1 ? "s" : ""}
                               </span>
                             </td>
-                            <td className="py-4 px-4 text-xs text-slate-500">
+                            <td className="py-4 px-4 text-xs text-[var(--text-muted)]">
                               {new Date(pt.created_at).toLocaleString()}
                             </td>
                             <td className="py-4 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1.5 text-slate-500 group-hover:text-blue-400 transition-colors">
+                              <div className="flex items-center justify-end gap-1.5 text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
                                 <span className="text-[10px] uppercase font-bold tracking-wider">Review</span>
                                 <ArrowUpRight className="w-3.5 h-3.5" />
                               </div>
@@ -605,7 +605,7 @@ export default function ReportsHistoryPage() {
               <div className="lg:col-span-1">
                 <Card title="Completed Threat Scans">
                   {threatScans.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 text-sm">
+                    <div className="text-center py-8 text-[var(--text-muted)] text-sm">
                       No completed threat scans yet.
                     </div>
                   ) : (
@@ -616,23 +616,23 @@ export default function ReportsHistoryPage() {
                           onClick={() => viewThreatReport(scan.id)}
                           className={`w-full text-left p-3 rounded-xl border transition-all text-sm select-none ${
                             selectedScan?.id === scan.id
-                              ? "bg-blue-500/10 border-blue-500/30"
-                              : "bg-white/[0.04] border-white/[0.06] hover:bg-slate-900/40"
+                              ? "bg-[var(--primary)]/10 border-[var(--primary)]"
+                              : "bg-[var(--bg-elevated)] border-[var(--border-strong)] hover:bg-[var(--bg-card)]/40"
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-slate-200 flex items-center gap-1.5">
-                              {scan.scan_type === "url" ? <Globe className="w-3.5 h-3.5 text-slate-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
+                            <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                              {scan.scan_type === "url" ? <Globe className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <FileText className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
                               {scan.scan_type.toUpperCase()}
                             </span>
                             <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider ${threatColor(scan.threat_level)}`}>
                               {scan.threat_level || "Clean"}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 truncate mt-2 font-mono">
+                          <p className="text-xs text-[var(--text-muted)] truncate mt-2 font-mono">
                             {scan.target}
                           </p>
-                          <p className="text-[10px] text-slate-600 mt-1 font-medium">
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium">
                             {new Date(scan.created_at).toLocaleDateString()}
                           </p>
                         </button>
@@ -646,57 +646,57 @@ export default function ReportsHistoryPage() {
               <div className="lg:col-span-2">
                 <Card title="Analysis Details">
                   {reportLoading ? (
-                    <div className="text-center py-12 text-slate-500 flex items-center justify-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                    <div className="text-center py-12 text-[var(--text-muted)] flex items-center justify-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin text-[var(--primary)]" />
                       Loading report data...
                     </div>
                   ) : !selectedReport ? (
-                    <div className="text-center py-16 text-slate-500">
+                    <div className="text-center py-16 text-[var(--text-muted)]">
                       <FileText className="w-10 h-10 mx-auto mb-3 opacity-20" />
                       <p className="font-semibold">Select a scan to inspect its findings</p>
-                      <p className="text-xs text-slate-500 mt-1">Review detections, reputations, and compromise indicators</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Review detections, reputations, and compromise indicators</p>
                     </div>
                   ) : (
                     <div className="space-y-6">
                       {/* Download button */}
-                      <div className="flex justify-between items-center relative border-b border-white/[0.06] pb-4">
+                      <div className="flex justify-between items-center relative border-b border-[var(--border-strong)] pb-4">
                         <div className="flex flex-col items-start">
-                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Report Identifier</span>
-                          <span className="font-mono text-xs text-slate-300 mt-0.5 select-all">{selectedReport.id}</span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Report Identifier</span>
+                          <span className="font-mono text-xs text-[var(--text-secondary)] mt-0.5 select-all">{selectedReport.id}</span>
                         </div>
                         <div className="relative">
                           <button
                             onClick={() => setDownloadMenuOpen((v) => !v)}
-                            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all text-xs font-bold"
+                            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] hover:bg-[var(--primary)]/20 border border-[var(--primary)] transition-all text-xs font-bold"
                           >
                             <Download className="w-3.5 h-3.5" />
                             Download Report
                             <ArrowRight className={`w-3 h-3 transition-transform ${downloadMenuOpen ? "rotate-90" : ""}`} />
                           </button>
                           {downloadMenuOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-[#17223b] border border-white/[0.08] shadow-2xl overflow-hidden z-10">
+                            <div className="absolute right-0 top-full mt-2 w-52 rounded-xl bg-[#17223b] border border-[var(--border-soft)] shadow-2xl overflow-hidden z-10">
                               <button
                                 onClick={() => handleDownloadThreatReport("txt")}
-                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/[0.06] transition-colors"
+                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[var(--bg-elevated)] transition-colors"
                               >
                                 <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                                   <FileText className="w-4 h-4 text-emerald-400" />
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-slate-200">Text Report</p>
-                                  <p className="text-[9px] text-slate-500">.txt — Human readable</p>
+                                  <p className="text-xs font-bold text-[var(--text-primary)]">Text Report</p>
+                                  <p className="text-[9px] text-[var(--text-muted)]">.txt — Human readable</p>
                                 </div>
                               </button>
                               <button
                                 onClick={() => handleDownloadThreatReport("json")}
-                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-white/[0.06] transition-colors border-t border-white/[0.04]"
+                                className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-[var(--bg-elevated)] transition-colors border-t border-[var(--border-soft)]"
                               >
-                                <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center flex-shrink-0">
-                                  <FileJson className="w-4 h-4 text-purple-400" />
+                                <div className="w-8 h-8 rounded-lg bg-[var(--primary-soft)] flex items-center justify-center flex-shrink-0">
+                                  <FileJson className="w-4 h-4 text-[var(--primary)]" />
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-slate-200">JSON Report</p>
-                                  <p className="text-[9px] text-slate-500">.json — Machine parsed</p>
+                                  <p className="text-xs font-bold text-[var(--text-primary)]">JSON Report</p>
+                                  <p className="text-[9px] text-[var(--text-muted)]">.json — Machine parsed</p>
                                 </div>
                               </button>
                             </div>
@@ -705,21 +705,21 @@ export default function ReportsHistoryPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Executive Summary</h3>
-                        <p className="text-sm text-slate-300 leading-relaxed bg-slate-950/25 p-3 rounded-xl border border-white/[0.04]">
+                        <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Executive Summary</h3>
+                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed bg-[var(--bg-page)]/25 p-3 rounded-xl border border-[var(--border-soft)]">
                           {selectedReport.summary}
                         </p>
                       </div>
 
                       {selectedReport.indicators?.length > 0 && (
                         <div className="space-y-2">
-                          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Indicators Found</h3>
+                          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Indicators Found</h3>
                           <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
                             {selectedReport.indicators.map((ind, i) => (
-                              <div key={i} className="flex items-center justify-between bg-slate-950/20 p-2.5 rounded-lg text-xs border border-white/[0.04]">
+                              <div key={i} className="flex items-center justify-between bg-[var(--bg-page)]/20 p-2.5 rounded-lg text-xs border border-[var(--border-soft)]">
                                 <div>
-                                  <span className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">{ind.type}</span>
-                                  <p className="font-mono text-slate-200 mt-0.5">{ind.value}</p>
+                                  <span className="text-[9px] text-[var(--text-muted)] uppercase font-bold tracking-wider">{ind.type}</span>
+                                  <p className="font-mono text-[var(--text-primary)] mt-0.5">{ind.value}</p>
                                 </div>
                                 <span className={`text-[9px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider ${threatColor(ind.threat_level)}`}>
                                   {ind.threat_level}
@@ -732,8 +732,8 @@ export default function ReportsHistoryPage() {
 
                       {selectedReport.details && Object.keys(selectedReport.details).length > 0 && (
                         <div className="space-y-2">
-                          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Metadata Payload</h3>
-                          <pre className="bg-[#0b0f19] p-3 rounded-xl text-[10px] text-slate-400 overflow-x-auto border border-white/[0.05] max-h-48 font-mono">
+                          <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Metadata Payload</h3>
+                          <pre className="bg-[#0b0f19] p-3 rounded-xl text-[10px] text-[var(--text-muted)] overflow-x-auto border border-[var(--border-soft)] max-h-48 font-mono">
                             {JSON.stringify(selectedReport.details, null, 2)}
                           </pre>
                         </div>
@@ -752,7 +752,7 @@ export default function ReportsHistoryPage() {
               <div className="lg:col-span-1">
                 <Card title="Saved Threat Models">
                   {threatModels.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500 text-sm">
+                    <div className="text-center py-8 text-[var(--text-muted)] text-sm">
                       No threat models saved yet.
                     </div>
                   ) : (
@@ -763,12 +763,12 @@ export default function ReportsHistoryPage() {
                           onClick={() => setSelectedThreatModel(model)}
                           className={`w-full text-left p-3 rounded-xl border transition-all text-sm select-none ${
                             selectedThreatModel?.id === model.id
-                              ? "bg-blue-500/10 border-blue-500/30"
-                              : "bg-white/[0.04] border-white/[0.06] hover:bg-slate-900/40"
+                              ? "bg-[var(--primary)]/10 border-[var(--primary)]"
+                              : "bg-[var(--bg-elevated)] border-[var(--border-strong)] hover:bg-[var(--bg-card)]/40"
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-200">
+                            <span className="font-bold text-[var(--text-primary)]">
                               {model.project_name}
                             </span>
                             <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
@@ -780,10 +780,10 @@ export default function ReportsHistoryPage() {
                               {model.risk_label}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-2 font-medium">
+                          <p className="text-xs text-[var(--text-muted)] mt-2 font-medium">
                             {model.app_type} • {model.threat_count} threat{model.threat_count !== 1 ? "s" : ""}
                           </p>
-                          <p className="text-[10px] text-slate-600 mt-1 font-medium">
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium">
                             {new Date(model.created_at).toLocaleDateString()}
                           </p>
                         </button>
@@ -797,25 +797,25 @@ export default function ReportsHistoryPage() {
               <div className="lg:col-span-2">
                 <Card title="Analysis Details">
                   {!selectedThreatModel ? (
-                    <div className="text-center py-16 text-slate-500">
+                    <div className="text-center py-16 text-[var(--text-muted)]">
                       <Sliders className="w-10 h-10 mx-auto mb-3 opacity-20" />
                       <p className="font-semibold">Select a threat model to inspect its parameters</p>
-                      <p className="text-xs text-slate-500 mt-1">Review vulnerability counts, criticality ratings, and properties</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Review vulnerability counts, criticality ratings, and properties</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-base font-black text-white">{selectedThreatModel.project_name}</h3>
-                        <p className="text-xs text-slate-500 mt-1">Application Paradigm: {selectedThreatModel.app_type}</p>
+                        <h3 className="text-base font-black text-[var(--text-primary)]">{selectedThreatModel.project_name}</h3>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">Application Paradigm: {selectedThreatModel.app_type}</p>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-3 mt-4">
-                        <div className="rounded-xl bg-slate-950/20 border border-white/[0.04] p-3.5">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Aggregate Risk Score</p>
-                          <p className="text-2xl font-black text-white mt-1.5">{selectedThreatModel.risk_score}</p>
+                        <div className="rounded-xl bg-[var(--bg-page)]/20 border border-[var(--border-soft)] p-3.5">
+                          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Aggregate Risk Score</p>
+                          <p className="text-2xl font-black text-[var(--text-primary)] mt-1.5">{selectedThreatModel.risk_score}</p>
                         </div>
-                        <div className="rounded-xl bg-slate-950/20 border border-white/[0.04] p-3.5">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Normalized Risk Level</p>
+                        <div className="rounded-xl bg-[var(--bg-page)]/20 border border-[var(--border-soft)] p-3.5">
+                          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Normalized Risk Level</p>
                           <p className={`text-base font-extrabold mt-2 uppercase tracking-wide ${
                             selectedThreatModel.risk_label === "Critical" || selectedThreatModel.risk_label === "High" ? "text-red-400" :
                             selectedThreatModel.risk_label === "Medium" ? "text-orange-400" : "text-yellow-400"
@@ -824,22 +824,22 @@ export default function ReportsHistoryPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-xl bg-slate-950/20 border border-white/[0.04] p-3.5">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Threats Identified</p>
-                          <p className="text-2xl font-black text-white mt-1.5">{selectedThreatModel.threat_count}</p>
+                        <div className="rounded-xl bg-[var(--bg-page)]/20 border border-[var(--border-soft)] p-3.5">
+                          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Threats Identified</p>
+                          <p className="text-2xl font-black text-[var(--text-primary)] mt-1.5">{selectedThreatModel.threat_count}</p>
                         </div>
-                        <div className="rounded-xl bg-slate-950/20 border border-white/[0.04] p-3.5">
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Date Compiled</p>
-                          <p className="text-xs text-slate-300 font-medium mt-3.5">
+                        <div className="rounded-xl bg-[var(--bg-page)]/20 border border-[var(--border-soft)] p-3.5">
+                          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Date Compiled</p>
+                          <p className="text-xs text-[var(--text-secondary)] font-medium mt-3.5">
                             {new Date(selectedThreatModel.created_at).toLocaleString()}
                           </p>
                         </div>
                       </div>
 
-                      <div className="border-t border-white/[0.06] pt-4 flex justify-end">
+                      <div className="border-t border-[var(--border-strong)] pt-4 flex justify-end">
                         <button
                           onClick={() => router.push(`/dashboard/threat-modeling`)}
-                          className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-bold transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 text-xs text-[var(--primary)] hover:text-[var(--primary)] font-bold transition-colors cursor-pointer"
                         >
                           Launch Threat Modeler <ExternalLink className="w-3.5 h-3.5" />
                         </button>

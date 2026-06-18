@@ -23,6 +23,14 @@ export interface LoginCredentials {
     password: string;
 }
 
+export interface LoginResponse {
+    access_token?: string;
+    refresh_token?: string;
+    mfa_required?: boolean;
+    factor_id?: string;
+    mfa_token?: string;
+}
+
 export interface RegisterCredentials {
     email: string;
     password: string;

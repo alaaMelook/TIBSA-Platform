@@ -76,9 +76,26 @@ async def get_current_user(
     try:
         token = credentials.credentials
 
+        import jwt
+        try:
+            decoded = jwt.decode(token, options={"verify_signature": False})
+            aal = decoded.get("aal", "aal1")
+        except Exception:
+            aal = "aal1"
+
+        def _enforce_aal2(user_obj):
+            factors = getattr(user_obj, "factors", []) or []
+            mfa_enrolled = any(getattr(f, "status", None) == "verified" and getattr(f, "factor_type", None) == "totp" for f in factors)
+            if mfa_enrolled and aal == "aal1":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="MFA verification required (AAL2)",
+                )
+
         # Check cache first — avoids a network round-trip
         cached = _get_cached_user(token)
         if cached:
+            _enforce_aal2(cached)
             from datetime import datetime, timezone
             ACTIVE_PRESENCE[cached.id] = datetime.now(timezone.utc).isoformat()
             _update_db_last_seen(supabase, cached.id)
@@ -92,6 +109,7 @@ async def get_current_user(
             )
 
         auth_user = user_response.user
+        _enforce_aal2(auth_user)
 
         # Check if user is inactive in the users table
         user_record = supabase.table("users").select("is_active").eq("id", auth_user.id).execute()

@@ -12,7 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <DashboardHeader />
                 <div className="flex flex-1">
                     <Sidebar />
-                    <main className="flex-1 p-6 bg-[#0f172a]">{children}</main>
+                    <main className="flex-1 p-6 bg-[var(--bg-main)]">{children}</main>
                 </div>
                 <Footer />
             </div>

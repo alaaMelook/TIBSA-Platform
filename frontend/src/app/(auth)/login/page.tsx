@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, Input } from "@/components/ui";
+import { supabase } from "@/lib/supabase";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 // ── Google SVG Icon ────────────────────────────────────────────
 function GoogleIcon() {
@@ -49,13 +51,13 @@ function OAuthButton({
                 disabled:opacity-50 disabled:cursor-not-allowed
                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e2d4a]
                 ${isGoogle
-                    ? "bg-white/[0.04] border-white/[0.12] text-slate-200 hover:bg-white/[0.09] hover:border-white/20 focus:ring-blue-500/50"
-                    : "bg-white/[0.04] border-white/[0.12] text-slate-200 hover:bg-white/[0.09] hover:border-white/20 focus:ring-slate-500/50"
+                    ? "bg-[var(--bg-elevated)] border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-strong)] focus:ring-[var(--primary)]/50"
+                    : "bg-[var(--bg-elevated)] border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-strong)] focus:ring-slate-500/50"
                 }
             `}
         >
             {isLoading ? (
-                <svg className="animate-spin w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -77,10 +79,13 @@ function OAuthButton({
 function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
-    const { login, loginWithOAuth, isAuthenticated } = useAuth();
+    const [mfaRequired, setMfaRequired] = useState(false);
+    const [mfaCode, setMfaCode] = useState("");
+    const [factorId, setFactorId] = useState("");
+    const [tempToken, setTempToken] = useState("");
+    const { login, verifyMfa, loginWithOAuth, isAuthenticated } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get("redirect") || "/dashboard";
@@ -93,7 +98,6 @@ function LoginForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
         setIsLoading(true);
 
         const target = e.target as HTMLFormElement;
@@ -104,27 +108,99 @@ function LoginForm() {
         const submittedPassword = password || passwordInput?.value || "";
 
         try {
-            await login({ email: submittedEmail, password: submittedPassword });
+            const res = await login({ email: submittedEmail, password: submittedPassword });
+            if (res && res.mfa_required) {
+                setMfaRequired(true);
+                setFactorId(res.factor_id || "");
+                setTempToken(res.mfa_token || "");
+                setIsLoading(false);
+            }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Login failed");
+            const errorMessage = err instanceof Error ? err.message : "Login failed";
+            if (errorMessage.toLowerCase().includes("too many requests") || errorMessage.includes("429")) {
+                notifyError("Too many failed login attempts.", "Please try again after 30 minutes.");
+            } else {
+                notifyError("Login Error", errorMessage);
+            }
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyMfa = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            console.log("before verifyMfa");
+            await verifyMfa(factorId, mfaCode, tempToken);
+            console.log("after verifyMfa success");
+            
+            notifySuccess("Login successful");
+            console.log("before redirect");
+            router.replace("/dashboard");
+            
+            // Fallback redirect if router.replace hangs
+            setTimeout(() => {
+                if (window.location.pathname !== "/dashboard") {
+                    window.location.href = "/dashboard";
+                }
+            }, 2000);
+        } catch (err) {
+            console.warn("MFA Verification Exception:", err);
+            notifyError("Verification Failed", err instanceof Error ? err.message : "Invalid code");
+            setMfaCode("");
+        } finally {
             setIsLoading(false);
         }
     };
 
     const handleOAuth = async (provider: "google" | "github") => {
-        setError("");
         setOauthLoading(provider);
         try {
             await loginWithOAuth(provider);
             // Supabase will redirect the page; no need to navigate manually
         } catch (err) {
-            setError(err instanceof Error ? err.message : `${provider} sign-in failed`);
+            notifyError("Sign-in Failed", err instanceof Error ? err.message : `${provider} sign-in failed`);
             setOauthLoading(null);
         }
     };
 
+    if (mfaRequired) {
+        return (
+            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden">
+                <form onSubmit={handleVerifyMfa} className="p-6 pt-5 space-y-4">
+                    <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">Two-Factor Authentication</h3>
+                    <p className="text-sm text-[var(--text-muted)] mb-4">Enter the 6-digit code from your authenticator app.</p>
+
+                    <Input
+                        label="Authenticator Code"
+                        type="text"
+                        placeholder="123456"
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        required
+                        maxLength={6}
+                        pattern="\d{6}"
+                    />
+
+                    <Button type="submit" className="w-full" isLoading={isLoading}>
+                        Verify Code
+                    </Button>
+                    
+                    <button 
+                        type="button" 
+                        onClick={() => setMfaRequired(false)} 
+                        className="w-full text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] mt-2"
+                    >
+                        Cancel
+                    </button>
+                </form>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-[#1e2d4a] rounded-xl border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden">
+        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden">
             {/* OAuth Section */}
             <div className="p-6 pb-5 space-y-3">
                 <OAuthButton
@@ -141,21 +217,13 @@ function LoginForm() {
 
             {/* Divider */}
             <div className="flex items-center gap-3 px-6">
-                <div className="h-px flex-1 bg-white/[0.06]" />
-                <span className="text-xs text-slate-500 font-medium tracking-wide">OR CONTINUE WITH EMAIL</span>
-                <div className="h-px flex-1 bg-white/[0.06]" />
+                <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
+                <span className="text-xs text-[var(--text-muted)] font-medium tracking-wide">OR CONTINUE WITH EMAIL</span>
+                <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
             </div>
 
             {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="p-6 pt-5 space-y-4">
-                {error && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400 flex items-start gap-2">
-                        <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        {error}
-                    </div>
-                )}
 
                 <Input
                     label="Email"
@@ -166,22 +234,29 @@ function LoginForm() {
                     required
                 />
 
-                <Input
-                    label="Password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+                <div className="space-y-1">
+                    <Input
+                        label="Password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <div className="flex justify-end mt-1">
+                        <Link href="/forgot-password" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] font-medium transition-colors">
+                            Forgot Password?
+                        </Link>
+                    </div>
+                </div>
 
                 <Button type="submit" className="w-full" isLoading={isLoading}>
                     Sign In
                 </Button>
 
-                <p className="text-center text-sm text-slate-500">
+                <p className="text-center text-sm text-[var(--text-muted)]">
                     Don&apos;t have an account?{" "}
-                    <Link href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                    <Link href="/register" className="text-[var(--primary)] hover:text-[var(--primary)] font-medium transition-colors">
                         Register
                     </Link>
                 </p>
@@ -192,31 +267,31 @@ function LoginForm() {
 
 export default function LoginPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0f172a] px-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] px-4 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-blue-600/[0.04] blur-3xl" />
+                <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary-hover)]/[0.04] blur-3xl" />
                 <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/[0.04] blur-3xl" />
             </div>
 
             <div className="w-full max-w-md relative">
                 {/* Logo & Heading */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 items-center justify-center mb-5 shadow-lg shadow-blue-600/25">
-                        <span className="text-white font-bold text-xl">T</span>
+                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] items-center justify-center mb-5 shadow-lg shadow-[var(--primary-soft)]">
+                        <span className="text-[var(--text-primary)] font-bold text-xl">T</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back</h1>
-                    <p className="text-slate-400 mt-1.5 text-sm">Sign in to your TIBSA account</p>
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Welcome back</h1>
+                    <p className="text-[var(--text-muted)] mt-1.5 text-sm">Sign in to your TIBSA account</p>
                 </div>
 
-                <Suspense fallback={<div className="text-center text-slate-400 py-8">Loading...</div>}>
+                <Suspense fallback={<div className="text-center text-[var(--text-muted)] py-8">Loading...</div>}>
                     <LoginForm />
                 </Suspense>
 
-                <p className="text-center text-xs text-slate-600 mt-6">
+                <p className="text-center text-xs text-[var(--text-muted)] mt-6">
                     By signing in, you agree to our{" "}
-                    <span className="text-slate-500">Terms of Service</span> and{" "}
-                    <span className="text-slate-500">Privacy Policy</span>
+                    <span className="text-[var(--text-muted)]">Terms of Service</span> and{" "}
+                    <span className="text-[var(--text-muted)]">Privacy Policy</span>
                 </p>
             </div>
         </div>
