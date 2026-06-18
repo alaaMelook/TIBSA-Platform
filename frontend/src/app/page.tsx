@@ -46,7 +46,7 @@ export default function Home() {
           </Link>
           <Link
             href="/register"
-            className="text-sm bg-[linear-gradient(135deg,#0f9d76,#0b7d5d)] text-white px-6 py-2.5 rounded-full transition-all font-bold shadow-sm shadow-[#0f9d76]/20 hover:shadow-md hover:-translate-y-0.5"
+            className="text-sm px-6 py-2.5 rounded-full font-bold btn-animated btn-primary-emerald"
           >
             Get Started
           </Link>
@@ -148,13 +148,13 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
               <Link
                 href="/register"
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[linear-gradient(135deg,#0f9d76,#0b7d5d)] text-white px-9 py-4 rounded-xl text-[15px] font-bold transition-all shadow-md shadow-[#0f9d76]/20 hover:shadow-lg hover:-translate-y-0.5"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-9 py-4 rounded-xl text-[15px] font-bold btn-animated btn-primary-emerald"
               >
                 Start Scanning <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/login"
-                className="w-full sm:w-auto flex items-center justify-center bg-white border border-[#0f9d76]/20 text-[#1d1d1d] hover:bg-[#edf8f3] hover:border-[#0f9d76]/40 px-9 py-4 rounded-xl text-[15px] font-bold transition-all shadow-sm"
+                className="w-full sm:w-auto flex items-center justify-center px-9 py-4 rounded-xl text-[15px] font-bold btn-animated btn-secondary-soft"
               >
                 Sign In
               </Link>

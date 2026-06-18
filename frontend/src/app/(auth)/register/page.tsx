@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button, Input } from "@/components/ui";
 import { PasswordStrengthMeter } from "@/components/ui/PasswordStrengthMeter";
 import { toast } from "sonner";
+import { CheckCircle2, Circle, AlertCircle } from "lucide-react";
 
 // ── Google SVG Icon ────────────────────────────────────────────
 function GoogleIcon() {
@@ -46,11 +47,10 @@ function OAuthButton({
             onClick={onClick}
             disabled={isLoading}
             className={`
-                group relative flex items-center justify-center gap-3 w-full px-4 py-2.5 rounded-lg
-                border text-sm font-medium transition-all duration-200
+                group relative flex items-center justify-center gap-3 w-full px-4 py-2.5 rounded-xl
+                text-sm font-bold btn-animated btn-secondary-soft
                 disabled:opacity-50 disabled:cursor-not-allowed
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e2d4a]
-                bg-[var(--bg-elevated)] border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-strong)] focus:ring-[var(--primary)]/50
+                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-page)] focus:ring-[var(--primary)]/50
             `}
         >
             {isLoading ? (
@@ -73,13 +73,32 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+    const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+    
     const [isLoading, setIsLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
     const { register, loginWithOAuth } = useAuth();
     const router = useRouter();
 
+    // Password validation rules
+    const reqLength = password.length >= 12;
+    const reqUpper = /[A-Z]/.test(password);
+    const reqLower = /[a-z]/.test(password);
+    const reqNum = /[0-9]/.test(password);
+    const reqSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const passwordValid = reqLength && reqUpper && reqLower && reqNum && reqSpecial;
+    
+    const showChecklist = isPasswordFocused || password.length > 0 || (hasAttemptedSubmit && !passwordValid);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setHasAttemptedSubmit(true);
+
+        if (!passwordValid) {
+            toast.error("Registration Error", { description: "Please meet all password requirements" });
+            return;
+        }
 
         if (password !== confirmPassword) {
             toast.error("Registration Error", { description: "Passwords do not match" });
@@ -109,27 +128,30 @@ export default function RegisterPage() {
         }
     };
 
+    const confirmValid = confirmPassword.length > 0 && confirmPassword === password;
+    const showConfirmError = (hasAttemptedSubmit || confirmPassword.length > 0) && !confirmValid;
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] px-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] px-4 py-12 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary-hover)]/[0.04] blur-3xl" />
-                <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/[0.04] blur-3xl" />
+                <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary)]/[0.04] blur-3xl" />
+                <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--primary-hover)]/[0.04] blur-3xl" />
             </div>
 
-            <div className="w-full max-w-md relative">
+            <div className="w-full max-w-md relative animate-[fadeIn_0.5s_ease-out]">
                 {/* Logo & Heading */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] items-center justify-center mb-5 shadow-lg shadow-[var(--primary-soft)]">
-                        <span className="text-[var(--text-primary)] font-bold text-xl">T</span>
+                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] items-center justify-center mb-5 shadow-lg shadow-[var(--primary)]/20">
+                        <span className="text-white font-black text-2xl tracking-tighter">T</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Create an account</h1>
-                    <p className="text-[var(--text-muted)] mt-1.5 text-sm">Get started with TIBSA today</p>
+                    <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-2">Create an account</h1>
+                    <p className="text-[var(--text-muted)] text-sm font-medium">Get started with TIBSA today</p>
                 </div>
 
-                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden">
+                <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-2xl shadow-[var(--primary)]/5 overflow-hidden">
                     {/* OAuth Section */}
-                    <div className="p-6 pb-5 space-y-3">
+                    <div className="p-6 pb-5 space-y-3 bg-white/40">
                         <OAuthButton
                             provider="google"
                             onClick={() => handleOAuth("google")}
@@ -143,76 +165,132 @@ export default function RegisterPage() {
                     </div>
 
                     {/* Divider */}
-                    <div className="flex items-center gap-3 px-6">
-                        <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
-                        <span className="text-xs text-[var(--text-muted)] font-medium tracking-wide">OR REGISTER WITH EMAIL</span>
-                        <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
+                    <div className="flex items-center gap-3 px-8 py-2">
+                        <div className="h-px flex-1 bg-[var(--border-soft)]" />
+                        <span className="text-[11px] text-[var(--text-muted)] font-bold tracking-widest uppercase">OR REGISTER WITH EMAIL</span>
+                        <div className="h-px flex-1 bg-[var(--border-soft)]" />
                     </div>
 
                     {/* Email Registration Form */}
-                    <form onSubmit={handleSubmit} className="p-6 pt-5 space-y-4">
-
-                        <Input
-                            label="Full Name"
-                            type="text"
-                            placeholder="John Doe"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            required
-                        />
-
-                        <Input
-                            label="Email"
-                            type="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-
-                        <div className="space-y-1">
+                    <form onSubmit={handleSubmit} className="p-6 pt-3 space-y-5">
+                        <div className="space-y-4">
                             <Input
-                                label="Password"
-                                type="password"
-                                placeholder="••••••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                label="Full Name"
+                                type="text"
+                                placeholder="John Doe"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
                                 required
-                                minLength={12}
+                                className="bg-white border-[var(--border-soft)] focus:border-[var(--primary)] focus:ring-[var(--primary)]/20"
                             />
-                            <PasswordStrengthMeter password={password} />
-                            <p className="text-[10px] text-[var(--text-muted)] pl-0.5">
-                                Must be at least 12 characters, including uppercase, lowercase, number, and special character.
-                            </p>
+
+                            <Input
+                                label="Email"
+                                type="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="bg-white border-[var(--border-soft)] focus:border-[var(--primary)] focus:ring-[var(--primary)]/20"
+                            />
+
+                            <div className="space-y-2">
+                                <Input
+                                    label="Password"
+                                    type="password"
+                                    placeholder="••••••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    onFocus={() => setIsPasswordFocused(true)}
+                                    onBlur={() => setIsPasswordFocused(false)}
+                                    required
+                                    className={`bg-white focus:ring-[var(--primary)]/20 ${hasAttemptedSubmit && !passwordValid ? "border-[var(--danger)] focus:border-[var(--danger)]" : "border-[var(--border-soft)] focus:border-[var(--primary)]"}`}
+                                />
+                                <div className="px-1">
+                                    <PasswordStrengthMeter password={password} />
+                                </div>
+                                
+                                {/* Animated Password Checklist */}
+                                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showChecklist ? "max-h-48 opacity-100 mt-2" : "max-h-0 opacity-0 m-0"}`}>
+                                    {passwordValid ? (
+                                        <div className="flex items-center gap-1.5 text-[var(--success)] text-xs font-semibold px-1">
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span>Strong password</span>
+                                        </div>
+                                    ) : (
+                                        <ul className="space-y-1.5 text-xs px-1">
+                                            <li className={`flex items-center gap-2 ${reqLength ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
+                                                {reqLength ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5 opacity-50" />}
+                                                <span>At least 12 characters</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 ${reqUpper ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
+                                                {reqUpper ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5 opacity-50" />}
+                                                <span>Contains uppercase letter</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 ${reqLower ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
+                                                {reqLower ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5 opacity-50" />}
+                                                <span>Contains lowercase letter</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 ${reqNum ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
+                                                {reqNum ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5 opacity-50" />}
+                                                <span>Contains number</span>
+                                            </li>
+                                            <li className={`flex items-center gap-2 ${reqSpecial ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
+                                                {reqSpecial ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5 opacity-50" />}
+                                                <span>Contains special character</span>
+                                            </li>
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <Input
+                                    label="Confirm Password"
+                                    type="password"
+                                    placeholder="••••••••••••"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    className={`bg-white focus:ring-[var(--primary)]/20 ${showConfirmError ? "border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]/20" : confirmValid ? "border-[var(--success)] focus:border-[var(--success)] focus:ring-[var(--success)]/20" : "border-[var(--border-soft)] focus:border-[var(--primary)]"}`}
+                                />
+                                {showConfirmError && (
+                                    <div className="flex items-center gap-1.5 text-[var(--danger)] text-xs font-semibold px-1 mt-1.5 animate-in fade-in slide-in-from-top-1">
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        <span>Passwords do not match</span>
+                                    </div>
+                                )}
+                                {confirmValid && confirmPassword.length > 0 && (
+                                    <div className="flex items-center gap-1.5 text-[var(--success)] text-xs font-semibold px-1 mt-1.5 animate-in fade-in slide-in-from-top-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>Passwords match</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <Input
-                            label="Confirm Password"
-                            type="password"
-                            placeholder="••••••••••••"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            minLength={12}
-                        />
-
-                        <Button type="submit" className="w-full" isLoading={isLoading}>
-                            Create Account
-                        </Button>
-
-                        <p className="text-center text-sm text-[var(--text-muted)]">
+                        <div className="pt-2">
+                            <Button type="submit" className="w-full btn-animated btn-primary-emerald font-bold rounded-xl py-3 shadow-md border-0" isLoading={isLoading}>
+                                Create Account
+                            </Button>
+                        </div>
+                    </form>
+                    
+                    {/* Clean Footer Area */}
+                    <div className="bg-[var(--bg-elevated)] border-t border-[var(--border-soft)] p-5 flex flex-col items-center justify-center gap-2">
+                        <p className="text-sm text-[var(--text-muted)] font-medium">
                             Already have an account?{" "}
-                            <Link href="/login" className="text-[var(--primary)] hover:text-[var(--primary)] font-medium transition-colors">
+                            <Link href="/login" className="text-[var(--primary)] font-semibold transition-all hover:text-[var(--primary-hover)] inline-flex items-center hover:-translate-y-[1px]">
                                 Sign In
                             </Link>
                         </p>
-                    </form>
+                    </div>
                 </div>
 
-                <p className="text-center text-xs text-[var(--text-muted)] mt-6">
+                <p className="text-center text-xs text-[var(--text-muted)] mt-6 font-medium">
                     By creating an account, you agree to our{" "}
-                    <span className="text-[var(--text-muted)]">Terms of Service</span> and{" "}
-                    <span className="text-[var(--text-muted)]">Privacy Policy</span>
+                    <span className="text-[var(--text-secondary)] hover:text-[var(--primary)] cursor-pointer transition-colors">Terms of Service</span> and{" "}
+                    <span className="text-[var(--text-secondary)] hover:text-[var(--primary)] cursor-pointer transition-colors">Privacy Policy</span>
                 </p>
             </div>
         </div>

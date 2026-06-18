@@ -46,14 +46,10 @@ function OAuthButton({
             onClick={onClick}
             disabled={isLoading}
             className={`
-                group relative flex items-center justify-center gap-3 w-full px-4 py-2.5 rounded-lg
-                border text-sm font-medium transition-all duration-200
+                group relative flex items-center justify-center gap-3 w-full px-4 py-2.5 rounded-xl
+                text-sm font-bold btn-animated btn-secondary-soft
                 disabled:opacity-50 disabled:cursor-not-allowed
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#1e2d4a]
-                ${isGoogle
-                    ? "bg-[var(--bg-elevated)] border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-strong)] focus:ring-[var(--primary)]/50"
-                    : "bg-[var(--bg-elevated)] border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] hover:border-[var(--border-strong)] focus:ring-slate-500/50"
-                }
+                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg-page)] focus:ring-[var(--primary)]/50
             `}
         >
             {isLoading ? (
@@ -67,11 +63,6 @@ function OAuthButton({
                 <GitHubIcon />
             )}
             <span>{isGoogle ? "Continue with Google" : "Continue with GitHub"}</span>
-            {/* Subtle glow effect on hover */}
-            <span className={`
-                absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200
-                ${isGoogle ? "bg-gradient-to-r from-blue-600/5 to-red-600/5" : "bg-gradient-to-r from-slate-600/5 to-slate-400/5"}
-            `} />
         </button>
     );
 }
@@ -167,10 +158,12 @@ function LoginForm() {
 
     if (mfaRequired) {
         return (
-            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden">
-                <form onSubmit={handleVerifyMfa} className="p-6 pt-5 space-y-4">
-                    <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">Two-Factor Authentication</h3>
-                    <p className="text-sm text-[var(--text-muted)] mb-4">Enter the 6-digit code from your authenticator app.</p>
+            <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-2xl shadow-[var(--primary)]/5 overflow-hidden animate-[fadeIn_0.5s_ease-out]">
+                <form onSubmit={handleVerifyMfa} className="p-6 pt-5 space-y-5">
+                    <div>
+                        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-1">Two-Factor Authentication</h3>
+                        <p className="text-sm text-[var(--text-muted)] font-medium">Enter the 6-digit code from your authenticator app.</p>
+                    </div>
 
                     <Input
                         label="Authenticator Code"
@@ -181,28 +174,31 @@ function LoginForm() {
                         required
                         maxLength={6}
                         pattern="\d{6}"
+                        className="bg-white border-[var(--border-soft)] focus:border-[var(--primary)] focus:ring-[var(--primary)]/20 text-center tracking-[0.2em] text-lg font-mono"
                     />
 
-                    <Button type="submit" className="w-full" isLoading={isLoading}>
-                        Verify Code
-                    </Button>
-                    
-                    <button 
-                        type="button" 
-                        onClick={() => setMfaRequired(false)} 
-                        className="w-full text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] mt-2"
-                    >
-                        Cancel
-                    </button>
+                    <div className="pt-2 space-y-3">
+                        <Button type="submit" className="w-full btn-animated btn-primary-emerald font-bold rounded-xl py-3 shadow-md border-0" isLoading={isLoading}>
+                            Verify Code
+                        </Button>
+                        
+                        <button 
+                            type="button" 
+                            onClick={() => setMfaRequired(false)} 
+                            className="w-full text-sm font-semibold text-[var(--text-muted)] transition-all hover:text-[var(--text-primary)] py-2 rounded-xl btn-animated btn-ghost-soft border border-transparent"
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </form>
             </div>
         );
     }
 
     return (
-        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] shadow-2xl shadow-black/5 overflow-hidden">
+        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-2xl shadow-[var(--primary)]/5 overflow-hidden animate-[fadeIn_0.5s_ease-out]">
             {/* OAuth Section */}
-            <div className="p-6 pb-5 space-y-3">
+            <div className="p-6 pb-5 space-y-3 bg-white/40">
                 <OAuthButton
                     provider="google"
                     onClick={() => handleOAuth("google")}
@@ -216,82 +212,90 @@ function LoginForm() {
             </div>
 
             {/* Divider */}
-            <div className="flex items-center gap-3 px-6">
-                <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
-                <span className="text-xs text-[var(--text-muted)] font-medium tracking-wide">OR CONTINUE WITH EMAIL</span>
-                <div className="h-px flex-1 bg-[var(--bg-elevated)]" />
+            <div className="flex items-center gap-3 px-8 py-2">
+                <div className="h-px flex-1 bg-[var(--border-soft)]" />
+                <span className="text-[11px] text-[var(--text-muted)] font-bold tracking-widest uppercase">OR CONTINUE WITH EMAIL</span>
+                <div className="h-px flex-1 bg-[var(--border-soft)]" />
             </div>
 
             {/* Email/Password Form */}
-            <form onSubmit={handleSubmit} className="p-6 pt-5 space-y-4">
-
-                <Input
-                    label="Email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-
-                <div className="space-y-1">
+            <form onSubmit={handleSubmit} className="p-6 pt-3 space-y-4">
+                <div className="space-y-4">
                     <Input
-                        label="Password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        label="Email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
+                        className="bg-white border-[var(--border-soft)] focus:border-[var(--primary)] focus:ring-[var(--primary)]/20"
                     />
-                    <div className="flex justify-end mt-1">
-                        <Link href="/forgot-password" className="text-xs text-[var(--primary)] hover:text-[var(--primary)] font-medium transition-colors">
-                            Forgot Password?
-                        </Link>
+
+                    <div className="space-y-2">
+                        <Input
+                            label="Password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            className="bg-white border-[var(--border-soft)] focus:border-[var(--primary)] focus:ring-[var(--primary)]/20"
+                        />
+                        <div className="flex justify-center pt-1">
+                            <Link href="/forgot-password" className="text-xs text-[var(--primary)] hover:text-[var(--primary-hover)] font-semibold transition-all inline-flex items-center hover:-translate-y-[1px]">
+                                Forgot Password?
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
-                <Button type="submit" className="w-full" isLoading={isLoading}>
-                    Sign In
-                </Button>
+                <div>
+                    <Button type="submit" className="w-full btn-animated btn-primary-emerald font-bold rounded-xl py-3 shadow-md border-0" isLoading={isLoading}>
+                        Sign In
+                    </Button>
+                </div>
+            </form>
 
-                <p className="text-center text-sm text-[var(--text-muted)]">
+            {/* Clean Footer Area */}
+            <div className="bg-[var(--bg-elevated)] border-t border-[var(--border-soft)] p-5 flex flex-col items-center justify-center gap-2">
+                <p className="text-sm text-[var(--text-muted)] font-medium">
                     Don&apos;t have an account?{" "}
-                    <Link href="/register" className="text-[var(--primary)] hover:text-[var(--primary)] font-medium transition-colors">
+                    <Link href="/register" className="text-[var(--primary)] font-semibold transition-all hover:text-[var(--primary-hover)] inline-flex items-center hover:-translate-y-[1px]">
                         Register
                     </Link>
                 </p>
-            </form>
+            </div>
         </div>
     );
 }
 
 export default function LoginPage() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] px-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] px-4 py-12 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary-hover)]/[0.04] blur-3xl" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/[0.04] blur-3xl" />
+                <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[var(--primary)]/[0.04] blur-3xl" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[var(--primary-hover)]/[0.04] blur-3xl" />
             </div>
 
-            <div className="w-full max-w-md relative">
+            <div className="w-full max-w-md relative animate-[fadeIn_0.5s_ease-out]">
                 {/* Logo & Heading */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] items-center justify-center mb-5 shadow-lg shadow-[var(--primary-soft)]">
-                        <span className="text-[var(--text-primary)] font-bold text-xl">T</span>
+                    <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] items-center justify-center mb-5 shadow-lg shadow-[var(--primary)]/20">
+                        <span className="text-white font-black text-2xl tracking-tighter">T</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Welcome back</h1>
-                    <p className="text-[var(--text-muted)] mt-1.5 text-sm">Sign in to your TIBSA account</p>
+                    <h1 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-2">Welcome back</h1>
+                    <p className="text-[var(--text-muted)] text-sm font-medium">Sign in to your TIBSA account</p>
                 </div>
 
-                <Suspense fallback={<div className="text-center text-[var(--text-muted)] py-8">Loading...</div>}>
+                <Suspense fallback={<div className="text-center text-[var(--text-muted)] py-8 font-medium animate-pulse">Loading secure environment...</div>}>
                     <LoginForm />
                 </Suspense>
 
-                <p className="text-center text-xs text-[var(--text-muted)] mt-6">
+                <p className="text-center text-xs text-[var(--text-muted)] mt-6 font-medium">
                     By signing in, you agree to our{" "}
-                    <span className="text-[var(--text-muted)]">Terms of Service</span> and{" "}
-                    <span className="text-[var(--text-muted)]">Privacy Policy</span>
+                    <span className="text-[var(--text-secondary)] hover:text-[var(--primary)] cursor-pointer transition-colors">Terms of Service</span> and{" "}
+                    <span className="text-[var(--text-secondary)] hover:text-[var(--primary)] cursor-pointer transition-colors">Privacy Policy</span>
                 </p>
             </div>
         </div>
