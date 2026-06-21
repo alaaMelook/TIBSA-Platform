@@ -27,6 +27,20 @@ class ScannerAdapter:
         import logging
         logger = logging.getLogger(__name__)
 
+        # Check target against system blocklist
+        try:
+            from app.dependencies import get_supabase
+            supabase = get_supabase()
+            block_res = supabase.table("system_blocklist").select("indicator").execute()
+            blocked_targets = [item.get("indicator") for item in (block_res.data or [])]
+            for blocked in blocked_targets:
+                if blocked and blocked.lower() in target.lower():
+                    raise Exception(f"Scan aborted: Target '{target}' matches blocklisted indicator '{blocked}'.")
+        except Exception as e:
+            if "Scan aborted" in str(e):
+                raise e
+            logger.error(f"Error checking blocklist: {e}")
+
         config = ScanConfig(
             target=target,
             tests=tests,

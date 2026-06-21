@@ -140,12 +140,12 @@ const sidebarLinks: SidebarLink[] = [
 const adminLinks: SidebarLink[] = [
     { href: "/admin", label: "Overview", icon: <IconOverview />, adminOnly: true },
     { href: "/admin/users", label: "User Management", icon: <IconUsers />, adminOnly: true },
-    { href: "/admin/threats", label: "Threat Feeds", icon: <IconShield />, adminOnly: true },
+    { href: "/admin/investigations", label: "Investigations", icon: <IconInvestigations />, adminOnly: true },
+    { href: "/admin/malware-analysis", label: "Malware Analysis", icon: <IconAIAnalysis />, adminOnly: true },
     { href: "/admin/analytics", label: "Analytics", icon: <IconAnalytics />, adminOnly: true },
     { href: "/admin/infra-analytics", label: "Infra Analytics", icon: <IconInfra />, adminOnly: true },
     { href: "/admin/system", label: "System Health", icon: <IconHeart />, adminOnly: true },
     { href: "/admin/audit", label: "Audit Log", icon: <IconAudit />, adminOnly: true },
-    { href: "/admin/settings", label: "Settings", icon: <IconSettings />, adminOnly: true },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────

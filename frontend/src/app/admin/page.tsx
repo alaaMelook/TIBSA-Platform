@@ -461,8 +461,8 @@ export default function AdminPage() {
                     description="Last 14 days detection overview"
                     className="lg:col-span-2"
                     action={
-                        <Link href="/admin/threats" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                            View all →
+                        <Link href="/admin/analytics" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                            Analytics →
                         </Link>
                     }
                 >
@@ -674,10 +674,9 @@ export default function AdminPage() {
             </div>
 
             {/* ── Quick Navigation ──────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                     { href: "/admin/users", icon: "👥", title: "User Management", desc: "Manage users, roles & permissions", color: "border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5" },
-                    { href: "/admin/threats", icon: "🛡️", title: "Threat Intelligence", desc: "Feeds, indicators & blocklists", color: "border-red-500/20 hover:border-red-500/40 hover:bg-red-500/5" },
                     { href: "/admin/analytics", icon: "📊", title: "Platform Analytics", desc: "Usage metrics & growth data", color: "border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/5" },
                     { href: "/admin/audit", icon: "📋", title: "Audit Log", desc: "Security events & admin actions", color: "border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/5" },
                 ].map((item) => (

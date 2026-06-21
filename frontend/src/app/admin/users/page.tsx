@@ -57,6 +57,55 @@ export default function UsersManagementPage() {
     const [refreshing, setRefreshing] = useState(false);
     const { token } = useAuth();
 
+    // User active sessions state
+    const [userSessions, setUserSessions] = useState<any[]>([]);
+    const [loadingSessions, setLoadingSessions] = useState(false);
+
+    useEffect(() => {
+        if (!selectedUser || !token) return;
+        const fetchSessions = async () => {
+            setLoadingSessions(true);
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/users/${selectedUser.id}/sessions`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserSessions(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch sessions:", err);
+            } finally {
+                setLoadingSessions(false);
+            }
+        };
+        fetchSessions();
+    }, [selectedUser, token]);
+
+    const handleRevokeSession = async (tokenSig: string) => {
+        if (!token || !selectedUser) return;
+        if (!confirm("Are you sure you want to terminate this active login session?")) return;
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/users/${selectedUser.id}/sessions/revoke`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ token_signature: tokenSig })
+            });
+            if (res.ok) {
+                setUserSessions((prev) => prev.filter((s) => s.token_signature !== tokenSig));
+                alert("Session terminated successfully.");
+            } else {
+                alert("Failed to terminate session.");
+            }
+        } catch (err) {
+            console.error("Failed to revoke session:", err);
+            alert("Error revoking session");
+        }
+    };
+
     const sortedOnlineAndRecent = useMemo(() => {
         return [...users]
             .filter((u) => u.last_login !== null)
@@ -522,6 +571,40 @@ export default function UsersManagementPage() {
                                     <span className="text-xs text-slate-500">User ID</span>
                                     <span className="text-xs text-slate-400 font-mono">{selectedUser.id}</span>
                                 </div>
+                            </div>
+
+                            {/* Active Sessions Manager */}
+                            <div className="border-t border-white/[0.06] pt-4 space-y-3">
+                                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    Active Sessions ({userSessions.length})
+                                </h4>
+                                {loadingSessions ? (
+                                    <p className="text-xs text-slate-500 animate-pulse">Loading sessions...</p>
+                                ) : userSessions.length === 0 ? (
+                                    <p className="text-xs text-slate-500 italic">No active tracked sessions.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {userSessions.map((session) => (
+                                            <div key={session.token_signature} className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-xs font-medium">
+                                                <div className="min-w-0 flex-1 pr-2">
+                                                    <div className="flex items-center gap-1 text-slate-300 font-mono">
+                                                        <span>IP: {session.ip_address}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-500 truncate block mt-0.5" title={session.user_agent}>
+                                                        Device: {session.user_agent}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleRevokeSession(session.token_signature)}
+                                                    className="px-2 py-1 text-[10px] font-semibold rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors flex-shrink-0"
+                                                >
+                                                    Revoke
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Actions */}

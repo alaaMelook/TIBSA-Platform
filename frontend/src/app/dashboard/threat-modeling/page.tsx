@@ -962,8 +962,7 @@ export default function ThreatModelingPage() {
                     ) : (
                         <>
                             {/* ── Report header + action buttons ── */}
-                            {result.blocked !== true && (
-                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
                                     <div>
                                         <h2 className="text-xl font-bold text-white">
                                             Threat Report —{" "}
@@ -1009,22 +1008,21 @@ export default function ThreatModelingPage() {
                                         </Button>
                                     </div>
                                 </div>
-                            )}
 
                             {/* Save confirmation */}
-                            {result.blocked !== true && saveMsg && (
+                            {saveMsg && (
                                 <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg print:hidden">
                                     {saveMsg}
                                 </div>
                             )}
-                            {result.blocked !== true && saveErr && (
+                            {saveErr && (
                                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg print:hidden">
                                     {saveErr}
                                 </div>
                             )}
 
                             {/* ── Stack summary tags ── */}
-                            {result.blocked !== true && stackTags.length > 0 && (
+                            {stackTags.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 print:hidden">
                                     <span className="text-xs font-medium text-slate-500 self-center mr-1">Stack:</span>
                                     {stackTags.map(tag => (
@@ -1036,8 +1034,7 @@ export default function ThreatModelingPage() {
                             )}
 
                             {/* ── Risk Score Card ── */}
-                            {result.blocked !== true && (
-                                <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
+                            <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
                                     <div className="flex items-center gap-6 mt-2">
                                         <div className="flex-shrink-0 text-center w-20">
                                             <div className="text-5xl font-bold text-white leading-none">{result.riskScore ?? 0}</div>
@@ -1063,7 +1060,6 @@ export default function ThreatModelingPage() {
                                         </div>
                                     </div>
                                 </Card>
-                            )}
 
                             {/* ── Uploaded files in report ── */}
 
@@ -1151,16 +1147,14 @@ export default function ThreatModelingPage() {
                             )}
 
                             {/* ── Print-only header/footer ── */}
-                            {result.blocked !== true && (
-                                <div className="hidden print:block border-t pt-4 mt-8">
-                                    <p className="text-xs text-slate-500">
-                                        TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
-                                    </p>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore ?? 0}/100 ({riskLabel})
-                                    </p>
-                                </div>
-                            )}
+                            <div className="hidden print:block border-t pt-4 mt-8">
+                                <p className="text-xs text-slate-500">
+                                    TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore ?? 0}/100 ({riskLabel})
+                                </p>
+                            </div>
                         </>
                     )}
                 </div>
