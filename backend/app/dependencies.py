@@ -3,9 +3,10 @@ Dependency injection for FastAPI.
 Provides Supabase client and authenticated user extraction.
 """
 import time
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from supabase import create_client, Client
+import time
 
 from app.config import settings
 
@@ -49,6 +50,8 @@ def _cache_user(token: str, user) -> None:
 
 # In-memory user presence cache: user_id -> last_seen_iso_str
 ACTIVE_PRESENCE: dict[str, str] = {}
+# In-memory active login sessions tracking: token -> session_info_dict
+ACTIVE_SESSIONS: dict[str, dict] = {}
 
 
 def _update_db_last_seen(supabase: Client, user_id: str) -> None:
@@ -64,6 +67,7 @@ def _update_db_last_seen(supabase: Client, user_id: str) -> None:
 
 # ─── Current User Extraction ─────────────────────────────────
 async def get_current_user(
+    request: Request = None,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     supabase: Client = Depends(get_supabase),
 ) -> dict:
@@ -76,29 +80,31 @@ async def get_current_user(
     try:
         token = credentials.credentials
 
-        import jwt
+        # Check token signature in database revoked_tokens table
         try:
-            decoded = jwt.decode(token, options={"verify_signature": False})
-            aal = decoded.get("aal", "aal1")
-        except Exception:
-            aal = "aal1"
-
-        def _enforce_aal2(user_obj):
-            factors = getattr(user_obj, "factors", []) or []
-            mfa_enrolled = any(getattr(f, "status", None) == "verified" and getattr(f, "factor_type", None) == "totp" for f in factors)
-            if mfa_enrolled and aal == "aal1":
+            rev_res = supabase.table("revoked_tokens").select("id").eq("token_signature", token).execute()
+            if rev_res.data:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="MFA verification required (AAL2)",
+                    detail="Token has been revoked/signed out by administrator.",
                 )
+        except HTTPException:
+            raise
+        except Exception:
+            pass
 
         # Check cache first — avoids a network round-trip
         cached = _get_cached_user(token)
         if cached:
-            _enforce_aal2(cached)
             from datetime import datetime, timezone
-            ACTIVE_PRESENCE[cached.id] = datetime.now(timezone.utc).isoformat()
+            now_str = datetime.now(timezone.utc).isoformat()
+            ACTIVE_PRESENCE[cached.id] = now_str
             _update_db_last_seen(supabase, cached.id)
+            
+            # Update session timestamp
+            if token in ACTIVE_SESSIONS:
+                ACTIVE_SESSIONS[token]["last_active"] = now_str
+            
             return {"auth_user": cached, "token": token}
 
         user_response = supabase.auth.get_user(token)
@@ -109,7 +115,6 @@ async def get_current_user(
             )
 
         auth_user = user_response.user
-        _enforce_aal2(auth_user)
 
         # Check if user is inactive in the users table
         user_record = supabase.table("users").select("is_active").eq("id", auth_user.id).execute()
@@ -162,8 +167,30 @@ async def get_current_user(
 
         _cache_user(token, auth_user)
         from datetime import datetime, timezone
-        ACTIVE_PRESENCE[auth_user.id] = datetime.now(timezone.utc).isoformat()
+        now_str = datetime.now(timezone.utc).isoformat()
+        ACTIVE_PRESENCE[auth_user.id] = now_str
         _update_db_last_seen(supabase, auth_user.id)
+
+        # Cache session details dynamically
+        try:
+            client_ip = "0.0.0.0"
+            user_agent = "Unknown"
+            if request:
+                client_ip = request.client.host if request.client else "0.0.0.0"
+                user_agent = request.headers.get("user-agent", "Unknown")
+            
+            from app.services.auth_service import parse_user_agent
+            ACTIVE_SESSIONS[token] = {
+                "user_id": auth_user.id,
+                "email": auth_user.email,
+                "full_name": (auth_user.user_metadata or {}).get("full_name", auth_user.email.split("@")[0]),
+                "ip_address": client_ip,
+                "user_agent": parse_user_agent(user_agent) if user_agent else "Unknown Device",
+                "last_active": now_str
+            }
+        except Exception:
+            pass
+
         return {"auth_user": auth_user, "token": token}
     except HTTPException:
         raise

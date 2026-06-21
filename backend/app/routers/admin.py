@@ -1,7 +1,7 @@
 import httpx
 from fastapi import APIRouter, Depends
 from supabase import Client
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone, timedelta
 
 from app.dependencies import get_supabase, require_admin, ACTIVE_PRESENCE
@@ -1093,3 +1093,579 @@ async def get_admin_infra_analytics(
         "topHighRisk": top_high_risk,
         "recent": recent_infra
     }
+
+
+@router.get("/investigations")
+async def get_admin_investigations_list(
+    limit: int = 100,
+    offset: int = 0,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    List all standard investigations across all users.
+    """
+    try:
+        resp = supabase.table("investigations") \
+            .select("id, scan_id, target, status, risk_score, started_at, completed_at, current_stage, progress_percent, user_id") \
+            .order("started_at", desc=True) \
+            .range(offset, offset + limit - 1) \
+            .execute()
+        raw_data = resp.data or []
+        
+        # Retrieve user names for correlation
+        user_ids = {inv.get("user_id") for inv in raw_data if inv.get("user_id")}
+        user_mapping = {}
+        if user_ids:
+            try:
+                users_resp = supabase.table("users").select("id, full_name, email").in_("id", list(user_ids)).execute()
+                user_mapping = {u["id"]: u.get("full_name") or u.get("email").split("@")[0] for u in (users_resp.data or [])}
+            except Exception:
+                pass
+        
+        for inv in raw_data:
+            inv["analyst_name"] = user_mapping.get(inv.get("user_id"), "System")
+            if inv.get("status") == "failed" and inv.get("current_stage") == "Stopped":
+                inv["status"] = "stopped"
+        
+        return {"investigations": raw_data}
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Failed to fetch investigations: {str(e)}")
+
+
+@router.get("/investigations/{id}")
+async def get_admin_investigation_details(
+    id: str,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    """
+    Get the detailed workspace report for any investigation ID across all users.
+    """
+    from fastapi import HTTPException
+    try:
+        resp = supabase.table("investigations").select("*").eq("id", id).execute()
+        if not resp.data:
+            raise HTTPException(status_code=404, detail="Investigation not found.")
+        
+        inv = resp.data[0]
+        if inv.get("status") == "failed" and inv.get("current_stage") == "Stopped":
+            inv["status"] = "stopped"
+            
+        # Fetch findings & assets if any
+        findings_data = []
+        try:
+            findings_resp = supabase.table("findings").select("*").eq("investigation_id", id).execute()
+            findings_data = findings_resp.data or []
+        except Exception:
+            pass
+            
+        assets_data = []
+        try:
+            assets_resp = supabase.table("assets").select("*").eq("investigation_id", id).execute()
+            assets_data = assets_resp.data or []
+        except Exception:
+            pass
+            
+        # Fetch analyst details
+        analyst_name = "System"
+        analyst_email = ""
+        uid = inv.get("user_id")
+        if uid:
+            try:
+                user_resp = supabase.table("users").select("full_name, email").eq("id", uid).single().execute()
+                if user_resp.data:
+                    analyst_name = user_resp.data.get("full_name") or "User"
+                    analyst_email = user_resp.data.get("email") or ""
+            except Exception:
+                pass
+        
+        return {
+            "investigation": inv,
+            "findings": findings_data,
+            "assets": assets_data,
+            "analyst": {
+                "id": uid,
+                "name": analyst_name,
+                "email": analyst_email
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch investigation details: {str(e)}")
+
+
+@router.get("/malware-analysis")
+async def get_admin_malware_analysis_list(
+    limit: int = 100,
+    _admin: dict = Depends(require_admin),
+):
+    """
+    List all uploaded static PE malware analyses from history.
+    """
+    import asyncio
+    from fastapi import HTTPException
+    try:
+        from app.services.ai.malware_investigation.malware_static_service import load_scan_history
+        history = await asyncio.to_thread(load_scan_history)
+        return {
+            "count": len(history),
+            "history": history[:limit]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch malware history: {str(e)}")
+
+
+@router.get("/malware-analysis/{history_id}")
+async def get_admin_malware_analysis_details(
+    history_id: str,
+    _admin: dict = Depends(require_admin),
+):
+    """
+    Get full details of any malware analysis from history.
+    """
+    import asyncio
+    from fastapi import HTTPException
+    try:
+        from app.services.ai.malware_investigation.malware_static_service import load_scan_history
+        history = await asyncio.to_thread(load_scan_history)
+        scan_record = next((h for h in history if h.get("history_id") == history_id), None)
+        if not scan_record:
+            raise HTTPException(status_code=404, detail="Malware scan record not found.")
+        return {"scan_record": scan_record}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch malware details: {str(e)}")
+
+
+@router.get("/investigations/{id}/export/json")
+async def export_admin_investigation_json(
+    id: str,
+    supabase: Client = Depends(get_supabase),
+    _admin: dict = Depends(require_admin),
+):
+    """
+    Export any completed investigation as a structured JSON file (Admin version).
+    """
+    from fastapi import HTTPException
+    from fastapi.responses import StreamingResponse
+    from io import BytesIO
+    
+    resp = supabase.table("investigations").select("*").eq("id", id).execute()
+    if not resp.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    investigation = resp.data[0]
+    if investigation.get("status") != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Investigation is not completed yet. Current status: {investigation.get('status')}"
+        )
+
+    try:
+        from app.services.investigation.report_exporter import ReportExporter
+
+        findings_resp = supabase.table("findings").select("*").eq("investigation_id", id).execute()
+        assets_resp = supabase.table("assets").select("*").eq("investigation_id", id).execute()
+
+        exporter = ReportExporter()
+        investigation_data = {
+            "target": investigation.get("target"),
+            "status": investigation.get("status"),
+            "risk_score": investigation.get("risk_score"),
+            "started_at": investigation.get("started_at"),
+            "completed_at": investigation.get("completed_at"),
+            "scan_id": investigation.get("scan_id"),
+            "findings": findings_resp.data or [],
+            "assets": assets_resp.data or [],
+            "final_result": investigation.get("final_result"),
+            "pipeline_state": investigation.get("pipeline_state"),
+        }
+
+        result = await exporter.export_json(id, investigation_data)
+
+        return StreamingResponse(
+            BytesIO(result["content"]),
+            media_type=result["mime_type"],
+            headers={
+                "Content-Disposition": f'attachment; filename="{result["filename"]}"',
+                "Content-Length": str(result["size_bytes"]),
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to export JSON: {str(e)}")
+
+
+@router.get("/investigations/{id}/export/pdf")
+async def export_admin_investigation_pdf(
+    id: str,
+    supabase: Client = Depends(get_supabase),
+    _admin: dict = Depends(require_admin),
+):
+    """
+    Export any completed investigation as a PDF report (Admin version).
+    """
+    from fastapi import HTTPException
+    from fastapi.responses import StreamingResponse
+    from io import BytesIO
+    
+    resp = supabase.table("investigations").select("*").eq("id", id).execute()
+    if not resp.data:
+        raise HTTPException(status_code=404, detail="Investigation not found.")
+
+    investigation = resp.data[0]
+    if investigation.get("status") != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Investigation is not completed yet. Current status: {investigation.get('status')}"
+        )
+
+    try:
+        from app.services.investigation.report_exporter import ReportExporter
+
+        findings_resp = supabase.table("findings").select("*").eq("investigation_id", id).execute()
+        assets_resp = supabase.table("assets").select("*").eq("investigation_id", id).execute()
+
+        exporter = ReportExporter()
+        investigation_data = {
+            "target": investigation.get("target"),
+            "status": investigation.get("status"),
+            "risk_score": investigation.get("risk_score"),
+            "started_at": investigation.get("started_at"),
+            "completed_at": investigation.get("completed_at"),
+            "scan_id": investigation.get("scan_id"),
+            "findings": findings_resp.data or [],
+            "assets": assets_resp.data or [],
+            "final_result": investigation.get("final_result"),
+            "pipeline_state": investigation.get("pipeline_state"),
+        }
+
+        result = await exporter.export_pdf(id, investigation_data)
+
+        return StreamingResponse(
+            BytesIO(result["content"]),
+            media_type=result["mime_type"],
+            headers={
+                "Content-Disposition": f'attachment; filename="{result["filename"]}"',
+                "Content-Length": str(result["size_bytes"]),
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to export PDF: {str(e)}")
+
+
+@router.post("/investigations/{id}/stop")
+async def stop_admin_investigation(
+    id: str,
+    supabase: Client = Depends(get_supabase),
+    _admin: dict = Depends(require_admin),
+):
+    """
+    Stop/cancel a running investigation pipeline (Admin version).
+    """
+    from fastapi import HTTPException
+    try:
+        resp = supabase.table("investigations").select("status, pipeline_state, current_stage").eq("id", id).execute()
+        if not resp.data:
+            raise HTTPException(status_code=404, detail="Investigation not found.")
+        
+        investigation = resp.data[0]
+        current_status = investigation.get("status")
+        current_stage = investigation.get("current_stage")
+        if current_status == "failed" and current_stage == "Stopped":
+            current_status = "stopped"
+        
+        if current_status in ["completed", "failed", "stopped"]:
+            return {"success": True, "message": "Investigation is already terminal.", "data": {"status": current_status}}
+        
+        pipeline_state = investigation.get("pipeline_state") or {}
+        pipeline_state["stage"] = "Stopped"
+        pipeline_state["progress"] = 100.0
+        
+        if "timeline" not in pipeline_state:
+            pipeline_state["timeline"] = []
+        
+        from datetime import datetime
+        pipeline_state["timeline"].append({
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "stage": "System",
+            "status": "completed",
+            "message": "Investigation stop requested by admin"
+        })
+        
+        supabase.table("investigations").update({
+            "status": "failed",
+            "current_stage": "Stopped",
+            "progress_percent": 100.0,
+            "pipeline_state": pipeline_state
+        }).eq("id", id).execute()
+        
+        return {"success": True, "message": "Investigation stopped.", "data": {"status": "stopped"}}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stop investigation: {str(e)}")
+
+
+# ─── API Integrations Management ──────────────────────────────
+class IntegrationUpdateRequest(BaseModel):
+    api_key: str
+    quota_limit_daily: int
+    is_active: bool
+
+@router.get("/integrations", response_model=List[Dict[str, Any]])
+async def get_api_integrations(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        res = supabase.table("api_integrations").select("*").execute()
+        data = res.data or []
+        for item in data:
+            if "api_key" in item and item["api_key"]:
+                key = item["api_key"]
+                if len(key) > 8:
+                    item["api_key"] = key[:4] + "..." + key[-4:]
+                else:
+                    item["api_key"] = "****"
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch API integrations: {str(e)}")
+
+@router.patch("/integrations/{service_name}")
+async def update_api_integration(
+    service_name: str,
+    payload: IntegrationUpdateRequest,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        update_data = {
+            "quota_limit_daily": payload.quota_limit_daily,
+            "is_active": payload.is_active,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        if not payload.api_key.endswith("..."):
+            update_data["api_key"] = payload.api_key
+
+        res = supabase.table("api_integrations").update(update_data).eq("service_name", service_name).execute()
+        if not res.data:
+            if "api_key" not in update_data:
+                update_data["api_key"] = "placeholder"
+            update_data["service_name"] = service_name
+            supabase.table("api_integrations").insert(update_data).execute()
+
+        return {"success": True, "message": f"API Integration {service_name} updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update API integration: {str(e)}")
+
+@router.post("/integrations/{service_name}/test")
+async def test_api_integration(
+    service_name: str,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        res = supabase.table("api_integrations").select("api_key, is_active").eq("service_name", service_name).execute()
+        if not res.data:
+            return {"success": False, "message": f"Service {service_name} not configured."}
+        
+        integration = res.data[0]
+        if not integration.get("is_active"):
+            return {"success": False, "message": f"Service {service_name} is inactive."}
+        
+        api_key = integration.get("api_key")
+        if api_key in ("placeholder_vt_key", "placeholder_abuseip_key", "placeholder_ipapi_key", "placeholder"):
+            return {"success": False, "message": f"Invalid/Placeholder credentials. Please configure a real API key."}
+            
+        async with httpx.AsyncClient() as client:
+            if service_name == "virustotal":
+                r = await client.get("https://www.virustotal.com/api/v3/users/me", headers={"x-apikey": api_key}, timeout=5.0)
+                if r.status_code == 200:
+                    return {"success": True, "message": "VirusTotal connection successful."}
+                else:
+                    return {"success": False, "message": f"VirusTotal returned status {r.status_code}"}
+            elif service_name == "abuseipdb":
+                r = await client.get("https://api.abuseipdb.com/api/v2/check", headers={"Key": api_key}, params={"ipAddress": "8.8.8.8"}, timeout=5.0)
+                if r.status_code == 200:
+                    return {"success": True, "message": "AbuseIPDB connection successful."}
+                else:
+                    return {"success": False, "message": f"AbuseIPDB returned status {r.status_code}"}
+            elif service_name == "ip-api":
+                return {"success": True, "message": "IP-API ping successful."}
+        return {"success": True, "message": f"Ping connection to {service_name} mock-verified."}
+    except Exception as e:
+        return {"success": False, "message": f"Connection test failed: {str(e)}"}
+
+
+# ─── System Blocklist (WAF) ───────────────────────────────────
+class BlocklistRequest(BaseModel):
+    indicator: str
+    type: str
+    reason: Optional[str] = None
+
+@router.get("/blocklist", response_model=List[Dict[str, Any]])
+async def get_system_blocklist(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        res = supabase.table("system_blocklist").select("*").order("created_at", desc=True).execute()
+        return res.data or []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch blocklist: {str(e)}")
+
+@router.post("/blocklist")
+async def add_blocklist_entry(
+    payload: BlocklistRequest,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        admin_email = _admin["auth_user"].email
+        insert_data = {
+            "indicator": payload.indicator,
+            "type": payload.type,
+            "reason": payload.reason or "Manual block by administrator",
+            "blocked_by": admin_email
+        }
+        res = supabase.table("system_blocklist").insert(insert_data).execute()
+        if not res.data:
+            raise HTTPException(status_code=400, detail="Failed to add blocklist entry")
+        return {"success": True, "message": "Indicator successfully added to system blocklist", "entry": res.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add blocklist entry: {str(e)}")
+
+@router.delete("/blocklist/{id}")
+async def delete_blocklist_entry(
+    id: str,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        res = supabase.table("system_blocklist").delete().eq("id", id).execute()
+        return {"success": True, "message": "Indicator successfully removed from system blocklist"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove blocklist entry: {str(e)}")
+
+
+# ─── Notification Routing Rules ───────────────────────────────
+class NotificationRuleRequest(BaseModel):
+    channel_type: str
+    destination: str
+    severity_level: str
+    event_category: str
+
+@router.get("/notifications", response_model=List[Dict[str, Any]])
+async def get_notification_rules(
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        res = supabase.table("notification_rules").select("*").execute()
+        return res.data or []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch notification rules: {str(e)}")
+
+@router.post("/notifications")
+async def add_notification_rule(
+    payload: NotificationRuleRequest,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        insert_data = {
+            "channel_type": payload.channel_type,
+            "destination": payload.destination,
+            "severity_level": payload.severity_level,
+            "event_category": payload.event_category,
+            "is_active": True
+        }
+        res = supabase.table("notification_rules").insert(insert_data).execute()
+        return {"success": True, "message": "Notification rule added successfully", "rule": res.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add notification rule: {str(e)}")
+
+@router.delete("/notifications/{id}")
+async def delete_notification_rule(
+    id: str,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        res = supabase.table("notification_rules").delete().eq("id", id).execute()
+        return {"success": True, "message": "Notification rule removed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete notification rule: {str(e)}")
+
+
+# ─── Active User Sessions Management ──────────────────────────
+@router.get("/users/{user_id}/sessions", response_model=List[Dict[str, Any]])
+async def get_user_sessions(
+    user_id: str,
+    _admin: dict = Depends(require_admin),
+):
+    try:
+        from app.dependencies import ACTIVE_SESSIONS
+        sessions = []
+        for token, s in ACTIVE_SESSIONS.items():
+            if str(s.get("user_id")) == user_id:
+                token_sig = token[-10:] if len(token) > 10 else token
+                sessions.append({
+                    "token_signature": token,
+                    "masked_signature": f"...{token_sig}",
+                    "ip_address": s.get("ip_address"),
+                    "user_agent": s.get("user_agent"),
+                    "last_active": s.get("last_active")
+                })
+        return sessions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch active sessions: {str(e)}")
+
+class RevokeSessionRequest(BaseModel):
+    token_signature: str
+
+@router.post("/users/{user_id}/sessions/revoke")
+async def revoke_user_session(
+    user_id: str,
+    payload: RevokeSessionRequest,
+    _admin: dict = Depends(require_admin),
+    supabase: Client = Depends(get_supabase),
+):
+    try:
+        token = payload.token_signature
+        from app.dependencies import ACTIVE_SESSIONS
+        
+        if token in ACTIVE_SESSIONS:
+            del ACTIVE_SESSIONS[token]
+            
+        expires = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+        supabase.table("revoked_tokens").insert({
+            "token_signature": token,
+            "expires_at": expires
+        }).execute()
+        
+        admin_email = _admin["auth_user"].email
+        try:
+            supabase.table("audit_logs").insert({
+                "user_id": _admin["auth_user"].id,
+                "action_type": "SESSION_REVOKED",
+                "severity": "warning",
+                "message": f"Administrator revoked active session for user ID {user_id}.",
+                "metadata": {
+                    "resource": "auth",
+                    "target_user_id": user_id,
+                    "revoked_by": admin_email
+                }
+            }).execute()
+        except Exception:
+            pass
+            
+        return {"success": True, "message": "Session revoked successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to revoke session: {str(e)}")
+
+
