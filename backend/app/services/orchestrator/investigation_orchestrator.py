@@ -606,7 +606,7 @@ class InvestigationOrchestrator:
                 "scan_id": investigation.get("scan_id"),
                 "target": investigation.get("target"),
                 "risk_score": risk_score,
-                "findings_count": len(normalized_findings),
+                "findings_count": sum(1 for f in normalized_findings if not f.get("exclude_from_risk")),
                 "assets_count": len(assets_data),
                 "ti_enriched": include_ti,
                 "tm_mode": tm_mode,

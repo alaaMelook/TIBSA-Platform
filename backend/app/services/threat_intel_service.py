@@ -20,18 +20,30 @@ class VirusTotalProvider:
         self.headers = {"x-apikey": self.api_key}
 
     async def lookup(self, indicator: str, type_: str) -> dict:
-        if self.demo_mode or not self.api_key:
-            # Generate realistic mock VT data
-            is_bad = len(indicator) % 7 == 0
-            malicious = 12 if is_bad else 0
-            suspicious = 2 if is_bad else 0
+        api_key_present = bool(self.api_key)
+        
+        if not api_key_present:
+            logger.info(f"""
+[VIRUSTOTAL PROVIDER]
+indicator = {indicator}
+api_key_present = false
+mode = not_configured
+malicious = 0
+suspicious = 0
+status = not_configured
+error = VirusTotal API key is not configured
+""")
             return {
-                "found": True,
-                "malicious": malicious,
-                "suspicious": suspicious,
-                "total_engines": 72,
-                "status": "completed",
-                "threat_level": "high" if is_bad else "clean"
+                "found": False,
+                "available": False,
+                "provider": "virustotal",
+                "status": "not_configured",
+                "malicious": 0,
+                "suspicious": 0,
+                "harmless": 0,
+                "undetected": 0,
+                "total_engines": 0,
+                "error": "VirusTotal API key is not configured"
             }
 
         async with httpx.AsyncClient(timeout=15, http2=False) as client:
@@ -44,29 +56,89 @@ class VirusTotalProvider:
                     url_id = base64.urlsafe_b64encode(indicator.encode()).decode().strip("=")
                     url = f"https://www.virustotal.com/api/v3/urls/{url_id}"
                 else:
-                    return {"found": False, "malicious": 0, "suspicious": 0, "total_engines": 0}
+                    err_msg = f"Unsupported type: {type_}"
+                    logger.info(f"""
+[VIRUSTOTAL PROVIDER]
+indicator = {indicator}
+api_key_present = true
+mode = api_error
+malicious = 0
+suspicious = 0
+status = api_error
+error = {err_msg}
+""")
+                    return {"found": False, "available": False, "provider": "virustotal", "status": "api_error", "malicious": 0, "suspicious": 0, "harmless": 0, "undetected": 0, "total_engines": 0, "error": err_msg}
 
                 r = await client.get(url, headers=self.headers)
                 if r.status_code == 404:
-                    return {"found": False, "malicious": 0, "suspicious": 0, "total_engines": 0}
+                    logger.info(f"""
+[VIRUSTOTAL PROVIDER]
+indicator = {indicator}
+api_key_present = true
+mode = real_api
+malicious = 0
+suspicious = 0
+status = not_found
+error = 
+""")
+                    return {"found": False, "available": True, "provider": "virustotal", "status": "not_found", "malicious": 0, "suspicious": 0, "harmless": 0, "undetected": 0, "total_engines": 0}
                 r.raise_for_status()
                 
                 attrs = r.json().get("data", {}).get("attributes", {})
                 stats = attrs.get("last_analysis_stats", {})
                 malicious = stats.get("malicious", 0)
                 suspicious = stats.get("suspicious", 0)
+                harmless = stats.get("harmless", 0)
+                undetected = stats.get("undetected", 0)
+                total_engines = sum(stats.values())
+                
+                logger.info(f"""
+[VIRUSTOTAL PROVIDER]
+indicator = {indicator}
+api_key_present = true
+mode = real_api
+malicious = {malicious}
+suspicious = {suspicious}
+status = completed
+error = 
+""")
                 
                 return {
                     "found": True,
+                    "available": True,
+                    "provider": "virustotal",
                     "malicious": malicious,
                     "suspicious": suspicious,
-                    "total_engines": sum(stats.values()),
+                    "harmless": harmless,
+                    "undetected": undetected,
+                    "total_engines": total_engines,
                     "status": "completed",
                     "threat_level": "high" if (malicious + suspicious) > 3 else ("medium" if (malicious + suspicious) > 0 else "clean")
                 }
             except Exception as e:
+                logger.info(f"""
+[VIRUSTOTAL PROVIDER]
+indicator = {indicator}
+api_key_present = true
+mode = api_error
+malicious = 0
+suspicious = 0
+status = api_error
+error = {str(e)}
+""")
                 logger.error(f"[VT-PROVIDER] Error querying {indicator}: {e}")
-                return {"found": False, "malicious": 0, "suspicious": 0, "total_engines": 0, "error": str(e)}
+                return {
+                  "found": False,
+                  "available": False,
+                  "provider": "virustotal",
+                  "status": "api_error",
+                  "malicious": 0,
+                  "suspicious": 0,
+                  "harmless": 0,
+                  "undetected": 0,
+                  "total_engines": 0,
+                  "error": str(e)
+                }
 
 class OTXProvider:
     """
@@ -160,6 +232,7 @@ class IntelAggregator:
     @staticmethod
     def aggregate(indicator: str, type_: str, vt_res: dict, otx_res: dict) -> dict:
         vt_found = vt_res.get("found", False)
+        vt_status = vt_res.get("status")
         vt_malicious = vt_res.get("malicious", 0)
         vt_suspicious = vt_res.get("suspicious", 0)
         vt_total = vt_res.get("total_engines", 0)
@@ -169,13 +242,21 @@ class IntelAggregator:
         otx_found = otx_res.get("found", False)
 
         # 1. Source label rules (for display only)
-        if vt_found and otx_found and pulse_count > 0:
+        if vt_status in ("not_configured", "api_error"):
+            source = "VirusTotal unavailable"
+        elif vt_found and otx_found and pulse_count > 0:
             source = "VirusTotal + OTX Context"
         else:
             source = "VirusTotal"
 
         # 2. VirusTotal ONLY scoring rules
-        if not vt_found:
+        if vt_status in ("not_configured", "api_error"):
+            threat_level = "unknown"
+            flagged = False
+            reputation_score = 0
+            risk_reason = f"VirusTotal is unavailable: {vt_res.get('error', 'unknown error')}"
+            severity = "info"
+        elif not vt_found:
             threat_level = "unknown"
             flagged = False
             reputation_score = 10
@@ -281,51 +362,9 @@ class ThreatIntelService:
             
             vt_res, otx_res = await asyncio.gather(vt_task, otx_task)
             
-            # Check if any provider lookup raised an error internally
-            if vt_res.get("error") or otx_res.get("error"):
-                return {
-                    "ioc": indicator,
-                    "type": type_,
-                    "source": "VirusTotal",
-                    "vt_score": 0,
-                    "vt_status": "unverified",
-                    "vt_malicious": 0,
-                    "vt_suspicious": 0,
-                    "otx_pulses": [],
-                    "otx_pulse_count": 0,
-                    "threat_tags": [],
-                    "campaign_context": [],
-                    "related_malware_families": [],
-                    "confidence_level": "low",
-                    "confidence_score": 10,
-                    "risk_reason": "Threat intelligence check encountered an unhandled lookup error.",
-                    "recommended_action": "No actions required.",
-                    "severity": "info",
-                    "flagged": False,
-                    "threat_level": "unknown"
-                }
-            
             return IntelAggregator.aggregate(indicator, type_, vt_res, otx_res)
         except Exception as e:
             logger.warning(f"[TI-SERVICE] Lookup failed for {indicator}: {e}")
-            return {
-                "ioc": indicator,
-                "type": type_,
-                "source": "VirusTotal",
-                "vt_score": 0,
-                "vt_status": "unverified",
-                "vt_malicious": 0,
-                "vt_suspicious": 0,
-                "otx_pulses": [],
-                "otx_pulse_count": 0,
-                "threat_tags": [],
-                "campaign_context": [],
-                "related_malware_families": [],
-                "confidence_level": "low",
-                "confidence_score": 10,
-                "risk_reason": f"Threat intelligence enrichment failed: {str(e)}",
-                "recommended_action": "No actions required.",
-                "severity": "info",
-                "flagged": False,
-                "threat_level": "unknown"
-            }
+            vt_res = {"found": False, "available": False, "status": "api_error", "error": str(e), "malicious": 0, "suspicious": 0, "total_engines": 0}
+            otx_res = {"found": False, "pulses": []}
+            return IntelAggregator.aggregate(indicator, type_, vt_res, otx_res)

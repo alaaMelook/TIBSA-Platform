@@ -138,6 +138,9 @@ class TIProcessingService:
         scores = []
         
         for f in finding_dicts:
+            if f.get("exclude_from_risk"):
+                continue
+                
             sev = f.get("severity", "info").lower()
             if sev in severity_counts:
                 severity_counts[sev] += 1

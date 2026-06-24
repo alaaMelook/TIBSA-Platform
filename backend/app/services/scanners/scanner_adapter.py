@@ -39,7 +39,10 @@ class ScannerAdapter:
         except Exception as e:
             if "Scan aborted" in str(e):
                 raise e
-            logger.error(f"Error checking blocklist: {e}")
+            if "PGRST205" in str(e):
+                pass
+            else:
+                logger.error(f"Error checking blocklist: {e}")
 
         config = ScanConfig(
             target=target,

@@ -201,8 +201,10 @@ class FindingNormalizer:
         if "auth boundary" in title_lower or "authentication boundary" in title_lower or "login boundary" in title_lower:
             confidence = "informational"
             severity = "info"
-        elif "robots.txt" in title_lower or "sitemap.xml" in title_lower:
-            confidence = "heuristic"
+        elif "robots.txt" in title_lower or "sitemap.xml" in title_lower or "robots.txt" in affected_url.lower() or "sitemap.xml" in affected_url.lower():
+            confidence = "informational"
+            severity = "info"
+            category = "Informational"
             is_passive = True
         elif "potential protected route" in title_lower or "protected route" in title_lower:
             confidence = "heuristic"
@@ -239,8 +241,8 @@ class FindingNormalizer:
                 
         # Determine exploitability score dynamically
         exploitability_score = 0.0
-        if is_passive or "robots.txt" in title_lower or "sitemap.xml" in title_lower:
-            exploitability_score = 0.1
+        if is_passive or "robots.txt" in title_lower or "sitemap.xml" in title_lower or "robots.txt" in affected_url.lower() or "sitemap.xml" in affected_url.lower():
+            exploitability_score = 0.0
         elif any(kw in title_lower for kw in ["cookie", "cache", "session"]):
             exploitability_score = 2.0
         elif "xss" in title_lower or "cross-site scripting" in title_lower:
@@ -297,6 +299,10 @@ class FindingNormalizer:
                     severity = "info"
                     category = "Informational"
             
+        is_robots_or_sitemap = "robots.txt" in title_lower or "sitemap.xml" in title_lower or "robots.txt" in affected_url.lower() or "sitemap.xml" in affected_url.lower()
+        exclude_from_risk = is_robots_or_sitemap
+        exclude_from_stride = is_robots_or_sitemap
+
         return FindingBase(
             finding_id=finding_id,
             title=title,
@@ -306,5 +312,7 @@ class FindingNormalizer:
             evidence=evidence,
             tags=tags,
             confidence=confidence,
-            exploitability_score=exploitability_score
+            exploitability_score=exploitability_score,
+            exclude_from_risk=exclude_from_risk,
+            exclude_from_stride=exclude_from_stride
         )

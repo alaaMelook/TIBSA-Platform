@@ -69,9 +69,12 @@ class AISecurityReporter:
             )
             logger.info("[AI-REPORTER] AI summary generated successfully")
         except Exception as e:
-            logger.warning(
-                "[AI-REPORTER] AI generation failed (%s), using fallback", str(e)
-            )
+            if "quota unavailable" in str(e).lower():
+                logger.warning("OpenRouter quota unavailable, using fallback reporter.")
+            else:
+                logger.warning(
+                    "[AI-REPORTER] AI generation failed (%s), using fallback", str(e)
+                )
             ai_summary = self._generate_fallback_summary(
                 target=target,
                 risk_score=risk_score,

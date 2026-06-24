@@ -15,6 +15,8 @@ class FindingBase(BaseModel):
     tags: List[str] = []
     confidence: str = "heuristic"
     exploitability_score: float = 0.0
+    exclude_from_risk: bool = False
+    exclude_from_stride: bool = False
 
 class FindingCreate(FindingBase):
     pass

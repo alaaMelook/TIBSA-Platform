@@ -43,7 +43,7 @@ export function IOCTable({ iocResults }: IOCTableProps) {
 
   const getThreatBadge = (level: string, flagged: boolean) => {
     const common = "px-2 py-0.5 rounded text-[10px] font-bold uppercase border";
-    if (level === "malicious" || flagged) {
+    if (level === "malicious") {
       return (
         <span className={`${common} border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444] flex items-center gap-1 w-fit`}>
           <ShieldAlert className="w-3.5 h-3.5" />
@@ -59,6 +59,15 @@ export function IOCTable({ iocResults }: IOCTableProps) {
         </span>
       );
     }
+    if (level === "unknown") {
+      return (
+        <span className={`${common} border-[#9CA3AF]/20 bg-[#9CA3AF]/10 text-[#6B7280] flex items-center gap-1 w-fit`}>
+          <ShieldAlert className="w-3.5 h-3.5" />
+          Unknown
+        </span>
+      );
+    }
+
     return (
       <span className={`${common} border-[#10B981]/20 bg-[#10B981]/10 text-[#10B981] flex items-center gap-1 w-fit`}>
         <ShieldCheck className="w-3.5 h-3.5" />
@@ -129,8 +138,8 @@ export function IOCTable({ iocResults }: IOCTableProps) {
                         {getSourceBadge(ioc.source || "virustotal")}
                       </td>
                       <td className="py-3.5 px-6 text-center font-mono font-bold">
-                        <span className={isThreat ? "text-[#EF4444]" : "text-[#10B981]"}>
-                          {ioc.reputation_score ? `${ioc.reputation_score}%` : "0%"}
+                        <span className={ioc.threat_level === "unknown" ? "text-[#6B7280]" : (isThreat ? "text-[#EF4444]" : "text-[#10B981]")}>
+                          {ioc.threat_level === "unknown" ? "N/A" : (ioc.reputation_score ? `${ioc.reputation_score}%` : "0%")}
                         </span>
                       </td>
                       <td className="py-3.5 px-6">

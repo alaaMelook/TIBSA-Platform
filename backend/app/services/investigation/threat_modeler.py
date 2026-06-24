@@ -262,14 +262,31 @@ class AutomatedSTRIDEModeler:
     def _get_allowed_stride_categories(self, finding: Dict[str, Any]) -> List[STRIDEType]:
         title_lower = (finding.get("title") or "").lower()
         cat_lower = (finding.get("category") or "").lower()
+        evidence_lower = str(finding.get("evidence") or "").lower()
+        conf_lower = str(finding.get("confidence") or "").lower()
         
+        # Check global exclusion flag
+        if finding.get("exclude_from_stride"):
+            return []
+
+        # 8. Robots.txt and Sitemap.xml (Should be excluded)
+        if "robots.txt" in title_lower or "sitemap.xml" in title_lower:
+            return []
+
+        # 15. General Headers / Hardening (Do NOT generate STRIDE for headers)
+        if "header" in title_lower or "header" in cat_lower or "hardening" in title_lower or "hardening" in cat_lower:
+            return []
+
         # 1. SQL Injection / Injection
         if "sqli" in title_lower or "sql injection" in title_lower or "injection" in title_lower or "injection" in cat_lower:
             return [STRIDEType.TAMPERING, STRIDEType.ELEVATION_OF_PRIVILEGE, STRIDEType.INFORMATION_DISCLOSURE]
 
         # 2. XSS Findings
+        # Do NOT generate Tampering/XSS STRIDE unless confirmed
         if "xss" in title_lower or "cross-site scripting" in title_lower:
-            return [STRIDEType.TAMPERING, STRIDEType.INFORMATION_DISCLOSURE]
+            if conf_lower in ("confirmed", "verified", "high"):
+                return [STRIDEType.TAMPERING, STRIDEType.INFORMATION_DISCLOSURE]
+            return []
 
         # 3. SSRF Findings
         if "ssrf" in title_lower or "server-side request forgery" in title_lower:
@@ -291,25 +308,29 @@ class AutomatedSTRIDEModeler:
         if "directory listing" in title_lower or "dir_listing" in title_lower or "index of" in title_lower:
             return [STRIDEType.INFORMATION_DISCLOSURE]
 
-        # 8. Robots.txt
-        if "robots.txt" in title_lower:
-            return [STRIDEType.INFORMATION_DISCLOSURE]
-
-        # 9. CSP Findings
+        # 9. CSP Findings (Treated as hardening/headers, excluded)
         if "csp" in title_lower or "content-security-policy" in title_lower or "content security policy" in title_lower:
-            return [STRIDEType.TAMPERING, STRIDEType.INFORMATION_DISCLOSURE]
+            return []
 
-        # 10. Clickjacking
+        # 10. Clickjacking (Treated as headers, excluded unless explicitly requested, but let's exclude to be safe)
         if "clickjacking" in title_lower or "x-frame-options" in title_lower or "frame-ancestors" in title_lower:
-            return [STRIDEType.SPOOFING, STRIDEType.TAMPERING]
+            return []
 
-        # 11. Missing HSTS
+        # 11. Missing HSTS (Headers, excluded)
         if "hsts" in title_lower or "strict-transport-security" in title_lower or "strict transport security" in title_lower:
-            return [STRIDEType.INFORMATION_DISCLOSURE]
+            return []
 
         # 12. Cookie Findings
+        # Do NOT generate cookie/session STRIDE rows unless sensitive_cookies > 0 OR jwt_cookies > 0 and confirmed
         if "cookie" in title_lower or "cookie" in cat_lower:
-            return [STRIDEType.SPOOFING, STRIDEType.INFORMATION_DISCLOSURE]
+            has_sensitive = "sensitive_cookies" in evidence_lower and not "sensitive_cookies: 0" in evidence_lower and not "sensitive_cookies:0" in evidence_lower
+            has_jwt = "jwt_cookies" in evidence_lower and not "jwt_cookies: 0" in evidence_lower and not "jwt_cookies:0" in evidence_lower
+            has_session = "session" in evidence_lower or "auth" in evidence_lower
+            
+            # If evidence doesn't explicitly mention the counters, but confidence is confirmed and it's a session cookie
+            if conf_lower in ("confirmed", "verified", "high") and (has_sensitive or has_jwt or has_session):
+                return [STRIDEType.SPOOFING, STRIDEType.INFORMATION_DISCLOSURE]
+            return []
 
         # 13. Authorization / Access Control / IDOR
         if any(kw in title_lower or kw in cat_lower for kw in ["authorization", "authz", "privilege", "idor", "bac", "access control"]):
@@ -318,10 +339,6 @@ class AutomatedSTRIDEModeler:
         # 14. Authentication Weakness
         if any(kw in title_lower or kw in cat_lower for kw in ["auth", "login", "password", "brute", "mfa", "authentication"]):
             return [STRIDEType.SPOOFING]
-
-        # 15. General Headers / Hardening
-        if "header" in title_lower or "header" in cat_lower or "hardening" in title_lower or "hardening" in cat_lower:
-            return [STRIDEType.INFORMATION_DISCLOSURE]
 
         # 16. Exposed Configuration Files
         if any(kw in title_lower or kw in cat_lower for kw in ["exposed file", "configuration file", ".env", ".git", "config.php", "phpinfo", "dump.sql"]):

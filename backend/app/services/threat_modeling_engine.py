@@ -505,6 +505,9 @@ def _deduplicate_threats(threats: List[ThreatItem]) -> List[ThreatItem]:
 
     for winner_id, loser_ids in OVERLAP_GROUPS:
         if winner_id in id_to_threat:
+            winner = id_to_threat[winner_id]
+            if getattr(winner, "status", None) == ThreatStatus.MITIGATED:
+                continue
             for loser_id in loser_ids:
                 if loser_id in id_to_threat:
                     # If we removed the generic threat, mention it in the winner's mitigation

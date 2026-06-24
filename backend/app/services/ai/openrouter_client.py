@@ -74,6 +74,9 @@ async def call_openrouter(system_prompt: str, user_prompt: str) -> dict[str, Any
         except httpx.RequestError as exc:
             raise RuntimeError(f"Failed to connect to OpenRouter: {exc}")
 
+    if response.status_code == 402:
+        raise RuntimeError("OpenRouter quota unavailable")
+        
     if response.status_code != 200:
         detail = response.text[:500]
         logger.error("OpenRouter API error %d: %s", response.status_code, detail)

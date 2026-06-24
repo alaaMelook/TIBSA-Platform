@@ -15,32 +15,31 @@ from app.services.threat_intel_service import (
 
 
 @pytest.mark.anyio
-async def test_vt_provider_demo_mode():
+async def test_vt_missing_api_key():
     provider = VirusTotalProvider()
-    # Test lookup in demo mode or without API key
-    res_bad = await provider.lookup("bad-indicator.js", "js_resource")
-    assert res_bad["found"] is True
-    assert res_bad["status"] == "completed"
+    provider.api_key = None  # Simulate missing key
     
-    # Check that demo mode produces correct structures
-    assert "malicious" in res_bad
-    assert "suspicious" in res_bad
-    assert "total_engines" in res_bad
+    res = await provider.lookup("www.google.com", "domain")
+    assert res["found"] is False
+    assert res["available"] is False
+    assert res["status"] == "not_configured"
+    assert res["error"] == "VirusTotal API key is not configured"
+    assert res["malicious"] == 0
 
 
 @pytest.mark.anyio
-async def test_otx_provider_demo_mode():
-    provider = OTXProvider()
-    # Test indicator general lookup in demo mode or without API key
-    res = await provider.lookup("threat-domain.com", "domain")
-    assert res["found"] is True
-    assert "pulses" in res
-    assert "pulse_count" in res
+async def test_no_mock_malicious_for_google():
+    provider = VirusTotalProvider()
+    provider.api_key = None  # Simulate missing key
+    # Even if indicator length % 7 == 0 (e.g. www.google.com is 14 -> % 7 == 0)
+    res = await provider.lookup("www.google.com", "domain")
+    assert res["malicious"] == 0
+    assert res["suspicious"] == 0
 
 
 def test_intel_aggregator_normalization():
     # Scenario A: VirusTotal Malicious Detection (score >= 90)
-    vt_res = {"found": True, "malicious": 5, "suspicious": 1, "total_engines": 72}
+    vt_res = {"found": True, "status": "completed", "malicious": 5, "suspicious": 1, "total_engines": 72}
     otx_res = {"found": True, "pulses": [{"name": "Campaign A", "description": "Banking malware Campaign", "tags": ["banking"], "malware_families": ["RedLine Stealer"], "targeted_countries": ["US"]}], "pulse_count": 1}
     
     aggregated = IntelAggregator.aggregate("bad-domain.com", "domain", vt_res, otx_res)
@@ -52,13 +51,13 @@ def test_intel_aggregator_normalization():
     assert "Campaign A" in aggregated["campaign_context"]
     assert "VirusTotal" in aggregated["risk_reason"]
 
-    # Scenario B: OTX Pulse match only
-    vt_res_clean = {"found": True, "malicious": 0, "suspicious": 0, "total_engines": 72}
+    # Scenario B: OTX Pulse match only, VT is clean
+    vt_res_clean = {"found": True, "status": "completed", "malicious": 0, "suspicious": 0, "total_engines": 72}
     aggregated_otx = IntelAggregator.aggregate("suspect-domain.com", "domain", vt_res_clean, otx_res)
-    assert aggregated_otx["vt_status"] == "suspicious"
-    assert aggregated_otx["confidence_score"] == 46
+    assert aggregated_otx["vt_status"] == "clean"
+    assert aggregated_otx["confidence_score"] == 10
     assert aggregated_otx["confidence_level"] == "low"
-    assert "suspicious" in aggregated_otx["risk_reason"]
+    assert "clean" in aggregated_otx["risk_reason"]
 
     # Scenario C: Clean / Heuristic (10 score)
     otx_res_empty = {"found": True, "pulses": [], "pulse_count": 0}
@@ -69,9 +68,22 @@ def test_intel_aggregator_normalization():
     assert "clean" in aggregated_clean["risk_reason"]
 
 
+def test_otx_cannot_change_unknown_vt_state_to_malicious():
+    vt_res_unavailable = {"found": False, "status": "not_configured", "error": "VirusTotal API key is not configured"}
+    otx_res = {"found": True, "pulses": [{"name": "Campaign B"}], "pulse_count": 1}
+    
+    aggregated = IntelAggregator.aggregate("some-domain.com", "domain", vt_res_unavailable, otx_res)
+    assert aggregated["vt_status"] == "unknown"
+    assert aggregated["threat_level"] == "unknown"
+    assert aggregated["confidence_score"] == 0
+    assert aggregated["flagged"] is False
+    assert aggregated["source"] == "VirusTotal unavailable"
+
+
 @pytest.mark.anyio
 async def test_threat_intel_service_orchestration():
     service = ThreatIntelService()
+    service.vt.api_key = None # Ensure it runs cleanly as missing
     enriched = await service.enrich_ioc("test-ioc.js", "js_resource")
     assert enriched["ioc"] == "test-ioc.js"
     assert enriched["type"] == "js_resource"
