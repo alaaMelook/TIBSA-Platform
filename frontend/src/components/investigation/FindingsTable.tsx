@@ -25,28 +25,28 @@ export function FindingsTable({ findings }: FindingsTableProps) {
     switch (norm) {
       case "critical":
         return (
-          <span className={`${commonStyles} border-red-950 bg-red-950/40 text-red-500 flex items-center gap-1 w-fit`}>
+          <span className={`${commonStyles} border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444] flex items-center gap-1 w-fit`}>
             <ShieldAlert className="w-3.5 h-3.5" />
             Critical
           </span>
         );
       case "high":
         return (
-          <span className={`${commonStyles} border-red-800 bg-red-900/20 text-red-400 flex items-center gap-1 w-fit`}>
+          <span className={`${commonStyles} border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444] flex items-center gap-1 w-fit`}>
             <AlertCircle className="w-3.5 h-3.5" />
             High
           </span>
         );
       case "medium":
         return (
-          <span className={`${commonStyles} border-orange-800 bg-orange-900/10 text-orange-400 flex items-center gap-1 w-fit`}>
+          <span className={`${commonStyles} border-[#F97316]/20 bg-[#F97316]/10 text-[#F97316] flex items-center gap-1 w-fit`}>
             <AlertTriangle className="w-3.5 h-3.5" />
             Medium
           </span>
         );
       case "low":
         return (
-          <span className={`${commonStyles} border-yellow-800 bg-yellow-900/10 text-yellow-400 flex items-center gap-1 w-fit`}>
+          <span className={`${commonStyles} border-yellow-500/20 bg-yellow-500/10 text-yellow-600 flex items-center gap-1 w-fit`}>
             <AlertTriangle className="w-3.5 h-3.5" />
             Low
           </span>
@@ -54,7 +54,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
       case "info":
       default:
         return (
-          <span className={`${commonStyles} border-blue-900 bg-blue-950/20 text-[var(--primary)] flex items-center gap-1 w-fit`}>
+          <span className={`${commonStyles} border-[#2F80ED]/20 bg-[#2F80ED]/5 text-[#2F80ED] flex items-center gap-1 w-fit`}>
             <Info className="w-3.5 h-3.5" />
             Info
           </span>
@@ -84,21 +84,21 @@ export function FindingsTable({ findings }: FindingsTableProps) {
           const active = filterSeverity === sev;
           const bgClass =
             sev === "critical"
-              ? "bg-red-950/30 border-red-500/30 text-red-400 hover:bg-red-950/50"
+              ? "bg-[#EF4444]/5 border-[#EF4444]/20 text-[#EF4444] hover:bg-[#EF4444]/10"
               : sev === "high"
-              ? "bg-red-900/20 border-red-500/20 text-red-400 hover:bg-red-900/30"
+              ? "bg-orange-600/5 border-orange-600/20 text-orange-600 hover:bg-orange-600/10"
               : sev === "medium"
-              ? "bg-orange-950/20 border-orange-500/20 text-orange-400 hover:bg-orange-950/30"
+              ? "bg-[#F97316]/5 border-[#F97316]/20 text-[#F97316] hover:bg-[#F97316]/10"
               : sev === "low"
-              ? "bg-yellow-950/20 border-yellow-500/20 text-yellow-400 hover:bg-yellow-950/30"
-              : "bg-blue-950/20 border-[var(--primary)] text-[var(--primary)] hover:bg-blue-950/30";
+              ? "bg-yellow-500/5 border-yellow-500/20 text-yellow-600 hover:bg-yellow-500/10"
+              : "bg-[#2F80ED]/5 border-[#2F80ED]/20 text-[#2F80ED] hover:bg-[#2F80ED]/10";
 
           return (
             <button
               key={sev}
               onClick={() => setFilterSeverity(active ? "all" : sev)}
               className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${bgClass} ${
-                active ? "ring-2 ring-blue-500 border-transparent shadow-lg" : ""
+                active ? "ring-2 ring-[#10B981] border-transparent shadow-sm" : ""
               }`}
             >
               <div className="text-xs uppercase font-bold tracking-widest">{sev}</div>
@@ -109,11 +109,11 @@ export function FindingsTable({ findings }: FindingsTableProps) {
       </div>
 
       {/* Main Table */}
-      <Card className="overflow-hidden !p-0">
+      <div className="bg-white border border-[#E6DDD2] rounded-[20px] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="bg-[var(--bg-card)]/40 text-[var(--text-muted)] font-medium border-b border-[var(--border-strong)]">
+              <tr className="bg-[#FAF7F1] text-[#7C6F64] font-medium border-b border-[#E6DDD2]">
                 <th className="py-3.5 px-4 w-10"></th>
                 <th className="py-3.5 px-4 w-32">Severity</th>
                 <th className="py-3.5 px-4">Finding Details</th>
@@ -121,11 +121,11 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                 <th className="py-3.5 px-4 w-40">Category</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[#E6DDD2]">
               {filteredFindings.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-[var(--text-muted)] font-medium">
-                    No findings matches the selected filter.
+                  <td colSpan={5} className="py-12 text-center text-[#7C6F64] font-medium">
+                    No findings match the selected filter.
                   </td>
                 </tr>
               ) : (
@@ -137,22 +137,22 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                       {/* Row Header */}
                       <tr
                         onClick={() => toggleRow(fid)}
-                        className="hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors"
+                        className="hover:bg-[#FAF7F1] cursor-pointer transition-colors"
                       >
                         <td className="py-4 px-4 text-center">
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+                            <ChevronUp className="w-4 h-4 text-[#7C6F64]" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+                            <ChevronDown className="w-4 h-4 text-[#7C6F64]" />
                           )}
                         </td>
                         <td className="py-4 px-4">{getSeverityBadge(finding.severity)}</td>
-                        <td className="py-4 px-4 font-semibold text-[var(--text-muted)]">{finding.title}</td>
-                        <td className="py-4 px-4 text-[var(--text-muted)] font-mono text-xs max-w-xs truncate">
+                        <td className="py-4 px-4 font-semibold text-[#1F2933]">{finding.title}</td>
+                        <td className="py-4 px-4 text-[#7C6F64] font-mono text-xs max-w-xs truncate">
                           {finding.affected_url}
                         </td>
                         <td className="py-4 px-4">
-                          <span className="text-[10px] bg-[var(--bg-card)] border border-[var(--border-soft)] text-[var(--text-secondary)] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                          <span className="text-[10px] bg-white border border-[#E6DDD2] text-[#7C6F64] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
                             {finding.category || "General"}
                           </span>
                         </td>
@@ -160,16 +160,16 @@ export function FindingsTable({ findings }: FindingsTableProps) {
 
                       {/* Row Details Drawer */}
                       {isExpanded && (
-                        <tr className="bg-[var(--bg-page)]/20">
-                          <td colSpan={5} className="p-4 border-t border-[var(--border-soft)] text-[var(--text-secondary)]">
+                        <tr className="bg-[#FAF7F1]/50">
+                          <td colSpan={5} className="p-4 border-t border-[#E6DDD2] text-[#1F2933]">
                             <div className="space-y-3 font-sans text-xs">
                               {/* Evidence */}
                               {finding.evidence && (
                                 <div className="space-y-1">
-                                  <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider">
+                                  <span className="text-[10px] font-bold uppercase text-[#7C6F64] tracking-wider">
                                     Evidence Details
                                   </span>
-                                  <pre className="bg-[var(--bg-page)]/80 p-3 rounded-lg border border-[var(--border-strong)] font-mono text-[var(--text-secondary)] overflow-x-auto max-w-full">
+                                  <pre className="bg-white p-3 rounded-lg border border-[#E6DDD2] font-mono text-[#1F2933] overflow-x-auto max-w-full shadow-sm">
                                     {finding.evidence}
                                   </pre>
                                 </div>
@@ -178,11 +178,11 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                               {/* Tags */}
                               {finding.tags && finding.tags.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  <Tag className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                                  <Tag className="w-3.5 h-3.5 text-[#7C6F64]" />
                                   {finding.tags.map((tag) => (
                                     <span
                                       key={tag}
-                                      className="px-2 py-0.5 bg-[var(--bg-elevated)] text-[var(--text-muted)] rounded-full text-[10px] font-medium"
+                                      className="px-2 py-0.5 bg-white border border-[#E6DDD2] text-[#7C6F64] rounded-full text-[10px] font-medium"
                                     >
                                       {tag}
                                     </span>
@@ -200,7 +200,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

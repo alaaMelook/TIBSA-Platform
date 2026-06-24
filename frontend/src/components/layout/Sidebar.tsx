@@ -40,11 +40,7 @@ const IconWebsiteScanner = () => (
     </svg>
 );
 
-const IconThreats = () => (
-    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-    </svg>
-);
+
 
 const IconThreatModeling = () => (
     <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -128,7 +124,6 @@ const sidebarLinks: SidebarLink[] = [
     { href: "/dashboard/infra-investigations", label: "Infra Intelligence", icon: <IconInfra /> },
     { href: "/dashboard/scans", label: "Scans", icon: <IconScans /> },
     { href: "/dashboard/website-scanner", label: "Penetration Testing", icon: <IconWebsiteScanner /> },
-    { href: "/dashboard/threats", label: "Threats", icon: <IconThreats /> },
     { href: "/dashboard/threat-modeling", label: "Threat Modeling", icon: <IconThreatModeling /> },
     { href: "/dashboard/ai-malware-analysis", label: "AI Analysis", icon: <IconAIAnalysis /> },
     { href: "/dashboard/reports", label: "Reports History", icon: <IconReports /> },

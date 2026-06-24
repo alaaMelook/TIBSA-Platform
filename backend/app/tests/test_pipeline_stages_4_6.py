@@ -273,7 +273,7 @@ def test_correlation_engine_basic():
             assert threat.attack_chain is not None
             assert len(threat.attack_chain) >= 2
 
-        print(f"✓ Correlation produced {result.unique_threats_identified} threats")
+        print(f"[OK] Correlation produced {result.unique_threats_identified} threats")
 
     asyncio.run(run_test())
 
@@ -307,7 +307,7 @@ def test_correlation_engine_no_matches():
 
         assert result.unique_threats_identified == 0
         assert result.global_risk_score >= 0
-        print("✓ No-match scenario handled correctly")
+        print("[OK] No-match scenario handled correctly")
 
     asyncio.run(run_test())
 
@@ -364,7 +364,7 @@ def test_stride_modeler_basic():
         for threat in result.stride_threats:
             assert len(threat.mitigations) > 0
 
-        print(f"✓ STRIDE modeler produced {len(result.stride_threats)} threats, matrix total={matrix.total_threats()}")
+        print(f"[OK] STRIDE modeler produced {len(result.stride_threats)} threats, matrix total={matrix.total_threats()}")
 
     asyncio.run(run_test())
 
@@ -404,7 +404,7 @@ def test_stride_modeler_with_correlations():
 
         # Should have threats from both findings and correlations
         assert len(result.stride_threats) >= 2
-        print(f"✓ STRIDE with correlations produced {len(result.stride_threats)} threats")
+        print(f"[OK] STRIDE with correlations produced {len(result.stride_threats)} threats")
 
     asyncio.run(run_test())
 
@@ -465,7 +465,7 @@ def test_ai_reporter_fallback():
             assert step.priority <= 5
             assert len(step.title) > 0
 
-        print("✓ AI Reporter fallback produced valid output")
+        print("[OK] AI Reporter fallback produced valid output")
 
     asyncio.run(run_test())
 
@@ -508,7 +508,7 @@ def test_report_exporter_json():
         if os.path.exists(result["filepath"]):
             os.remove(result["filepath"])
 
-        print("✓ JSON export produced valid content")
+        print("[OK] JSON export produced valid content")
 
     asyncio.run(run_test())
 
@@ -587,7 +587,7 @@ def test_report_exporter_pdf():
         if os.path.exists(result["filepath"]):
             os.remove(result["filepath"])
 
-        print("✓ PDF export produced valid content")
+        print("[OK] PDF export produced valid content")
 
     asyncio.run(run_test())
 
@@ -714,7 +714,7 @@ def test_full_pipeline_with_stages_4_6():
         assert db_inv.risk_score >= 0
         print(f"  Final risk score: {db_inv.risk_score}")
 
-        print("\n✓ Full pipeline with stages 4-6 completed successfully!")
+        print("\n[OK] Full pipeline with stages 4-6 completed successfully!")
 
     asyncio.run(run_test())
 
@@ -784,7 +784,7 @@ def test_correlation_engine_hardening_config():
             enable_strict_correlation_hardening=False
         )
         assert lab_result.unique_threats_identified > 0, "Lab/Test Mode should allow correlations on heuristic/unverified chains."
-        print("✓ enable_strict_correlation_hardening toggle verified successfully in unit test!")
+        print("[OK] enable_strict_correlation_hardening toggle verified successfully in unit test!")
 
     asyncio.run(run_test())
 

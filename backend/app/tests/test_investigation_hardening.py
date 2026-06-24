@@ -122,23 +122,76 @@ def test_ti_processing_and_multipliers():
 
 
 def test_threat_intel_thresholds():
-    # VT malicious < 3 or OTX pulses < 1 -> clean default
-    vt_res = {"malicious": 2, "total_engines": 70}
-    otx_res = {"pulses": [{"name": "Stealer Campaign", "tags": ["malware"]}], "pulse_count": 1}
-    
-    clean_agg = IntelAggregator.aggregate("example.com", "domain", vt_res, otx_res)
-    assert clean_agg["vt_status"] == "suspicious" # vt >= 1 or OTX >= 1
-    # Check that malware claims/campaigns are scrubbed for suspicious (not malicious)
-    assert clean_agg["campaign_context"] == []
-    # Stealer was scrubbed since it contains 'malware'
-    assert "malware" not in clean_agg["threat_tags"]
+    # Rule 1: VT not found => threat_level unknown, flagged false, reputation_score 10
+    vt_res_unk = {"found": False, "malicious": 0, "suspicious": 0}
+    otx_res_pulses = {"found": True, "pulses": [{"name": "Stealer Campaign", "tags": ["malware"]}], "pulse_count": 1}
+    unk_agg = IntelAggregator.aggregate("unknown.com", "domain", vt_res_unk, otx_res_pulses)
+    assert unk_agg["threat_level"] == "unknown"
+    assert unk_agg["vt_status"] == "unknown"
+    assert unk_agg["flagged"] is False
+    assert unk_agg["confidence_score"] == 10
 
-    # When both thresholds met (VT>=3 AND OTX>=1)
-    vt_res_mal = {"malicious": 4, "total_engines": 70}
-    mal_agg = IntelAggregator.aggregate("badsite.com", "domain", vt_res_mal, otx_res)
-    assert mal_agg["vt_status"] == "malicious"
-    assert mal_agg["campaign_context"] == ["Stealer Campaign"]
-    assert "malware" in mal_agg["threat_tags"]
+    # Rule 2: VT malicious = 0 and suspicious = 0 => clean, flagged false, reputation_score 10
+    # OTX pulses/tags exists but must not affect score, threat_level, flagged, severity, or reputation_score
+    vt_res_clean = {"found": True, "malicious": 0, "suspicious": 0, "total_engines": 70}
+    clean_agg = IntelAggregator.aggregate("example.com", "domain", vt_res_clean, otx_res_pulses)
+    assert clean_agg["threat_level"] == "clean"
+    assert clean_agg["vt_status"] == "clean"
+    assert clean_agg["flagged"] is False
+    assert clean_agg["confidence_score"] == 10
+    assert clean_agg["source"] == "VirusTotal + OTX Context"
+
+    # Rule 3: VT suspicious > 0 and malicious = 0 => suspicious, flagged true, reputation_score 30-50
+    # Test with and without OTX to confirm OTX has no scoring impact
+    vt_res_susp_only = {"found": True, "malicious": 0, "suspicious": 3, "total_engines": 70}
+    
+    # 3a. Without OTX
+    susp_only_agg_no_otx = IntelAggregator.aggregate("suspicious-no-otx.com", "domain", vt_res_susp_only, {"found": False, "pulses": [], "pulse_count": 0})
+    assert susp_only_agg_no_otx["threat_level"] == "suspicious"
+    assert susp_only_agg_no_otx["flagged"] is True
+    assert 30 <= susp_only_agg_no_otx["confidence_score"] <= 50
+    
+    # 3b. With OTX
+    susp_only_agg_with_otx = IntelAggregator.aggregate("suspicious-with-otx.com", "domain", vt_res_susp_only, otx_res_pulses)
+    assert susp_only_agg_with_otx["threat_level"] == "suspicious"
+    assert susp_only_agg_with_otx["flagged"] is True
+    assert 30 <= susp_only_agg_with_otx["confidence_score"] <= 50
+
+    # Rule 4: VT malicious = 1 => suspicious, flagged true, reputation_score 50-60
+    # Test with and without OTX to confirm OTX has no scoring impact
+    vt_res_mal1 = {"found": True, "malicious": 1, "suspicious": 0, "total_engines": 70}
+    
+    # 4a. Without OTX
+    mal1_agg_no_otx = IntelAggregator.aggregate("mal1-no-otx.com", "domain", vt_res_mal1, {"found": False, "pulses": [], "pulse_count": 0})
+    assert mal1_agg_no_otx["threat_level"] == "suspicious"
+    assert mal1_agg_no_otx["flagged"] is True
+    assert 50 <= mal1_agg_no_otx["confidence_score"] <= 60
+
+    # 4b. With OTX
+    mal1_agg_with_otx = IntelAggregator.aggregate("mal1-with-otx.com", "domain", vt_res_mal1, otx_res_pulses)
+    assert mal1_agg_with_otx["threat_level"] == "suspicious"
+    assert mal1_agg_with_otx["flagged"] is True
+    assert 50 <= mal1_agg_with_otx["confidence_score"] <= 60
+
+    # Rule 5: VT malicious >= 2 => malicious, flagged true, reputation_score 70-100
+    # Test with and without OTX to confirm OTX has no scoring impact
+    vt_res_mal2 = {"found": True, "malicious": 2, "suspicious": 0, "total_engines": 70}
+    
+    # 5a. Without OTX
+    mal2_agg_no_otx = IntelAggregator.aggregate("mal2-no-otx.com", "domain", vt_res_mal2, {"found": False, "pulses": [], "pulse_count": 0})
+    assert mal2_agg_no_otx["threat_level"] == "malicious"
+    assert mal2_agg_no_otx["flagged"] is True
+    assert 70 <= mal2_agg_no_otx["confidence_score"] <= 100
+
+    # 5b. With OTX
+    mal2_agg_with_otx = IntelAggregator.aggregate("mal2-with-otx.com", "domain", vt_res_mal2, otx_res_pulses)
+    assert mal2_agg_with_otx["threat_level"] == "malicious"
+    assert mal2_agg_with_otx["flagged"] is True
+    assert 70 <= mal2_agg_with_otx["confidence_score"] <= 100
+    assert "Stealer Campaign" in mal2_agg_with_otx["campaign_context"]
+    assert "malware" in mal2_agg_with_otx["threat_tags"]
+
+
 
 
 @pytest.mark.anyio

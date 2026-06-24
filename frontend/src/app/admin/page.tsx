@@ -10,22 +10,24 @@ import {
     ScanVolumeChart,
     ActivityFeed,
     AdminSectionCard,
+    LightActionLink,
 } from "./components";
 import Link from "next/link";
 import { AdminStats, RecentActivity, ServiceHealth, ThreatTrend, ThreatDistribution, TopScannedUrl, ScanVolumeData } from "./types";
 import { api } from "@/lib/api";
+import { TibsaRefreshButton } from "@/components/ui";
 
 // ─── Threat Level Badge ─────────────────────────────────────
 function ThreatBadge({ level }: { level: string }) {
     const styles: Record<string, string> = {
-        safe: "bg-emerald-500/15 text-emerald-400",
-        low: "bg-yellow-500/15 text-yellow-400",
-        medium: "bg-amber-500/15 text-amber-400",
-        high: "bg-orange-500/15 text-orange-400",
-        critical: "bg-red-500/15 text-red-400",
+        safe: "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20",
+        low: "bg-[#2F80ED]/10 text-[#2F80ED] border border-[#2F80ED]/20",
+        medium: "bg-amber-500/10 text-amber-600 border border-amber-500/20",
+        high: "bg-orange-500/10 text-orange-600 border border-orange-500/20",
+        critical: "bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20",
     };
     return (
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${styles[level] || styles.safe}`}>
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${styles[level] || "bg-[#F4EFE7] text-[#7C6F64] border border-[#E6DDD2]"}`}>
             {level}
         </span>
     );
@@ -34,9 +36,9 @@ function ThreatBadge({ level }: { level: string }) {
 // ─── Service Status Indicator ───────────────────────────────
 function StatusDot({ status }: { status: string }) {
     const colors: Record<string, string> = {
-        operational: "bg-emerald-400",
-        degraded: "bg-amber-400",
-        down: "bg-red-400",
+        operational: "bg-[#10B981]",
+        degraded: "bg-amber-500",
+        down: "bg-[#EF4444]",
     };
     return (
         <span className="relative flex h-2.5 w-2.5">
@@ -220,477 +222,478 @@ export default function AdminPage() {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 border border-red-500/20 bg-red-500/5 rounded-xl">
-                <p className="text-red-400 mb-4">{error}</p>
-                <button onClick={fetchData} className="px-4 py-2 bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition">
-                    Retry Connection
-                </button>
+            <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] text-[#1F2933]">
+                <div className="flex flex-col items-center justify-center h-64 border border-[#EF4444]/20 bg-[#EF4444]/5 rounded-[20px] shadow-sm">
+                    <p className="text-[#EF4444] mb-4 font-semibold text-sm">{error}</p>
+                    <button onClick={fetchData} className="px-4 py-2 bg-[#EF4444]/10 text-[#EF4444] rounded-lg hover:bg-[#EF4444]/20 transition-colors font-bold text-xs">
+                        Retry Connection
+                    </button>
+                </div>
             </div>
         );
     }
 
     if (isLoading) {
         return (
-            <div className="space-y-6 max-w-[1400px] animate-pulse">
-                {/* Skeleton header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="h-7 w-56 bg-white/[0.04] rounded-lg" />
-                        <div className="h-4 w-80 bg-white/[0.03] rounded mt-2" />
+            <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] text-[#1F2933]">
+                <div className="space-y-6 max-w-[1400px] animate-pulse">
+                    {/* Skeleton header */}
+                    <div className="h-[120px] bg-white border border-[#E6DDD2] rounded-[24px] shadow-sm" />
+                    {/* Skeleton stat cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="h-[110px] rounded-[18px] bg-white border border-[#E6DDD2] shadow-sm" />
+                        ))}
                     </div>
-                    <div className="h-4 w-40 bg-white/[0.03] rounded hidden md:block" />
-                </div>
-                {/* Skeleton stat cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="h-28 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-                    ))}
-                </div>
-                {/* Skeleton charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 h-80 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-                    <div className="h-80 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-                </div>
-                {/* Skeleton bottom row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="h-72 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
-                    <div className="h-72 rounded-xl bg-white/[0.03] border border-white/[0.04]" />
+                    {/* Skeleton charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 h-80 rounded-[20px] bg-white border border-[#E6DDD2] shadow-sm" />
+                        <div className="h-80 rounded-[20px] bg-white border border-[#E6DDD2] shadow-sm" />
+                    </div>
+                    {/* Skeleton bottom row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="h-72 rounded-[20px] bg-white border border-[#E6DDD2] shadow-sm" />
+                        <div className="h-72 rounded-[20px] bg-white border border-[#E6DDD2] shadow-sm" />
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6 max-w-[1400px] relative"
-        >
-            {/* Subtle SOC Scanline / Glow Effect */}
-            <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-500/[0.02] to-transparent pointer-events-none -z-10" />
-
-            {/* ── Page Header ──────────────────────────────── */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-white tracking-tight">SOC Monitoring Console</h1>
-                        {isLive && (
-                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.2)]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                LIVE
-                            </span>
-                        )}
+        <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] text-[#1F2933]">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="space-y-6 max-w-[1400px] relative mx-auto"
+            >
+                {/* ── Page Header ──────────────────────────────── */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }} 
+                    animate={{ opacity: 1, y: 0, scale: 1 }} 
+                    transition={{ duration: 0.4 }}
+                    style={{ background: "linear-gradient(90deg, #FFFCF7 0%, #F4EFE7 45%, #E9EDF3 100%)" }}
+                    className="border border-[#E6DDD2] p-[32px] rounded-[24px] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+                >
+                    <div className="flex items-start gap-4">
+                        <div className="p-2.5 bg-[#edf8f3] rounded-xl border border-[#0f9d76]/30 shadow-sm shrink-0 mt-1">
+                            <IconShield />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-[10px] font-bold text-[#0f9d76] uppercase tracking-widest">
+                                    TIBSA SOC NEXUS
+                                </span>
+                                {isLive && (
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                        LIVE
+                                    </span>
+                                )}
+                            </div>
+                            <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Admin Overview</h1>
+                            <p className="text-[#7C6F64] mt-1 max-w-xl text-sm leading-relaxed font-medium">
+                                Central command view for users, investigations, threats, analytics, and system health.
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-sm text-slate-400">
-                        Active threat monitoring and platform oversight for <span className="text-slate-200 font-medium">{user?.full_name}</span>
-                    </p>
-                </div>
-                <div className="flex items-center gap-4 bg-black/40 border border-white/[0.06] rounded-lg p-2 backdrop-blur-md">
-                    <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-50"
-                    >
-                        <svg className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        {refreshing ? "Refreshing..." : "Refresh"}
-                    </button>
-                    <div className="w-px h-4 bg-white/[0.1]" />
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-400 font-mono">AUTO-REFRESH</span>
-                        <button 
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <button
                             onClick={() => setIsLive(!isLive)}
-                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-slate-700'}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors ${
+                                isLive 
+                                ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/15' 
+                                : 'bg-white border-[#E6DDD2] text-[#7C6F64] hover:text-[#1F2933]'
+                            }`}
                         >
-                            <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isLive ? 'translate-x-4' : 'translate-x-0'}`} />
+                            <span className={`w-2 h-2 rounded-full ${isLive ? 'bg-red-500 animate-pulse' : 'bg-slate-300'}`} />
+                            {isLive ? 'Auto-Refresh ON' : 'Auto-Refresh OFF'}
                         </button>
+                        <TibsaRefreshButton
+                            onClick={handleRefresh}
+                            isRefreshing={refreshing}
+                        />
                     </div>
-                    <div className="w-px h-4 bg-white/[0.1]" />
-                    <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
-                        <span>SYSTEMS_NOMINAL</span>
-                    </div>
-                </div>
-            </div>
+                </motion.div>
 
-            {/* ── Stats Grid ─────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
-                <StatCard
-                    label="Total Users"
-                    value={stats?.totalUsers || 0}
-                    change={0}
-                    changeLabel="Real-time"
-                    icon={<IconUsers />}
-                    color="blue"
-                    trend="neutral"
-                    delay={0}
-                />
-                <StatCard
-                    label="Active Users"
-                    value={stats?.activeUsers || 0}
-                    change={0}
-                    changeLabel="Real-time"
-                    icon={<IconActive />}
-                    color="green"
-                    trend="neutral"
-                    delay={100}
-                />
-                <StatCard
-                    label="Total Scans"
-                    value={stats?.totalScans.toLocaleString() || "0"}
-                    change={0}
-                    changeLabel="Real-time"
-                    icon={<IconScans />}
-                    color="purple"
-                    trend="neutral"
-                    delay={200}
-                />
-                <StatCard
-                    label="Scans Today"
-                    value={stats?.scansToday.toLocaleString() || "0"}
-                    change={0}
-                    changeLabel="Real-time"
-                    icon={<IconClock />}
-                    color="cyan"
-                    trend="neutral"
-                    delay={300}
-                />
-                <StatCard
-                    label="Threats Detected"
-                    value={stats?.threatsDetected.toLocaleString() || "0"}
-                    change={0}
-                    changeLabel="Real-time"
-                    icon={<IconShield />}
-                    color="red"
-                    trend="neutral"
-                    delay={400}
-                />
-                <StatCard
-                    label="System Uptime"
-                    value={`${stats?.systemUptime || 99.9}%`}
-                    change={0}
-                    changeLabel="Real-time"
-                    icon={<IconUptime />}
-                    color="green"
-                    trend="neutral"
-                    delay={500}
-                />
-            </div>
-
-            {/* ── Infrastructure Intel Stats Grid ─────────────────── */}
-            <div className="border-t border-white/[0.08] pt-6 mt-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                        Infrastructure Intelligence Metrics
-                    </h2>
-                    <Link href="/admin/infra-analytics" className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
-                        Detailed Analytics →
-                    </Link>
-                </div>
+                {/* ── Stats Grid ─────────────────────────────── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
                     <StatCard
-                        label="Total Infra Inv."
-                        value={stats?.infra?.total || 0}
+                        label="Total Users"
+                        value={stats?.totalUsers || 0}
                         change={0}
                         changeLabel="Real-time"
-                        icon={<IconScans />}
-                        color="cyan"
+                        icon={<IconUsers />}
+                        color="blue"
                         trend="neutral"
                         delay={0}
                     />
                     <StatCard
-                        label="Investigations Today"
-                        value={stats?.infra?.today || 0}
-                        change={0}
-                        changeLabel="Real-time"
-                        icon={<IconClock />}
-                        color="blue"
-                        trend="neutral"
-                        delay={100}
-                    />
-                    <StatCard
-                        label="Running Inv."
-                        value={stats?.infra?.running || 0}
+                        label="Active Users"
+                        value={stats?.activeUsers || 0}
                         change={0}
                         changeLabel="Real-time"
                         icon={<IconActive />}
                         color="green"
                         trend="neutral"
+                        delay={100}
+                    />
+                    <StatCard
+                        label="Total Scans"
+                        value={stats?.totalScans.toLocaleString() || "0"}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconScans />}
+                        color="purple"
+                        trend="neutral"
                         delay={200}
                     />
                     <StatCard
-                        label="Failed Inv."
-                        value={stats?.infra?.failed || 0}
+                        label="Scans Today"
+                        value={stats?.scansToday.toLocaleString() || "0"}
+                        change={0}
+                        changeLabel="Real-time"
+                        icon={<IconClock />}
+                        color="cyan"
+                        trend="neutral"
+                        delay={300}
+                    />
+                    <StatCard
+                        label="Threats Detected"
+                        value={stats?.threatsDetected.toLocaleString() || "0"}
                         change={0}
                         changeLabel="Real-time"
                         icon={<IconShield />}
                         color="red"
                         trend="neutral"
-                        delay={300}
-                    />
-                    <StatCard
-                        label="Avg Risk Score"
-                        value={stats?.infra?.avgRiskScore || 0}
-                        change={0}
-                        changeLabel="Real-time"
-                        icon={<IconShield />}
-                        color="amber"
-                        trend="neutral"
                         delay={400}
                     />
                     <StatCard
-                        label="High Risk IOCs"
-                        value={stats?.infra?.highRiskCount || 0}
+                        label="System Uptime"
+                        value={`${stats?.systemUptime || 99.9}%`}
                         change={0}
                         changeLabel="Real-time"
-                        icon={<IconShield />}
-                        color="purple"
+                        icon={<IconUptime />}
+                        color="green"
                         trend="neutral"
                         delay={500}
                     />
                 </div>
-            </div>
 
-            {/* ── Charts Row: Threat Trends + Distribution ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <AdminSectionCard
-                    title="Threat Trends"
-                    description="Last 14 days detection overview"
-                    className="lg:col-span-2"
-                    action={
-                        <Link href="/admin/analytics" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                            Analytics →
-                        </Link>
-                    }
-                >
-                    <ThreatTrendChart data={charts?.trends || []} />
-                </AdminSectionCard>
-
-                <AdminSectionCard
-                    title="Threat Distribution"
-                    description="By category"
-                >
-                    <ThreatDistributionChart data={charts?.distribution || []} />
-                </AdminSectionCard>
-            </div>
-
-            {/* ── Row: Scan Volume + Activity Feed ──────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <AdminSectionCard
-                    title="Scan Volume"
-                    description="Last 7 days"
-                    action={
-                        <Link href="/admin/analytics" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                            Analytics →
-                        </Link>
-                    }
-                >
-                    <ScanVolumeChart data={charts?.volume || []} />
-                </AdminSectionCard>
-
-                <AdminSectionCard
-                    title="Recent Activity"
-                    description="Real-time platform events"
-                    noPadding
-                    action={
-                        <Link href="/admin/audit" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                            View audit log →
-                        </Link>
-                    }
-                >
-                    <div className="px-2 py-2">
-                        {activity.length > 0 ? (
-                            <ActivityFeed activities={activity} />
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
-                                <p className="text-sm">No recent activity found.</p>
-                            </div>
-                        )}
+                {/* ── Infrastructure Intel Stats Grid ─────────────────── */}
+                <div className="border-t border-[#E6DDD2] pt-6 mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-bold text-[#1F2933] uppercase tracking-wider flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                            Infrastructure Intelligence Metrics
+                        </h2>
+                        <LightActionLink href="/admin/infra-analytics">Detailed Analytics</LightActionLink>
                     </div>
-                </AdminSectionCard>
-            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
+                        <StatCard
+                            label="Total Infra Inv."
+                            value={stats?.infra?.total || 0}
+                            change={0}
+                            changeLabel="Real-time"
+                            icon={<IconScans />}
+                            color="cyan"
+                            trend="neutral"
+                            delay={0}
+                        />
+                        <StatCard
+                            label="Investigations Today"
+                            value={stats?.infra?.today || 0}
+                            change={0}
+                            changeLabel="Real-time"
+                            icon={<IconClock />}
+                            color="blue"
+                            trend="neutral"
+                            delay={100}
+                        />
+                        <StatCard
+                            label="Running Inv."
+                            value={stats?.infra?.running || 0}
+                            change={0}
+                            changeLabel="Real-time"
+                            icon={<IconActive />}
+                            color="green"
+                            trend="neutral"
+                            delay={200}
+                        />
+                        <StatCard
+                            label="Failed Inv."
+                            value={stats?.infra?.failed || 0}
+                            change={0}
+                            changeLabel="Real-time"
+                            icon={<IconShield />}
+                            color="red"
+                            trend="neutral"
+                            delay={300}
+                        />
+                        <StatCard
+                            label="Avg Risk Score"
+                            value={stats?.infra?.avgRiskScore || 0}
+                            change={0}
+                            changeLabel="Real-time"
+                            icon={<IconShield />}
+                            color="amber"
+                            trend="neutral"
+                            delay={400}
+                        />
+                        <StatCard
+                            label="High Risk IOCs"
+                            value={stats?.infra?.highRiskCount || 0}
+                            change={0}
+                            changeLabel="Real-time"
+                            icon={<IconShield />}
+                            color="purple"
+                            trend="neutral"
+                            delay={500}
+                        />
+                    </div>
+                </div>
 
-            {/* ── Row: Top Scanned URLs + System Health ─── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Top Scanned URLs */}
-                <AdminSectionCard
-                    title="Top Scanned URLs"
-                    description="Most frequently analyzed targets"
-                >
-                    <div className="space-y-2">
-                        {charts?.topUrls && charts.topUrls.length > 0 ? (
-                            charts.topUrls.map((url, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors group"
-                                >
-                                    {/* Rank */}
-                                    <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                                        i < 3 ? "bg-blue-500/15 text-blue-400" : "bg-white/[0.04] text-slate-500"
-                                    }`}>
-                                        {i + 1}
-                                    </span>
-                                    {/* URL */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-slate-300 truncate group-hover:text-white transition-colors">
-                                            {url.url}
-                                        </p>
-                                        <p className="text-[11px] text-slate-500">
-                                            {url.scan_count} scans
-                                        </p>
-                                    </div>
-                                    {/* Threat level */}
-                                    <ThreatBadge level={url.threat_level || "unknown"} />
+                {/* ── Charts Row: Threat Trends + Distribution ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <AdminSectionCard
+                        title="Threat Trends"
+                        description="Last 14 days detection overview"
+                        className="lg:col-span-2"
+                        action={
+                            <LightActionLink href="/admin/analytics">Analytics</LightActionLink>
+                        }
+                    >
+                        <ThreatTrendChart data={charts?.trends || []} />
+                    </AdminSectionCard>
+
+                    <AdminSectionCard
+                        title="Threat Distribution"
+                        description="By category"
+                    >
+                        <ThreatDistributionChart data={charts?.distribution || []} />
+                    </AdminSectionCard>
+                </div>
+
+                {/* ── Row: Scan Volume + Activity Feed ──────── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AdminSectionCard
+                        title="Scan Volume"
+                        description="Last 7 days"
+                        action={
+                            <LightActionLink href="/admin/analytics">Analytics</LightActionLink>
+                        }
+                    >
+                        <ScanVolumeChart data={charts?.volume || []} />
+                    </AdminSectionCard>
+
+                    <AdminSectionCard
+                        title="Recent Activity"
+                        description="Real-time platform events"
+                        noPadding
+                        action={
+                            <LightActionLink href="/admin/audit">View audit log</LightActionLink>
+                        }
+                    >
+                        <div className="px-2 py-2">
+                            {activity.length > 0 ? (
+                                <ActivityFeed activities={activity} />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-10 text-[#7C6F64]">
+                                    <p className="text-sm">No recent activity found.</p>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="py-8 text-center text-slate-500 text-sm">No scan targets found.</div>
-                        )}
-                    </div>
-                </AdminSectionCard>
-
-                {/* System Health Mini */}
-                <AdminSectionCard
-                    title="System Health"
-                    description={`${healthyServices}/${totalServices} services operational`}
-                    action={
-                        <Link href="/admin/system" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                            Details →
-                        </Link>
-                    }
-                >
-                    <div className="space-y-2">
-                        {health.map((service) => (
-                            <div
-                                key={service.name}
-                                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.02] transition-colors"
-                            >
-                                <StatusDot status={service.status} />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-slate-300">{service.name}</p>
-                                    <p className="text-xs text-slate-500 truncate">{service.description}</p>
-                                </div>
-                                <span className="text-xs text-slate-500 tabular-nums">{service.responseTime}ms</span>
-                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                    service.status === "operational" ? "bg-emerald-500/10 text-emerald-400" :
-                                    service.status === "degraded" ? "bg-amber-500/10 text-amber-400" :
-                                    "bg-red-500/10 text-red-400"
-                                }`}>
-                                    {service.uptime}%
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                    {degradedServices.length > 0 && (
-                        <div className="mt-3 px-3 py-2 bg-amber-500/5 border border-amber-500/10 rounded-lg">
-                            <p className="text-xs text-amber-400">
-                                ⚠️ {degradedServices.map(s => s.name).join(", ")} showing degraded performance
-                            </p>
+                            )}
                         </div>
-                    )}
-                </AdminSectionCard>
+                    </AdminSectionCard>
+                </div>
 
-                {/* Active Analysts & Users Presence */}
-                <AdminSectionCard
-                    title="Active Analysts & Users"
-                    description={`${presence?.active_count || 0} active analysts online`}
-                    action={
-                        <Link href="/admin/users" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                            Manage Users →
-                        </Link>
-                    }
-                >
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                        {/* Active Users */}
-                        {presence?.active_users && presence.active_users.length > 0 ? (
-                            presence.active_users.map((user) => (
-                                <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-emerald-500/[0.02] border border-emerald-500/10 hover:bg-emerald-500/[0.04] transition-colors">
-                                    {/* Avatar */}
-                                    <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-                                        <span className="text-xs font-bold text-white uppercase">{user.full_name.charAt(0)}</span>
-                                        <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-400 border-2 border-[#0B1528] animate-pulse" />
-                                    </div>
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
-                                            <span className="px-1.5 py-0.5 rounded text-[8px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 uppercase tracking-wide">
-                                                Active
-                                            </span>
+                {/* ── Row: Top Scanned URLs + System Health ─── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Top Scanned URLs */}
+                    <AdminSectionCard
+                        title="Top Scanned URLs"
+                        description="Most frequently analyzed targets"
+                    >
+                        <div className="space-y-2">
+                            {charts?.topUrls && charts.topUrls.length > 0 ? (
+                                charts.topUrls.map((url, i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#F8FDFB] transition-colors group border border-transparent hover:border-[#E6DDD2]"
+                                    >
+                                        {/* Rank */}
+                                        <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                                            i < 3 ? "bg-[#2F80ED]/10 text-[#2F80ED]" : "bg-[#F4EFE7] text-[#7C6F64]"
+                                        }`}>
+                                            {i + 1}
+                                        </span>
+                                        {/* URL */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-[#1F2933] truncate group-hover:text-[#10B981] transition-colors">
+                                                {url.url}
+                                            </p>
+                                            <p className="text-[11px] text-[#7C6F64] font-medium">
+                                                {url.scan_count} scans
+                                            </p>
                                         </div>
-                                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                        {/* Threat level */}
+                                        <ThreatBadge level={url.threat_level || "unknown"} />
                                     </div>
-                                    {/* Role Badge */}
-                                    <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${
-                                        user.role === "admin" ? "bg-purple-500/15 text-purple-400 border border-purple-500/20" : "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                ))
+                            ) : (
+                                <div className="py-8 text-center text-[#7C6F64] text-sm">No scan targets found.</div>
+                            )}
+                        </div>
+                    </AdminSectionCard>
+
+                    {/* System Health Mini */}
+                    <AdminSectionCard
+                        title="System Health"
+                        description={`${healthyServices}/${totalServices} services operational`}
+                        action={
+                            <LightActionLink href="/admin/system">Details</LightActionLink>
+                        }
+                    >
+                        <div className="space-y-2">
+                            {health.map((service) => (
+                                <div
+                                    key={service.name}
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#F8FDFB] transition-colors group border border-transparent hover:border-[#E6DDD2]"
+                                >
+                                    <StatusDot status={service.status} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-[#1F2933] group-hover:text-[#10B981] transition-colors">{service.name}</p>
+                                        <p className="text-xs text-[#7C6F64] truncate">{service.description}</p>
+                                    </div>
+                                    <span className="text-xs text-[#7C6F64] tabular-nums font-mono">{service.responseTime}ms</span>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                        service.status === "operational" ? "bg-[#10B981]/10 text-[#10B981]" :
+                                        service.status === "degraded" ? "bg-amber-500/10 text-amber-600" :
+                                        "bg-[#EF4444]/10 text-[#EF4444]"
                                     }`}>
-                                        {user.role === "admin" ? "⚡ ADMIN" : "👤 USER"}
+                                        {service.uptime}%
                                     </span>
                                 </div>
-                            ))
-                        ) : null}
+                            ))}
+                        </div>
+                        {degradedServices.length > 0 && (
+                            <div className="mt-3 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg shadow-sm">
+                                <p className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
+                                    <span className="text-sm">⚠️</span> {degradedServices.map(s => s.name).join(", ")} showing degraded performance
+                                </p>
+                            </div>
+                        )}
+                    </AdminSectionCard>
 
-                        {/* Offline Users */}
-                        {presence?.offline_users && presence.offline_users.length > 0 ? (
-                            presence.offline_users.map((user) => {
-                                const lastSeenStr = user.seconds_ago === 999999 ? "never" : 
-                                    user.seconds_ago < 60 ? `${user.seconds_ago}s ago` :
-                                    user.seconds_ago < 3600 ? `${Math.floor(user.seconds_ago / 60)}m ago` :
-                                    `${Math.floor(user.seconds_ago / 3600)}h ago`;
-                                return (
-                                    <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.01] transition-colors group">
+                    {/* Active Analysts & Users Presence */}
+                    <AdminSectionCard
+                        title="Active Analysts & Users"
+                        description={`${presence?.active_count || 0} active analysts online`}
+                        action={
+                            <LightActionLink href="/admin/users">Manage Users</LightActionLink>
+                        }
+                    >
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                            {/* Active Users */}
+                            {presence?.active_users && presence.active_users.length > 0 ? (
+                                presence.active_users.map((user) => (
+                                    <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#10B981]/5 border border-[#10B981]/20 hover:bg-[#10B981]/10 transition-colors shadow-sm">
                                         {/* Avatar */}
-                                        <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-slate-800 border border-white/[0.06] flex items-center justify-center">
-                                            <span className="text-xs font-bold text-slate-400 uppercase">{user.full_name.charAt(0)}</span>
-                                            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-slate-600 border-2 border-[#0B1528]" />
+                                        <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#10B981] to-[#00A884] flex items-center justify-center shadow-md">
+                                            <span className="text-xs font-bold text-white uppercase">{user.full_name.charAt(0)}</span>
+                                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-white animate-pulse" />
                                         </div>
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-400 group-hover:text-white transition-colors truncate">{user.full_name}</p>
-                                            <p className="text-xs text-slate-600 truncate font-mono">last seen {lastSeenStr}</p>
+                                            <div className="flex items-center gap-1.5">
+                                                <p className="text-sm font-bold text-[#1F2933] truncate">{user.full_name}</p>
+                                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20 uppercase tracking-wide">
+                                                    Active
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-[#7C6F64] truncate font-medium">{user.email}</p>
                                         </div>
                                         {/* Role Badge */}
-                                        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-md ${
-                                            user.role === "admin" ? "bg-white/[0.04] text-purple-400/60 border border-purple-500/10" : "bg-white/[0.04] text-slate-500 border border-white/[0.06]"
+                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${
+                                            user.role === "admin" ? "bg-[#A855F7]/10 text-[#A855F7] border-[#A855F7]/20" : "bg-[#2F80ED]/10 text-[#2F80ED] border-[#2F80ED]/20"
                                         }`}>
-                                            {user.role === "admin" ? "ADMIN" : "USER"}
+                                            {user.role === "admin" ? "⚡ ADMIN" : "👤 USER"}
                                         </span>
                                     </div>
-                                );
-                            })
-                        ) : null}
+                                ))
+                            ) : null}
 
-                        {(!presence?.active_users || presence.active_users.length === 0) && 
-                         (!presence?.offline_users || presence.offline_users.length === 0) && (
-                            <div className="py-8 text-center text-slate-500 text-sm">
-                                No registered analysts found.
-                            </div>
-                        )}
-                    </div>
-                </AdminSectionCard>
-            </div>
+                            {/* Offline Users */}
+                            {presence?.offline_users && presence.offline_users.length > 0 ? (
+                                presence.offline_users.map((user) => {
+                                    const lastSeenStr = user.seconds_ago === 999999 ? "never" : 
+                                        user.seconds_ago < 60 ? `${user.seconds_ago}s ago` :
+                                        user.seconds_ago < 3600 ? `${Math.floor(user.seconds_ago / 60)}m ago` :
+                                        `${Math.floor(user.seconds_ago / 3600)}h ago`;
+                                    return (
+                                        <div key={user.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#F8FDFB] hover:border-[#E6DDD2] border border-transparent transition-colors group">
+                                            {/* Avatar */}
+                                            <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-[#F4EFE7] border border-[#E6DDD2] flex items-center justify-center">
+                                                <span className="text-xs font-bold text-[#7C6F64] uppercase">{user.full_name.charAt(0)}</span>
+                                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#E6DDD2] border-2 border-white" />
+                                            </div>
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-[#1F2933] group-hover:text-[#10B981] transition-colors truncate">{user.full_name}</p>
+                                                <p className="text-[11px] text-[#7C6F64] truncate font-medium">last seen {lastSeenStr}</p>
+                                            </div>
+                                            {/* Role Badge */}
+                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${
+                                                user.role === "admin" ? "bg-white text-[#A855F7] border-[#A855F7]/20" : "bg-white text-[#7C6F64] border-[#E6DDD2]"
+                                            }`}>
+                                                {user.role === "admin" ? "ADMIN" : "USER"}
+                                            </span>
+                                        </div>
+                                    );
+                                })
+                            ) : null}
 
-            {/* ── Quick Navigation ──────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                    { href: "/admin/users", icon: "👥", title: "User Management", desc: "Manage users, roles & permissions", color: "border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5" },
-                    { href: "/admin/analytics", icon: "📊", title: "Platform Analytics", desc: "Usage metrics & growth data", color: "border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/5" },
-                    { href: "/admin/audit", icon: "📋", title: "Audit Log", desc: "Security events & admin actions", color: "border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/5" },
-                ].map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`block p-5 rounded-xl border bg-white/[0.01] transition-all duration-300 group ${item.color}`}
-                    >
-                        <span className="text-2xl">{item.icon}</span>
-                        <h3 className="text-sm font-semibold text-white mt-3 group-hover:text-blue-300 transition-colors">{item.title}</h3>
-                        <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
-                    </Link>
-                ))}
-            </div>
-        </motion.div>
+                            {(!presence?.active_users || presence.active_users.length === 0) && 
+                             (!presence?.offline_users || presence.offline_users.length === 0) && (
+                                <div className="py-8 text-center text-[#7C6F64] text-sm">
+                                    No registered analysts found.
+                                </div>
+                            )}
+                        </div>
+                    </AdminSectionCard>
+                </div>
+
+                {/* ── Quick Navigation ──────────────────────── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                        { href: "/admin/users", icon: "👥", title: "User Management", desc: "Manage users, roles & permissions", color: "hover:border-[#2F80ED] hover:shadow-[#2F80ED]/10 text-[#2F80ED]" },
+                        { href: "/admin/investigations", icon: "🔍", title: "Investigations", desc: "View security operations", color: "hover:border-[#10B981] hover:shadow-[#10B981]/10 text-[#10B981]" },
+                        { href: "/admin/analytics", icon: "📊", title: "Platform Analytics", desc: "Usage metrics & growth data", color: "hover:border-[#A855F7] hover:shadow-[#A855F7]/10 text-[#A855F7]" },
+                        { href: "/admin/audit", icon: "📋", title: "Audit Log", desc: "Security events & admin actions", color: "hover:border-amber-500 hover:shadow-amber-500/10 text-amber-500" },
+                    ].map((item, idx) => (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1 * idx }}
+                            key={item.href}
+                        >
+                            <Link
+                                href={item.href}
+                                className={`block p-5 rounded-[18px] border border-[#E6DDD2] bg-white shadow-sm transition-all duration-300 group hover:-translate-y-1 hover:shadow-md ${item.color.split(' ')[0]}`}
+                            >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3 bg-[#FAF7F1] border border-[#E6DDD2] group-hover:bg-white transition-colors shadow-sm`}>
+                                    {item.icon}
+                                </div>
+                                <h3 className="text-sm font-bold text-[#1F2933] group-hover:text-[#10B981] transition-colors flex items-center justify-between">
+                                    {item.title}
+                                    <span className="text-[#7C6F64] group-hover:text-[#10B981] group-hover:translate-x-1 transition-all">→</span>
+                                </h3>
+                                <p className="text-xs text-[#7C6F64] mt-1.5 font-medium">{item.desc}</p>
+                            </Link>
+                        </motion.div>
+                    ))}
+                </div>
+            </motion.div>
+        </div>
     );
 }

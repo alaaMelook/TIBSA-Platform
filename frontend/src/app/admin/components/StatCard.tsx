@@ -17,12 +17,12 @@ interface StatCardProps {
 
 
 const COLOR_MAP = {
-    blue:   { bg: "bg-[var(--primary)]/[0.07]", border: "border-[var(--primary)]",   text: "text-[var(--primary)]",   glow: "shadow-[var(--primary-soft)]",   accent: "#3b82f6" },
-    green:  { bg: "bg-emerald-500/[0.07]", border: "border-emerald-500/20", text: "text-emerald-400", glow: "shadow-emerald-500/10", accent: "#10b981" },
-    red:    { bg: "bg-red-500/[0.07]",     border: "border-red-500/20",     text: "text-red-400",     glow: "shadow-red-500/10",     accent: "#ef4444" },
-    amber:  { bg: "bg-amber-500/[0.07]",   border: "border-amber-500/20",   text: "text-amber-400",   glow: "shadow-amber-500/10",   accent: "#f59e0b" },
-    purple: { bg: "bg-purple-500/[0.07]",  border: "border-[var(--primary)]",  text: "text-[var(--primary)]",  glow: "shadow-[var(--primary-soft)]",  accent: "#a855f7" },
-    cyan:   { bg: "bg-cyan-500/[0.07]",    border: "border-cyan-500/20",    text: "text-cyan-400",    glow: "shadow-cyan-500/10",    accent: "#06b6d4" },
+    blue:   { bg: "bg-[#2F80ED]/10", border: "border-[#2F80ED]/20",   text: "text-[#2F80ED]",   glow: "shadow-[#2F80ED]/10",   accent: "#2F80ED" },
+    green:  { bg: "bg-[#10B981]/10", border: "border-[#10B981]/20", text: "text-[#10B981]", glow: "shadow-[#10B981]/10", accent: "#10B981" },
+    red:    { bg: "bg-[#EF4444]/10",     border: "border-[#EF4444]/20",     text: "text-[#EF4444]",     glow: "shadow-[#EF4444]/10",     accent: "#EF4444" },
+    amber:  { bg: "bg-amber-500/10",   border: "border-amber-500/20",   text: "text-amber-500",   glow: "shadow-amber-500/10",   accent: "#f59e0b" },
+    purple: { bg: "bg-purple-500/10",  border: "border-purple-500/20",  text: "text-purple-600",  glow: "shadow-purple-500/10",  accent: "#a855f7" },
+    cyan:   { bg: "bg-[#00A884]/10",    border: "border-[#00A884]/20",    text: "text-[#00A884]",    glow: "shadow-[#00A884]/10",    accent: "#00A884" },
 };
 
 function AnimatedNumber({ value, duration = 1400 }: { value: number; duration?: number }) {
@@ -61,9 +61,8 @@ export function StatCard({ label, value, change, changeLabel, icon, color, trend
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, delay: delay / 1000, ease: [0.25, 0.46, 0.45, 0.94] }}
-            whileHover={{ y: -2, scale: 1.02, transition: { duration: 0.2 } }}
-            className={`relative overflow-hidden rounded-xl border ${colors.border} backdrop-blur-md p-5 shadow-lg ${colors.glow} cursor-default group`}
-            style={{ background: `linear-gradient(135deg, rgba(26,39,68,0.8) 0%, rgba(15,23,42,0.9) 100%)` }}
+            whileHover={{ y: -4, scale: 1.01, transition: { duration: 0.2 } }}
+            className={`relative overflow-hidden rounded-[18px] border border-[#E6DDD2] bg-white p-5 shadow-sm hover:shadow-md hover:border-[#10B981]/50 cursor-default group`}
         >
             {/* Animated gradient accent line at top */}
             <div
@@ -79,7 +78,7 @@ export function StatCard({ label, value, change, changeLabel, icon, color, trend
 
             <div className="relative flex items-start justify-between">
                 <div className="space-y-2">
-                    <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{label}</p>
+                    <p className="text-xs font-semibold text-[#7C6F64] uppercase tracking-wider">{label}</p>
                     <p className={`text-2xl font-bold ${colors.text} tracking-tight`}>
                         {isNumeric ? <AnimatedNumber value={value as number} /> : value}
                     </p>
@@ -91,21 +90,21 @@ export function StatCard({ label, value, change, changeLabel, icon, color, trend
                             className="flex items-center gap-1.5"
                         >
                             {trend === "up" && (
-                                <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <svg className="w-3.5 h-3.5 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 17l9.2-9.2M17 17V7H7" />
                                 </svg>
                             )}
                             {trend === "down" && (
-                                <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <svg className="w-3.5 h-3.5 text-[#EF4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 7l-9.2 9.2M7 7v10h10" />
                                 </svg>
                             )}
                             <span className={`text-[11px] font-semibold tabular-nums ${
-                                trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : "text-[var(--text-muted)]"
+                                trend === "up" ? "text-[#10B981]" : trend === "down" ? "text-[#EF4444]" : "text-[#7C6F64]"
                             }`}>
                                 {change > 0 ? "+" : ""}{change}%
                             </span>
-                            {changeLabel && <span className="text-[10px] text-[var(--text-muted)]">{changeLabel}</span>}
+                            {changeLabel && <span className="text-[10px] text-[#7C6F64]/70">{changeLabel}</span>}
                         </motion.div>
                     )}
                 </div>

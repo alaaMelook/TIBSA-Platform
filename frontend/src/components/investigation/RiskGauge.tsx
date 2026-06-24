@@ -74,7 +74,7 @@ export function RiskGauge({ score, size = 180 }: RiskGaugeProps) {
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke="#E6DDD2"
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={circumference - circumference * (angleRange / 360)}
@@ -98,7 +98,7 @@ export function RiskGauge({ score, size = 180 }: RiskGaugeProps) {
 
         {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center mt-2">
-          <span className="text-4xl font-extrabold text-[var(--text-primary)] tracking-tight">
+          <span className="text-4xl font-extrabold text-[#1F2933] tracking-tight">
             {animatedScore}
           </span>
           <span
@@ -111,7 +111,7 @@ export function RiskGauge({ score, size = 180 }: RiskGaugeProps) {
           >
             {label}
           </span>
-          <span className="text-[10px] text-[var(--text-muted)] uppercase font-medium tracking-widest mt-1">
+          <span className="text-[10px] text-[#7C6F64] uppercase font-medium tracking-widest mt-1">
             Risk Index
           </span>
         </div>

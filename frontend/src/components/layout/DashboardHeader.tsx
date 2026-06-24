@@ -10,7 +10,6 @@ import { api } from "@/lib/api";
 const PAGE_TITLES: Record<string, string> = {
     "/dashboard": "Dashboard",
     "/dashboard/scans": "Security Scans",
-    "/dashboard/threats": "Threat Intelligence",
     "/dashboard/threat-modeling": "Threat Modeling",
     "/dashboard/reports": "Reports History",
     "/dashboard/profile": "Profile Settings",
@@ -54,7 +53,6 @@ const NOTIF_ICON_COLOR: Record<string, string> = {
 function getBreadcrumbs(pathname: string): string[] {
     if (pathname === "/dashboard") return ["TIBSA", "Dashboard"];
     if (pathname === "/dashboard/scans") return ["TIBSA", "Security Scans"];
-    if (pathname === "/dashboard/threats") return ["TIBSA", "Threat Intelligence"];
     if (pathname === "/dashboard/threat-modeling") return ["TIBSA", "Threat Modeling"];
     if (pathname === "/dashboard/reports") return ["TIBSA", "Reports History"];
     if (pathname === "/dashboard/profile") return ["TIBSA", "Profile Settings"];

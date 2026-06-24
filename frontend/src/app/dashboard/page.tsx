@@ -259,7 +259,7 @@ export default function DashboardPage() {
                     </div>
                     <p className="text-[#8a8178] text-center text-xs mb-8">Access individual security tools and capabilities.</p>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         
                         {/* Service 1: Scans */}
                         <Link href="/dashboard/scans" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
@@ -285,17 +285,6 @@ export default function DashboardPage() {
                             <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </Link>
 
-                        {/* Service 3: Threats */}
-                        <Link href="/dashboard/threats" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
-                            <div className="p-2.5 rounded-lg bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                            </div>
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-[#1d1d1d]">Threats</h4>
-                                <p className="text-[11px] text-[#8a8178] leading-tight">Monitor and analyze threats</p>
-                            </div>
-                            <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                        </Link>
 
                         {/* Service 4: Threat Modeling */}
                         <Link href="/dashboard/threat-modeling" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
@@ -305,18 +294,6 @@ export default function DashboardPage() {
                             <div className="space-y-1">
                                 <h4 className="text-sm font-semibold text-[#1d1d1d]">Threat Modeling</h4>
                                 <p className="text-[11px] text-[#8a8178] leading-tight">Create and manage threat models</p>
-                            </div>
-                            <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                        </Link>
-
-                        {/* Service 5: AI Analysis */}
-                        <Link href="/dashboard/ai-malware-analysis" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
-                            <div className="p-2.5 rounded-lg bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
-                            </div>
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-[#1d1d1d]">AI Analysis</h4>
-                                <p className="text-[11px] text-[#8a8178] leading-tight">AI-powered security analysis</p>
                             </div>
                             <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </Link>

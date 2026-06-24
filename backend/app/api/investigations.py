@@ -104,7 +104,9 @@ async def start_investigation(
         
         # Dispatch background task to execute the full pipeline
         from app.dependencies import get_supabase
-        async def run_pipeline_task(
+        from app.utils.loop import run_in_proactor_loop
+
+        def run_pipeline_task(
             inv_id: str,
             run_tests: List[str],
             run_mode: str,
@@ -118,7 +120,9 @@ async def start_investigation(
         ):
             bg_supabase = get_supabase()
             bg_orch = InvestigationOrchestrator(bg_supabase)
-            await bg_orch.run_investigation_pipeline(
+            
+            run_in_proactor_loop(
+                bg_orch.run_investigation_pipeline,
                 investigation_id=inv_id,
                 tests=run_tests,
                 mode=run_mode,

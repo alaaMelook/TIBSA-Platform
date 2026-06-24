@@ -14,7 +14,7 @@ import { PassiveDNSTab } from "@/components/infra-investigation/PassiveDNSTab";
 import { ThreatIndicatorsTab } from "@/components/infra-investigation/ThreatIndicatorsTab";
 import { CorrelationTab } from "@/components/infra-investigation/CorrelationTab";
 import { AIReportTab } from "@/components/infra-investigation/AIReportTab";
-import { Button } from "@/components/ui";
+import { Button, TibsaRefreshButton } from "@/components/ui";
 import {
   ArrowLeft, Globe, AlertOctagon, Clock, RefreshCw, StopCircle,
   ShieldAlert, Search, GitBranch, AlertTriangle, Sparkles, Network,
@@ -287,9 +287,12 @@ export default function InfraInvestigationWorkspace() {
               <Download className="w-4 h-4" /> Export Report
             </Button>
           )}
-          <button onClick={() => refresh()} className="p-2 rounded-lg border border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all">
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <TibsaRefreshButton
+            onClick={() => { refresh(); }}
+            label=""
+            loadingLabel=""
+            className="w-10 h-10 p-0 flex items-center justify-center rounded-lg"
+          />
         </div>
       </div>
 

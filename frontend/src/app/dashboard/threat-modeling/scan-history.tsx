@@ -31,17 +31,17 @@ interface ScanHistoryResponse {
 }
 
 const RISK_COLORS: Record<string, string> = {
-    "Critical": "bg-red-600 text-[var(--text-primary)]",
-    "High": "bg-red-500 text-[var(--text-primary)]",
-    "Medium": "bg-orange-400 text-[var(--text-primary)]",
-    "Low": "bg-green-500 text-[var(--text-primary)]",
+    "Critical": "bg-[#EF4444] text-[#1F2933]",
+    "High": "bg-[#EF4444] text-[#1F2933]",
+    "Medium": "bg-[#F97316] text-[#1F2933]",
+    "Low": "bg-[#10B981] text-[#1F2933]",
 };
 
 const RISK_TEXT_COLORS: Record<string, string> = {
-    "Critical": "text-red-400",
-    "High": "text-red-300",
-    "Medium": "text-orange-300",
-    "Low": "text-green-300",
+    "Critical": "text-[#EF4444]",
+    "High": "text-[#EF4444]",
+    "Medium": "text-[#F97316]",
+    "Low": "text-[#10B981]",
 };
 
 export function ScanHistory() {
@@ -81,7 +81,7 @@ export function ScanHistory() {
     if (!token) {
         return (
             <Card className="p-6 text-center">
-                <p className="text-[var(--text-muted)]">Sign in to view scan history</p>
+                <p className="text-[#7C6F64]">Sign in to view scan history</p>
             </Card>
         );
     }
@@ -90,8 +90,8 @@ export function ScanHistory() {
         return (
             <Card className="p-6">
                 <div className="animate-pulse space-y-4">
-                    <div className="h-4 bg-[var(--bg-elevated)] rounded w-1/4"></div>
-                    <div className="h-8 bg-[var(--bg-elevated)] rounded w-full"></div>
+                    <div className="h-4 bg-[#F4EFE7] rounded w-1/4"></div>
+                    <div className="h-8 bg-[#F4EFE7] rounded w-full"></div>
                 </div>
             </Card>
         );
@@ -99,8 +99,8 @@ export function ScanHistory() {
 
     if (error) {
         return (
-            <Card className="p-6 border-red-500/20 bg-red-500/5">
-                <p className="text-red-400">❌ {error}</p>
+            <Card className="p-6 border-[#EF4444]/20 bg-[#EF4444]/10">
+                <p className="text-[#EF4444]">❌ {error}</p>
             </Card>
         );
     }
@@ -108,7 +108,7 @@ export function ScanHistory() {
     if (!history || history.total_scans === 0) {
         return (
             <Card className="p-6 text-center">
-                <p className="text-[var(--text-muted)]">No scan history yet. Create your first threat model analysis above!</p>
+                <p className="text-[#7C6F64]">No scan history yet. Create your first threat model analysis above!</p>
             </Card>
         );
     }
@@ -117,67 +117,67 @@ export function ScanHistory() {
         <div className="space-y-6 animate-[fadeIn_0.5s_ease-out]">
             {/* Statistics Summary */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-[var(--bg-card)] backdrop-blur-md rounded-xl p-5 border border-[var(--border-soft)] border-t-4 border-t-blue-500 shadow-lg shadow-black/5 hover:bg-[var(--bg-page)] transition-colors">
-                    <p className="text-[11px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest">Total Scans</p>
-                    <p className="text-3xl font-extrabold text-[var(--text-primary)] animate-[pulse_2s_ease-in-out_1]">{history.total_scans}</p>
+                <div className="bg-[#FFFFFF] backdrop-blur-md rounded-xl p-5 border border-[#E6DDD2] border-t-4 border-t-[#10B981] shadow-lg shadow-black/5 hover:bg-[#F4EFE7] transition-colors">
+                    <p className="text-[11px] font-bold text-[#7C6F64] mb-2 uppercase tracking-widest">Total Scans</p>
+                    <p className="text-3xl font-extrabold text-[#1F2933] animate-[pulse_2s_ease-in-out_1]">{history.total_scans}</p>
                 </div>
-                <div className={`bg-[var(--bg-card)] backdrop-blur-md rounded-xl p-5 border border-[var(--border-soft)] border-t-4 shadow-lg shadow-black/5 hover:bg-[var(--bg-page)] transition-colors ${
-                    history.average_risk_score && history.average_risk_score >= 80 ? 'border-t-red-600' :
-                    history.average_risk_score && history.average_risk_score >= 60 ? 'border-t-red-500' :
-                    history.average_risk_score && history.average_risk_score >= 35 ? 'border-t-orange-400' : 'border-t-green-500'
+                <div className={`bg-[#FFFFFF] backdrop-blur-md rounded-xl p-5 border border-[#E6DDD2] border-t-4 shadow-lg shadow-black/5 hover:bg-[#F4EFE7] transition-colors ${
+                    history.average_risk_score && history.average_risk_score >= 80 ? 'border-t-[#EF4444]' :
+                    history.average_risk_score && history.average_risk_score >= 60 ? 'border-t-[#EF4444]' :
+                    history.average_risk_score && history.average_risk_score >= 35 ? 'border-t-[#F97316]' : 'border-t-[#10B981]'
                 }`}>
-                    <p className="text-[11px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest">Average Risk</p>
+                    <p className="text-[11px] font-bold text-[#7C6F64] mb-2 uppercase tracking-widest">Average Risk</p>
                     <p className={`text-3xl font-extrabold animate-[pulse_2s_ease-in-out_1] ${RISK_TEXT_COLORS[getRiskLabel(history.average_risk_score || 0)]}`}>
                         {history.average_risk_score ? history.average_risk_score.toFixed(1) : "—"}
                     </p>
                 </div>
-                <div className="bg-[var(--bg-card)] backdrop-blur-md rounded-xl p-5 border border-[var(--border-soft)] border-t-4 border-t-red-500 shadow-lg shadow-black/5 hover:bg-[var(--bg-page)] transition-colors">
-                    <p className="text-[11px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest">High Risk Scans</p>
-                    <p className="text-3xl font-extrabold text-red-400 animate-[pulse_2s_ease-in-out_1]">{history.high_risk_count}</p>
+                <div className="bg-[#FFFFFF] backdrop-blur-md rounded-xl p-5 border border-[#E6DDD2] border-t-4 border-t-[#EF4444] shadow-lg shadow-black/5 hover:bg-[#F4EFE7] transition-colors">
+                    <p className="text-[11px] font-bold text-[#7C6F64] mb-2 uppercase tracking-widest">High Risk Scans</p>
+                    <p className="text-3xl font-extrabold text-[#EF4444] animate-[pulse_2s_ease-in-out_1]">{history.high_risk_count}</p>
                 </div>
-                <div className="bg-[var(--bg-card)] backdrop-blur-md rounded-xl p-5 border border-[var(--border-soft)] border-t-4 border-t-orange-400 shadow-lg shadow-black/5 hover:bg-[var(--bg-page)] transition-colors">
-                    <p className="text-[11px] font-bold text-[var(--text-muted)] mb-2 uppercase tracking-widest">Medium Risk Scans</p>
-                    <p className="text-3xl font-extrabold text-orange-400 animate-[pulse_2s_ease-in-out_1]">{history.medium_risk_count}</p>
+                <div className="bg-[#FFFFFF] backdrop-blur-md rounded-xl p-5 border border-[#E6DDD2] border-t-4 border-t-[#F97316] shadow-lg shadow-black/5 hover:bg-[#F4EFE7] transition-colors">
+                    <p className="text-[11px] font-bold text-[#7C6F64] mb-2 uppercase tracking-widest">Medium Risk Scans</p>
+                    <p className="text-3xl font-extrabold text-[#F97316] animate-[pulse_2s_ease-in-out_1]">{history.medium_risk_count}</p>
                 </div>
             </div>
 
             {/* Scan History Table */}
-            <div className="bg-[var(--bg-card)] backdrop-blur-md border border-[var(--border-soft)] rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-[#FFFFFF] backdrop-blur-md border border-[#E6DDD2] rounded-2xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-[var(--bg-page)] border-b border-[var(--border-soft)]">
-                                <th className="px-6 py-4 text-left text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">Project</th>
-                                <th className="px-6 py-4 text-left text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">App Type</th>
-                                <th className="px-6 py-4 text-center text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">Risk Score</th>
-                                <th className="px-6 py-4 text-center text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">Threats</th>
-                                <th className="px-6 py-4 text-left text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">Scanned On</th>
+                            <tr className="bg-[#F4EFE7] border-b border-[#E6DDD2]">
+                                <th className="px-6 py-4 text-left text-[11px] font-bold text-[#7C6F64] uppercase tracking-widest whitespace-nowrap">Project</th>
+                                <th className="px-6 py-4 text-left text-[11px] font-bold text-[#7C6F64] uppercase tracking-widest whitespace-nowrap">App Type</th>
+                                <th className="px-6 py-4 text-center text-[11px] font-bold text-[#7C6F64] uppercase tracking-widest whitespace-nowrap">Risk Score</th>
+                                <th className="px-6 py-4 text-center text-[11px] font-bold text-[#7C6F64] uppercase tracking-widest whitespace-nowrap">Threats</th>
+                                <th className="px-6 py-4 text-left text-[11px] font-bold text-[#7C6F64] uppercase tracking-widest whitespace-nowrap">Scanned On</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.04]">
+                        <tbody className="divide-y divide-[#E6DDD2]">
                             {history.scans.map((scan, idx) => {
                                 const isCritical = scan.risk_score >= 80;
                                 const isHigh = scan.risk_score >= 60 && scan.risk_score < 80;
                                 const isMed = scan.risk_score >= 35 && scan.risk_score < 60;
                                 
-                                let badgeClass = "bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.2)]";
-                                if (isCritical) badgeClass = "bg-red-600/20 text-red-400 border-red-500/30 shadow-[0_0_15px_rgba(220,38,38,0.4)]";
-                                else if (isHigh) badgeClass = "bg-red-500/15 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.2)]";
-                                else if (isMed) badgeClass = "bg-orange-500/15 text-orange-400 border-orange-500/20 shadow-[0_0_10px_rgba(249,115,22,0.2)]";
+                                let badgeClass = "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20 shadow-sm";
+                                if (isCritical) badgeClass = "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20 shadow-sm";
+                                else if (isHigh) badgeClass = "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20 shadow-sm";
+                                else if (isMed) badgeClass = "bg-[#F97316]/10 text-[#F97316] border-[#F97316]/20 shadow-sm";
 
                                 return (
                                     <tr
                                         key={`${scan.id}-${idx}`}
-                                        className="group hover:bg-[var(--primary)]/[0.04] transition-colors duration-200"
+                                        className="group hover:bg-[#10B981]/[0.04] transition-colors duration-200"
                                         style={{ animation: `fadeIn 0.3s ease-out ${(idx * 0.05).toFixed(2)}s both` }}
                                     >
                                         <td className="px-6 py-4">
-                                            <div className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">
+                                            <div className="font-semibold text-[#1F2933] group-hover:text-[#10B981] transition-colors">
                                                 {scan.project_name}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-soft)]">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#F4EFE7] text-[#7C6F64] border border-[#E6DDD2]">
                                                 {scan.app_type}
                                             </span>
                                         </td>
@@ -189,12 +189,12 @@ export function ScanHistory() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <div className="text-sm font-semibold text-[var(--text-secondary)]">
+                                            <div className="text-sm font-semibold text-[#7C6F64]">
                                                 {scan.threat_count}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-xs font-medium text-[var(--text-muted)]">
+                                            <div className="text-xs font-medium text-[#7C6F64]">
                                                 {formatDate(scan.created_at)}
                                             </div>
                                         </td>

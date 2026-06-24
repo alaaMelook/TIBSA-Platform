@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Card, Button, Input } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { notifySuccess, notifyError } from "@/lib/notify";
 import { ScanHistory } from "./scan-history";
 
 // ─────────────────────────────────────────────────────────────────────
@@ -92,24 +94,24 @@ const initialForm: FormState = {
 // ─────────────────────────────────────────────────────────────────────
 
 const RISK_BADGE: Record<RiskLevel, string> = {
-    High: "bg-red-500/15 text-red-400 border border-red-500/20",
-    Medium: "bg-orange-500/15 text-orange-400 border border-orange-500/20",
-    Low: "bg-yellow-500/15 text-yellow-400 border border-yellow-500/20",
+    High: "bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20",
+    Medium: "bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/20",
+    Low: "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20",
 };
 
 const RISK_DOT: Record<RiskLevel, string> = {
-    High: "bg-red-500", Medium: "bg-orange-400", Low: "bg-yellow-400",
+    High: "bg-[#EF4444]", Medium: "bg-[#F97316]", Low: "bg-[#10B981]",
 };
 
 const SCORE_COLOR: Record<string, string> = {
-    Critical: "bg-red-600", High: "bg-red-500", Medium: "bg-orange-400", Low: "bg-green-500",
+    Critical: "bg-[#EF4444]", High: "bg-[#EF4444]", Medium: "bg-[#F97316]", Low: "bg-[#10B981]",
 };
 
 const SCORE_LABEL_STYLE: Record<string, string> = {
-    Critical: "bg-red-500/15 text-red-400",
-    High: "bg-red-500/15 text-red-400",
-    Medium: "bg-orange-500/15 text-orange-400",
-    Low: "bg-green-500/15 text-green-400",
+    Critical: "bg-[#EF4444]/10 text-[#EF4444]",
+    High: "bg-[#EF4444]/10 text-[#EF4444]",
+    Medium: "bg-[#F97316]/10 text-[#F97316]",
+    Low: "bg-[#10B981]/10 text-[#10B981]",
 };
 
 function getRiskLabel(score: number | null): string {
@@ -132,21 +134,21 @@ function getRiskLabel(score: number | null): string {
 type PillColor = "blue" | "indigo" | "violet" | "teal" | "emerald" | "rose";
 
 const PILL_ACTIVE: Record<PillColor, string> = {
-    blue: "bg-blue-600 text-white border-blue-600",
-    indigo: "bg-indigo-600 text-white border-indigo-600",
-    violet: "bg-violet-600 text-white border-violet-600",
-    teal: "bg-teal-600 text-white border-teal-600",
-    emerald: "bg-emerald-600 text-white border-emerald-600",
-    rose: "bg-rose-600 text-white border-rose-600",
+    blue: "bg-[#ECFDF5] text-[#10B981] border-[#10B981]",
+    indigo: "bg-[#ECFDF5] text-[#10B981] border-[#10B981]",
+    violet: "bg-[#ECFDF5] text-[#10B981] border-[#10B981]",
+    teal: "bg-[#ECFDF5] text-[#10B981] border-[#10B981]",
+    emerald: "bg-[#ECFDF5] text-[#10B981] border-[#10B981]",
+    rose: "bg-[#ECFDF5] text-[#10B981] border-[#10B981]",
 };
 
 const PILL_HOVER: Record<PillColor, string> = {
-    blue: "hover:border-blue-400/50 hover:text-blue-400",
-    indigo: "hover:border-indigo-400/50 hover:text-indigo-400",
-    violet: "hover:border-violet-400/50 hover:text-violet-400",
-    teal: "hover:border-teal-400/50 hover:text-teal-400",
-    emerald: "hover:border-emerald-400/50 hover:text-emerald-400",
-    rose: "hover:border-rose-400/50 hover:text-rose-400",
+    blue: "hover:border-[#10B981] hover:text-[#10B981]",
+    indigo: "hover:border-[#10B981] hover:text-[#10B981]",
+    violet: "hover:border-[#10B981] hover:text-[#10B981]",
+    teal: "hover:border-[#10B981] hover:text-[#10B981]",
+    emerald: "hover:border-[#10B981] hover:text-[#10B981]",
+    rose: "hover:border-[#10B981] hover:text-[#10B981]",
 };
 
 function MultiPillSelect<T extends string>({
@@ -158,8 +160,8 @@ function MultiPillSelect<T extends string>({
     return (
         <div>
             <div className="mb-3">
-                <span className="block text-sm font-semibold text-slate-200">{label}</span>
-                {hint && <span className="block text-[11px] font-medium text-slate-500 mt-1 uppercase tracking-wider">{hint}</span>}
+                <span className="block text-sm font-semibold text-[#1F2933]">{label}</span>
+                {hint && <span className="block text-[11px] font-medium text-[#7C6F64] mt-1 uppercase tracking-wider">{hint}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
                 {options.map((opt) => {
@@ -169,21 +171,38 @@ function MultiPillSelect<T extends string>({
                             key={opt}
                             type="button"
                             onClick={() => onToggle(opt)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-300 ${active
-                                ? `${PILL_ACTIVE[color]} shadow-[0_0_12px_rgba(0,0,0,0.5)] shadow-${color}-500/30 scale-[1.02]`
-                                : `bg-[#0d1117]/80 text-slate-400 border-white/[0.05] hover:border-${color}-500/50 hover:bg-${color}-500/10 hover:text-${color}-400`
+                            className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-300 transform hover:-translate-y-[2px] active:scale-[0.98] ${active
+                                ? 'bg-gradient-to-br from-[#10B981] to-[#00A884] text-white border-[#00A884] shadow-[0_4px_12px_rgba(16,185,129,0.25)]'
+                                : 'bg-white text-[#7C6F64] border-[#E6DDD2] hover:border-[#10B981] hover:bg-[#ECFDF5] hover:text-[#10B981] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)]'
                                 }`}
                         >
-                            {opt}
+                            <div className="flex items-center gap-1.5">
+                                {active && (
+                                    <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                )}
+                                {opt}
+                            </div>
                         </button>
                     );
                 })}
             </div>
             {selected.length > 0 && (
-                <p className="mt-3 text-[11px] font-medium text-slate-400 bg-white/[0.02] inline-block px-3 py-1.5 rounded-md border border-white/[0.05]">
-                    <span className="text-emerald-400 mr-1.5">✓</span>
-                    {selected.join(" • ")}
-                </p>
+                <div className="mt-4 p-3 bg-[#F9FDFC] border border-[#E6F3EE] rounded-xl flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-[#7C6F64] mr-1">Selected:</span>
+                    {selected.map((item) => (
+                        <div
+                            key={item}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#047857] border border-[#BFEBD8] animate-in fade-in zoom-in-95 duration-200"
+                        >
+                            <svg className="w-3 h-3 text-[#047857]" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            {item}
+                        </div>
+                    ))}
+                </div>
             )}
         </div>
     );
@@ -192,53 +211,53 @@ function MultiPillSelect<T extends string>({
 function SectionDivider({ label }: { label: string }) {
     return (
         <div className="flex items-center gap-4 py-2">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E6DDD2] to-transparent" />
+            <span className="text-[10px] font-bold text-[#7C6F64] uppercase tracking-widest whitespace-nowrap">
                 {label}
             </span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E6DDD2] to-transparent" />
         </div>
     );
 }
 
-function CollapsibleSection({ 
-    title, 
-    description, 
-    icon, 
-    children, 
-    defaultOpen = true 
-}: { 
-    title: string; 
-    description: string; 
-    icon: React.ReactNode; 
-    children: React.ReactNode; 
+function CollapsibleSection({
+    title,
+    description,
+    icon,
+    children,
+    defaultOpen = true
+}: {
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    children: React.ReactNode;
     defaultOpen?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-        <div className="bg-[#0f1523]/80 backdrop-blur-md rounded-2xl border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-all duration-300 hover:border-blue-500/20 group">
-            <button 
-                type="button" 
-                onClick={() => setIsOpen(!isOpen)} 
+        <div className="bg-white rounded-2xl border border-[#E6DDD2] shadow-sm overflow-hidden transition-all duration-300 hover:border-[#10B981]/50 group">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
             >
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400 group-hover:bg-blue-500/20 group-hover:scale-110 transition-all duration-300">
+                    <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center border border-[#10B981]/20 text-[#10B981] group-hover:bg-[#10B981]/20 group-hover:scale-110 transition-all duration-300">
                         {icon}
                     </div>
                     <div>
-                        <h3 className="text-base font-bold text-white tracking-wide">{title}</h3>
-                        <p className="text-[11px] font-medium text-slate-400 mt-1 uppercase tracking-wider">{description}</p>
+                        <h3 className="text-base font-bold text-[#1F2933] tracking-wide">{title}</h3>
+                        <p className="text-[11px] font-medium text-[#7C6F64] mt-1 uppercase tracking-wider">{description}</p>
                     </div>
                 </div>
-                <div className={`w-8 h-8 rounded-full bg-white/[0.03] flex items-center justify-center transition-transform duration-300 ${isOpen ? 'rotate-180 bg-white/[0.08]' : ''}`}>
-                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className={`w-8 h-8 rounded-full bg-[#F4EFE7] flex items-center justify-center transition-transform duration-300 ${isOpen ? 'rotate-180 bg-[#E6DDD2]' : ''}`}>
+                    <svg className="w-4 h-4 text-[#7C6F64]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
             </button>
             <div className={`transition-all duration-500 ease-in-out origin-top ${isOpen ? 'max-h-[2000px] opacity-100 scale-y-100' : 'max-h-0 opacity-0 scale-y-95 pointer-events-none'}`}>
-                <div className="p-6 pt-2 border-t border-white/[0.05]">
+                <div className="p-6 pt-2 border-t border-[#E6DDD2]">
                     {children}
                 </div>
             </div>
@@ -571,11 +590,9 @@ export default function ThreatModelingPage() {
                         token,
                     );
                     setAutoSaved(true);
-                    setSaveMsg("✅ Report auto-saved to your history.");
-                    setTimeout(() => setSaveMsg(""), 5000);
+                    notifySuccess("Report auto-saved", "Your threat model has been saved to your history.");
                 } catch {
-                    setSaveErr("⚠️ Auto-save failed — you can save manually if needed.");
-                    setTimeout(() => setSaveErr(""), 6000);
+                    notifyError("Auto-save failed", "You can save manually if needed.");
                 } finally {
                     setIsSaving(false);
                 }
@@ -627,11 +644,9 @@ export default function ThreatModelingPage() {
                 },
                 token,
             );
-            setSaveMsg("✅ Report saved! You can view it in the Reports page.");
-            setTimeout(() => setSaveMsg(""), 5000);
+            notifySuccess("Report saved", "You can view it in the Reports page.");
         } catch (err) {
-            setSaveErr(`❌ Failed to save: ${err instanceof Error ? err.message : "Unknown error"}`);
-            setTimeout(() => setSaveErr(""), 5000);
+            notifyError("Failed to save", err instanceof Error ? err.message : "Unknown error");
         } finally {
             setIsSaving(false);
         }
@@ -648,7 +663,7 @@ export default function ThreatModelingPage() {
     };
 
     const riskLabel = result ? getRiskLabel(result.riskScore) : "";
-    const barColor = SCORE_COLOR[riskLabel] ?? "bg-slate-600";
+    const barColor = SCORE_COLOR[riskLabel] ?? "bg-[#E6DDD2]";
     const labelStyle = SCORE_LABEL_STYLE[riskLabel] ?? "";
 
     // Compact summary of selected options for the report header
@@ -656,79 +671,79 @@ export default function ThreatModelingPage() {
 
     // ── Render ────────────────────────────────────────────────
     return (
-        <div className="space-y-8 print:p-8 max-w-4xl mx-auto pb-16">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-8 print:p-8 max-w-[1600px] w-full px-6 xl:px-8 mx-auto pb-16">
 
             {/* ════════════════════ HERO ════════════════════ */}
-            <div className="relative rounded-2xl bg-[#0d1117] border border-white/[0.05] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] print:hidden">
+            <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} className="relative rounded-2xl bg-[linear-gradient(90deg,#FFFCF7_0%,#F4EFE7_45%,#E9EDF3_100%)] border border-[#E6DDD2] overflow-hidden shadow-sm print:hidden">
                 {/* Background glow effects */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl bg-blue-500/10 blur-[100px] pointer-events-none" />
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50" />
-                
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl bg-[#10B981]/10 blur-[100px] pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#E6DDD2] to-transparent opacity-100" />
+
                 <div className="relative px-8 py-14 flex flex-col items-center text-center">
                     <div className="relative w-16 h-16 mb-6">
-                        <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-                        <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/30 flex items-center justify-center backdrop-blur-sm shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                            <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <div className="absolute inset-0 bg-[#2F80ED]/10 rounded-full blur-xl animate-pulse" />
+                        <div className="relative w-full h-full rounded-2xl bg-white border border-[#E6DDD2] flex items-center justify-center backdrop-blur-sm shadow-sm">
+                            <svg className="w-8 h-8 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                         </div>
                     </div>
-                    
+
                     <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
-                        <span className="bg-gradient-to-r from-white via-blue-100 to-slate-300 bg-clip-text text-transparent">
+                        <span className="text-[#1F2933]">
                             Threat Modeling
                         </span>
-                        <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent ml-2">
+                        <span className="bg-gradient-to-r from-[#00A884] to-[#10B981] bg-clip-text text-transparent ml-2">
                             as a Service
                         </span>
                     </h1>
-                    
-                    <p className="text-slate-400 text-lg max-w-2xl mb-10 font-medium leading-relaxed">
+
+                    <p className="text-[#7C6F64] text-lg max-w-2xl mb-10 font-medium leading-relaxed">
                         Proactively discover architectural vulnerabilities and continuously adapt your defenses with AI-driven threat intelligence.
                     </p>
-                    
+
                     {!result && (
                         <button
                             onClick={() => document.getElementById("tm-form")?.scrollIntoView({ behavior: "smooth" })}
-                            className="group relative inline-flex items-center justify-center gap-3 bg-blue-600 text-white font-bold text-sm tracking-wider uppercase px-8 py-4 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] transition-all duration-300"
+                            className="group relative inline-flex items-center justify-center gap-3 bg-gradient-to-br from-[#10B981] to-[#00A884] text-white font-bold text-sm tracking-wider uppercase px-10 py-4 rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(16,185,129,0.25)] hover:shadow-[0_12px_32px_rgba(16,185,129,0.4)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300"
                         >
-                            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                            <svg className="w-5 h-5 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                            <svg className="w-5 h-5 text-white/90 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
-                            Start Analysis
+                            <span className="relative">Start Analysis</span>
                         </button>
                     )}
                 </div>
-            </div>
+            </motion.div>
 
             {/* ════════════════════ FORM ════════════════════ */}
             {!result && (
                 <form id="tm-form" onSubmit={handleSubmit} className="space-y-6">
 
                     {/* ── Card 1: System Information ── */}
-                    <CollapsibleSection 
-                        title="System Information" 
+                    <CollapsibleSection
+                        title="System Information"
                         description="Define the core properties and architecture of your application"
                         icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>}
                     >
                         <div className="space-y-8 mt-2">
                             {/* Project name */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-200 mb-2">Project Name <span className="text-red-400">*</span></label>
+                                <label className="block text-sm font-semibold text-[#1F2933] mb-2">Project Name <span className="text-red-400">*</span></label>
                                 <input
                                     type="text"
                                     placeholder="e.g. Project Phoenix"
                                     value={form.projectName}
                                     onChange={e => setForm(p => ({ ...p, projectName: e.target.value }))}
-                                    className={`w-full bg-[#0d1117] text-white border ${nameError ? 'border-red-500/50 focus:border-red-500' : 'border-white/[0.1] focus:border-blue-500'} rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors shadow-inner`}
+                                    className={`w-full bg-[linear-gradient(90deg,#FFFCF7_0%,#F4EFE7_45%,#E9EDF3_100%)] text-[#1F2933] border ${nameError ? 'border-red-500/50 focus:border-red-500' : 'border-white/[0.1] focus:border-[#10B981]'} rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#10B981] transition-colors shadow-inner`}
                                 />
                                 {nameError && <p className="mt-2 text-xs font-medium text-red-400">{nameError}</p>}
                             </div>
 
                             {/* App type - 2x2 Grid */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-200 mb-3">Application Architecture</label>
+                                <label className="block text-sm font-semibold text-[#1F2933] mb-3">Application Architecture</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { type: 'Web', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /> },
@@ -738,22 +753,21 @@ export default function ThreatModelingPage() {
                                     ].map(({ type, icon }) => {
                                         const isActive = form.appType === type;
                                         return (
-                                            <button 
-                                                key={type} 
+                                            <button
+                                                key={type}
                                                 type="button"
                                                 onClick={() => setForm(p => ({ ...p, appType: type as AppType }))}
-                                                className={`flex items-center gap-3 p-4 rounded-xl border text-left transition-all duration-300 ${
-                                                    isActive 
-                                                        ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)] ring-1 ring-blue-500/20' 
-                                                        : 'bg-[#0d1117] border-white/[0.05] hover:border-white/[0.15] hover:bg-white/[0.02]'
-                                                }`}
+                                                className={`group flex items-center gap-3 p-4 rounded-xl border text-left transition-all duration-300 transform hover:-translate-y-[2px] hover:border-[#10B981] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)] active:scale-[0.98] ${isActive
+                                                    ? 'bg-[#ECFDF5] border-[#10B981] shadow-[0_4px_12px_rgba(16,185,129,0.15)]'
+                                                    : 'bg-[linear-gradient(90deg,#FFFCF7_0%,#F4EFE7_45%,#E9EDF3_100%)] border-[#E6DDD2]'
+                                                    }`}
                                             >
-                                                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-white/[0.05] text-slate-400'}`}>
+                                                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-white border border-[#10B981]/25 text-[#10B981] shadow-sm' : 'bg-[#F4EFE7] text-[#7C6F64]'} group-hover:scale-110`}>
                                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                         {icon}
                                                     </svg>
                                                 </div>
-                                                <span className={`font-semibold ${isActive ? 'text-blue-100' : 'text-slate-300'}`}>{type} Application</span>
+                                                <span className={`font-bold transition-colors duration-300 ${isActive ? 'text-[#1F2933]' : 'text-[#7C6F64] group-hover:text-[#1F2933]'}`}>{type} Application</span>
                                             </button>
                                         );
                                     })}
@@ -762,24 +776,23 @@ export default function ThreatModelingPage() {
 
                             {/* System characteristics - Modern Toggle Chips */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-200 mb-3">System Characteristics</label>
+                                <label className="block text-sm font-semibold text-[#1F2933] mb-3">System Characteristics</label>
                                 <div className="flex flex-wrap gap-2.5">
                                     {CHECKBOXES.map(({ key, label }) => {
                                         const isChecked = form[key] as boolean;
                                         return (
-                                            <button 
+                                            <button
                                                 key={key}
                                                 type="button"
                                                 onClick={() => toggleBool(key)}
-                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
-                                                    isChecked 
-                                                        ? 'bg-[#3B82F6] text-white border-[#3B82F6] shadow-[0_0_15px_rgba(59,130,246,0.4)]' 
-                                                        : 'bg-[#0d1117] text-slate-400 border-white/[0.08] hover:border-slate-500 hover:text-slate-200'
-                                                }`}
+                                                className={`group flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 border transform hover:-translate-y-[2px] hover:border-[#10B981] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)] active:scale-[0.98] ${isChecked
+                                                    ? 'bg-gradient-to-br from-[#10B981] to-[#00A884] border-[#00A884] text-white shadow-[0_4px_12px_rgba(16,185,129,0.25)]'
+                                                    : 'bg-[linear-gradient(90deg,#FFFCF7_0%,#F4EFE7_45%,#E9EDF3_100%)] text-[#7C6F64] border-[#E6DDD2]'
+                                                    }`}
                                             >
-                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center border transition-colors ${isChecked ? 'bg-white border-white' : 'bg-transparent border-slate-500'}`}>
+                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center border transition-all duration-300 ${isChecked ? 'bg-white border-transparent text-[#10B981]' : 'bg-transparent border-[#7C6F64]'} group-hover:scale-110`}>
                                                     {isChecked && (
-                                                        <svg className="w-3 h-3 text-[#3B82F6]" viewBox="0 0 20 20" fill="currentColor">
+                                                        <svg className="w-3 h-3 text-[#10B981]" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                         </svg>
                                                     )}
@@ -794,8 +807,8 @@ export default function ThreatModelingPage() {
                     </CollapsibleSection>
 
                     {/* ── Card 2: Technology Stack ── */}
-                    <CollapsibleSection 
-                        title="Technology Stack" 
+                    <CollapsibleSection
+                        title="Technology Stack"
                         description="Frameworks and languages defining your system's attack surface"
                         icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>}
                     >
@@ -821,8 +834,8 @@ export default function ThreatModelingPage() {
                     </CollapsibleSection>
 
                     {/* ── Card 3: Deployment ── */}
-                    <CollapsibleSection 
-                        title="Deployment & Environment" 
+                    <CollapsibleSection
+                        title="Deployment & Environment"
                         description="Infrastructure architecture and delivery models"
                         icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
                     >
@@ -848,8 +861,8 @@ export default function ThreatModelingPage() {
                     </CollapsibleSection>
 
                     {/* ── Card 4: Data & Protocols ── */}
-                    <CollapsibleSection 
-                        title="Data & Network Protocols" 
+                    <CollapsibleSection
+                        title="Data & Network Protocols"
                         description="Data persistence layers and communication channels"
                         icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
                     >
@@ -875,7 +888,7 @@ export default function ThreatModelingPage() {
                     </CollapsibleSection>
 
                     {!isAuthenticated && !isLoading && (
-                        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-200 px-5 py-4 mb-4 flex items-center gap-3 backdrop-blur-sm">
+                        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 px-5 py-4 mb-4 flex items-center gap-3 backdrop-blur-sm">
                             <svg className="w-6 h-6 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
@@ -883,8 +896,8 @@ export default function ThreatModelingPage() {
                         </div>
                     )}
                     {isLoading && (
-                        <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-200 px-5 py-4 mb-4 flex items-center gap-3 backdrop-blur-sm">
-                            <svg className="w-5 h-5 text-blue-400 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                        <div className="rounded-xl border border-[#E6DDD2] bg-[#10B981]/10 text-[#2F80ED] px-5 py-4 mb-4 flex items-center gap-3 backdrop-blur-sm">
+                            <svg className="w-5 h-5 text-[#10B981] animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                             </svg>
@@ -894,26 +907,25 @@ export default function ThreatModelingPage() {
 
                     {/* ── Submit ── */}
                     <div className="pt-6 pb-4">
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={!canSubmit}
-                            className={`relative w-full group overflow-hidden rounded-xl font-bold text-lg tracking-widest uppercase py-5 transition-all duration-500 ${
-                                canSubmit 
-                                    ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700 text-white shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_50px_rgba(59,130,246,0.5)] border border-blue-400/30' 
-                                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                            }`}
+                            className={`group relative w-full overflow-hidden rounded-2xl font-bold text-lg tracking-widest uppercase py-5 transition-all duration-300 transform active:scale-[0.98] ${canSubmit
+                                ? 'bg-gradient-to-br from-[#10B981] to-[#00A884] text-white shadow-[0_12px_30px_rgba(16,185,129,0.25)] hover:shadow-[0_16px_40px_rgba(16,185,129,0.4)] hover:-translate-y-[2px] border border-[#10B981]/30'
+                                : 'bg-[#F4EFE7] text-[#7C6F64] cursor-not-allowed border border-[#E6DDD2]'
+                                }`}
                         >
                             {canSubmit && (
                                 <>
-                                    <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)] -translate-x-[150%] animate-[shimmer_2.5s_infinite]" />
-                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-blue-500/20 mix-blend-overlay transition-opacity duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/10 mix-blend-overlay transition-opacity duration-500" />
                                 </>
                             )}
                             <div className="relative flex items-center justify-center gap-3">
-                                <svg className={`w-6 h-6 ${canSubmit ? 'animate-pulse text-blue-300' : 'text-slate-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg className={`w-6 h-6 ${canSubmit ? 'text-white/90' : 'text-[#7C6F64]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
-                                Generate Threat Model
+                                <span className="relative">Generate Threat Model</span>
                             </div>
                         </button>
                     </div>
@@ -963,70 +975,46 @@ export default function ThreatModelingPage() {
                         <>
                             {/* ── Report header + action buttons ── */}
                             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 print:hidden">
-                                    <div>
-                                        <h2 className="text-xl font-bold text-white">
-                                            Threat Report —{" "}
-                                            <span className="text-blue-400">{form.projectName}</span>
-                                        </h2>
-                                        <p className="text-sm text-slate-400 mt-0.5">
-                                            {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 flex-shrink-0">
-                                        <Button variant="secondary" size="sm" onClick={handleDownloadPDF}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            Download PDF
-                                        </Button>
-                                        <Button variant="secondary" size="sm" onClick={handleDownloadJSON}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                            Download JSON
-                                        </Button>
-                                        {isSaving ? (
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 px-3 py-2">
-                                                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                                Saving…
-                                            </span>
-                                        ) : autoSaved ? (
-                                            <span className="inline-flex items-center gap-1.5 text-xs text-green-400 px-3 py-2">
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Saved
-                                            </span>
-                                        ) : null}
-                                        <Button variant="ghost" size="sm" onClick={handleReset}>
-                                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                            Run Another Analysis
-                                        </Button>
-                                    </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-[#1F2933]">
+                                        Threat Report —{" "}
+                                        <span className="text-[#10B981]">{form.projectName}</span>
+                                    </h2>
+                                    <p className="text-sm text-[#7C6F64] mt-0.5">
+                                        {form.appType} · {result.threats.length} threat{result.threats.length !== 1 ? "s" : ""} identified
+                                    </p>
                                 </div>
-
-                            {/* Save confirmation */}
-                            {saveMsg && (
-                                <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-3 rounded-lg print:hidden">
-                                    {saveMsg}
+                                <div className="flex flex-wrap gap-3 flex-shrink-0">
+                                    <button onClick={handleDownloadPDF} className="group relative inline-flex items-center gap-2 bg-gradient-to-br from-[#10B981] to-[#00A884] text-white font-semibold text-sm px-5 py-2.5 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(16,185,129,0.2)] hover:shadow-[0_8px_24px_rgba(16,185,129,0.35)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300">
+                                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                                        <svg className="w-4 h-4 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span className="relative">Download PDF</span>
+                                    </button>
+                                    <button onClick={handleDownloadJSON} className="group relative inline-flex items-center gap-2 bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-[#1F2933] font-semibold text-sm px-5 py-2.5 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(245,158,11,0.2)] hover:shadow-[0_8px_24px_rgba(245,158,11,0.35)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300">
+                                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                                        <svg className="w-4 h-4 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span className="relative">Download JSON</span>
+                                    </button>
+                                    <button onClick={handleReset} className="group relative inline-flex items-center gap-2 bg-white text-[#1F2933] font-semibold text-sm px-5 py-2.5 rounded-xl overflow-hidden border border-[#E6DDD2] shadow-sm hover:shadow-md hover:border-[#10B981] hover:text-[#10B981] hover:bg-[#ECFDF5]/30 hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300">
+                                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#10B981]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                                        <svg className="w-4 h-4 relative text-[#7C6F64] group-hover:text-[#10B981] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span className="relative">Run Another Analysis</span>
+                                    </button>
                                 </div>
-                            )}
-                            {saveErr && (
-                                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-4 py-3 rounded-lg print:hidden">
-                                    {saveErr}
-                                </div>
-                            )}
+                            </div>
 
                             {/* ── Stack summary tags ── */}
                             {stackTags.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 print:hidden">
-                                    <span className="text-xs font-medium text-slate-500 self-center mr-1">Stack:</span>
+                                    <span className="text-xs font-medium text-[#7C6F64] self-center mr-1">Stack:</span>
                                     {stackTags.map(tag => (
-                                        <span key={tag} className="text-xs bg-white/[0.06] text-slate-400 border border-white/[0.08] px-2.5 py-1 rounded-full font-medium">
+                                        <span key={tag} className="text-xs bg-[#F4EFE7] text-[#7C6F64] border border-[#E6DDD2] px-2.5 py-1 rounded-full font-medium">
                                             {tag}
                                         </span>
                                     ))}
@@ -1035,31 +1023,31 @@ export default function ThreatModelingPage() {
 
                             {/* ── Risk Score Card ── */}
                             <Card title="Overall Risk Score" description="Composite score based on all selected system properties">
-                                    <div className="flex items-center gap-6 mt-2">
-                                        <div className="flex-shrink-0 text-center w-20">
-                                            <div className="text-5xl font-bold text-white leading-none">{result.riskScore ?? 0}</div>
-                                            <div className="text-sm text-slate-500 mt-1">/ 100</div>
+                                <div className="flex items-center gap-6 mt-2">
+                                    <div className="flex-shrink-0 text-center w-20">
+                                        <div className="text-5xl font-bold text-[#1F2933] leading-none">{result.riskScore ?? 0}</div>
+                                        <div className="text-sm text-[#7C6F64] mt-1">/ 100</div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm font-medium text-[#7C6F64]">Risk Level</span>
+                                            <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
+                                                {riskLabel}
+                                            </span>
                                         </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm font-medium text-slate-400">Risk Level</span>
-                                                <span className={`text-sm font-semibold px-3 py-0.5 rounded-full ${labelStyle}`}>
-                                                    {riskLabel}
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-white/[0.06] rounded-full h-3 overflow-hidden">
-                                                <div
-                                                    className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
-                                                    style={{ width: `${result.riskScore ?? 0}%` }}
-                                                />
-                                            </div>
-                                            <div className="flex justify-between text-xs text-slate-500 mt-1.5">
-                                                <span>0 — Safe</span>
-                                                <span>100 — Critical</span>
-                                            </div>
+                                        <div className="w-full bg-[#F4EFE7] rounded-full h-3 overflow-hidden">
+                                            <div
+                                                className={`h-3 rounded-full transition-all duration-700 ease-out ${barColor}`}
+                                                style={{ width: `${result.riskScore ?? 0}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between text-xs text-[#7C6F64] mt-1.5">
+                                            <span>0 — Safe</span>
+                                            <span>100 — Critical</span>
                                         </div>
                                     </div>
-                                </Card>
+                                </div>
+                            </Card>
 
                             {/* ── Uploaded files in report ── */}
 
@@ -1067,10 +1055,10 @@ export default function ThreatModelingPage() {
                             {result.threats.length > 0 && (
                                 <div>
                                     <div className="flex items-center justify-between mb-3">
-                                        <h3 className="text-base font-semibold text-slate-200">
+                                        <h3 className="text-base font-semibold text-[#1F2933]">
                                             Identified Threats
                                         </h3>
-                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                        <div className="flex items-center gap-3 text-xs text-[#7C6F64]">
                                             <span className="flex items-center gap-1.5">
                                                 <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High
                                             </span>
@@ -1083,75 +1071,85 @@ export default function ThreatModelingPage() {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3">
-                                        {result.threats.map(threat => (
-                                            <div key={threat.id}
-                                                className="bg-[#263554] border border-white/[0.08] rounded-xl shadow-lg shadow-black/25 overflow-hidden">
-                                                {/* Threat header */}
-                                                <div className="px-5 py-3.5 border-b border-white/[0.06] flex items-center justify-between gap-4">
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]}`} />
-                                                        <div className="min-w-0">
-                                                            <h4 className="font-semibold text-white text-sm leading-tight truncate">
-                                                                {threat.title}
-                                                            </h4>
-                                                            <span className="text-xs text-slate-500">{threat.category}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                                        {threat.stride_category && (
-                                                            <span className="text-xs font-medium px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                                                {threat.stride_category}
-                                                            </span>
-                                                        )}
-                                                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
-                                                            {threat.risk} Risk
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                {/* Threat body */}
-                                                <div className="px-5 py-4 space-y-4">
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                                                            Description
-                                                        </p>
-                                                        <p className="text-sm text-slate-300 leading-relaxed">
-                                                            {threat.description}
-                                                        </p>
-                                                    </div>
-                                                    <div className="border-t border-white/[0.06] pt-4">
-                                                        <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
-                                                            ✓ Mitigation
-                                                        </p>
-                                                        <p className="text-sm text-slate-300 leading-relaxed">
-                                                            {threat.mitigation}
-                                                        </p>
-                                                    </div>
-                                                    {threat.priority && (
-                                                        <div className="flex items-center gap-2 text-xs">
-                                                            <span className="font-semibold text-slate-500">Priority Score:</span>
-                                                            <div className="flex-1 bg-white/[0.06] rounded-full h-2">
-                                                                <div
-                                                                    className="h-2 rounded-full bg-gradient-to-r from-yellow-500 to-red-500"
-                                                                    style={{ width: `${Math.min(threat.priority, 100)}%` }}
-                                                                />
+                                    <div className="space-y-4">
+                                        {result.threats.map((threat, idx) => {
+                                            const accentColor = threat.risk === 'High' ? 'from-[#EF4444] to-[#F97316]' : threat.risk === 'Medium' ? 'from-[#F97316] to-[#FBBF24]' : 'from-[#10B981] to-[#34D399]';
+                                            return (
+                                                <motion.div key={threat.id}
+                                                    initial={{ opacity: 0, y: 12 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.35, delay: idx * 0.06 }}
+                                                    className="group bg-white border border-[#E6DDD2] rounded-[18px] shadow-sm hover:shadow-md hover:-translate-y-0.5 overflow-hidden transition-all duration-300 flex">
+                                                    {/* Accent strip */}
+                                                    <div className={`w-1.5 flex-shrink-0 bg-gradient-to-b ${accentColor}`} />
+                                                    <div className="flex-1 min-w-0">
+                                                        {/* Threat header */}
+                                                        <div className="px-5 py-3.5 border-b border-[#E6DDD2] flex items-center justify-between gap-4">
+                                                            <div className="flex items-center gap-3 min-w-0">
+                                                                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${RISK_DOT[threat.risk]} ring-2 ring-offset-2 ring-offset-white ${threat.risk === 'High' ? 'ring-[#EF4444]/30' : threat.risk === 'Medium' ? 'ring-[#F97316]/30' : 'ring-[#10B981]/30'}`} />
+                                                                <div className="min-w-0">
+                                                                    <h4 className="font-bold text-[#1F2933] text-sm leading-tight truncate">
+                                                                        {threat.title}
+                                                                    </h4>
+                                                                    <span className="text-xs text-[#7C6F64]">{threat.category}</span>
+                                                                </div>
                                                             </div>
-                                                            <span className="text-slate-400">{threat.priority}</span>
+                                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                                {threat.stride_category && (
+                                                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#2F80ED]/10 text-[#2F80ED] border border-[#2F80ED]/20">
+                                                                        {threat.stride_category}
+                                                                    </span>
+                                                                )}
+                                                                <span className={`text-xs font-bold px-3 py-1 rounded-full ${RISK_BADGE[threat.risk]}`}>
+                                                                    {threat.risk} Risk
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
+                                                        {/* Threat body */}
+                                                        <div className="px-5 py-4 space-y-4">
+                                                            <div>
+                                                                <p className="text-xs font-bold text-[#7C6F64] uppercase tracking-wider mb-1.5">
+                                                                    Description
+                                                                </p>
+                                                                <p className="text-sm text-[#1F2933]/80 leading-relaxed">
+                                                                    {threat.description}
+                                                                </p>
+                                                            </div>
+                                                            <div className="bg-[#ECFDF5] rounded-xl p-4 border border-[#10B981]/15">
+                                                                <p className="text-xs font-bold text-[#10B981] uppercase tracking-wider mb-1.5">
+                                                                    ✓ Mitigation
+                                                                </p>
+                                                                <p className="text-sm text-[#1F2933]/80 leading-relaxed">
+                                                                    {threat.mitigation}
+                                                                </p>
+                                                            </div>
+                                                            {threat.priority && (
+                                                                <div className="flex items-center gap-2 text-xs">
+                                                                    <span className="font-semibold text-[#7C6F64]">Priority Score:</span>
+                                                                    <div className="flex-1 bg-[#F4EFE7] rounded-full h-2.5">
+                                                                        <div
+                                                                            className={`h-2.5 rounded-full bg-gradient-to-r ${accentColor} transition-all duration-700`}
+                                                                            style={{ width: `${Math.min(threat.priority, 100)}%` }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-[#7C6F64] font-semibold">{threat.priority}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
 
                             {/* ── Print-only header/footer ── */}
                             <div className="hidden print:block border-t pt-4 mt-8">
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-[#7C6F64]">
                                     TIBSA Platform · Threat Modeling as a Service · Generated {new Date().toLocaleString()}
                                 </p>
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-xs text-[#7C6F64] mt-1">
                                     Project: {form.projectName} · Type: {form.appType} · Risk Score: {result.riskScore ?? 0}/100 ({riskLabel})
                                 </p>
                             </div>
@@ -1163,10 +1161,10 @@ export default function ThreatModelingPage() {
             {/* ════════════════════ SCAN HISTORY ════════════════════ */}
             {!result && (
                 <div className="print:hidden">
-                    <h2 className="text-xl font-bold text-white mb-4">Scan History</h2>
+                    <h2 className="text-xl font-bold text-[#1F2933] mb-4">Scan History</h2>
                     <ScanHistory />
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }

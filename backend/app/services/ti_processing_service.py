@@ -255,3 +255,4 @@ class TIProcessingService:
             base_risk = min(base_risk, 35.0)
             
         return min(100.0, round(base_risk, 1))
+        return min(100.0, round(base_risk, 1))

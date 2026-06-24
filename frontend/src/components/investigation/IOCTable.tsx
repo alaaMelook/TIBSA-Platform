@@ -11,7 +11,7 @@ export function IOCTable({ iocResults }: IOCTableProps) {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
 
   const getIndicatorIcon = (type: string) => {
-    const size = "w-4 h-4 text-[var(--text-muted)]";
+    const size = "w-4 h-4 text-[#7C6F64]";
     if (type === "domain") return <Globe className={size} />;
     if (type === "ip") return <Server className={size} />;
     return <Code className={size} />; // JS resource
@@ -19,23 +19,24 @@ export function IOCTable({ iocResults }: IOCTableProps) {
 
   const getSourceBadge = (source: string) => {
     const common = "px-2 py-0.5 rounded text-[9px] font-extrabold uppercase border tracking-wider";
-    if (source === "both") {
+    const srcLower = source.toLowerCase();
+    if (srcLower === "both" || srcLower.includes("+ otx")) {
       return (
-        <span className={`${common} border-indigo-500/20 bg-indigo-500/10 text-indigo-400`}>
-          Both VT & OTX
+        <span className={`${common} border-indigo-500/20 bg-indigo-500/5 text-indigo-600`}>
+          VirusTotal + OTX Context
         </span>
       );
     }
-    if (source === "alienvault") {
+    if (srcLower === "alienvault" || srcLower === "otx") {
       return (
-        <span className={`${common} border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary)]`}>
+        <span className={`${common} border-[#10B981]/20 bg-[#10B981]/5 text-[#10B981]`}>
           AlienVault OTX
         </span>
       );
     }
     return (
-      <span className={`${common} border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)]`}>
-        VirusTotal
+      <span className={`${common} border-[#2F80ED]/20 bg-[#2F80ED]/5 text-[#2F80ED]`}>
+        {source}
       </span>
     );
   };
@@ -44,7 +45,7 @@ export function IOCTable({ iocResults }: IOCTableProps) {
     const common = "px-2 py-0.5 rounded text-[10px] font-bold uppercase border";
     if (level === "malicious" || flagged) {
       return (
-        <span className={`${common} border-red-500/20 bg-red-500/10 text-red-400 flex items-center gap-1 w-fit`}>
+        <span className={`${common} border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444] flex items-center gap-1 w-fit`}>
           <ShieldAlert className="w-3.5 h-3.5" />
           Malicious
         </span>
@@ -52,14 +53,14 @@ export function IOCTable({ iocResults }: IOCTableProps) {
     }
     if (level === "suspicious") {
       return (
-        <span className={`${common} border-orange-500/20 bg-orange-500/10 text-orange-400 flex items-center gap-1 w-fit`}>
+        <span className={`${common} border-[#F97316]/20 bg-[#F97316]/10 text-[#F97316] flex items-center gap-1 w-fit`}>
           <ShieldAlert className="w-3.5 h-3.5" />
           Suspicious
         </span>
       );
     }
     return (
-      <span className={`${common} border-emerald-500/20 bg-emerald-500/10 text-emerald-400 flex items-center gap-1 w-fit`}>
+      <span className={`${common} border-[#10B981]/20 bg-[#10B981]/10 text-[#10B981] flex items-center gap-1 w-fit`}>
         <ShieldCheck className="w-3.5 h-3.5" />
         Clean
       </span>
@@ -71,12 +72,12 @@ export function IOCTable({ iocResults }: IOCTableProps) {
   };
 
   return (
-    <Card className="!p-0 overflow-hidden">
-      <div className="px-6 py-4 border-b border-[var(--border-strong)] bg-[var(--bg-card)]/20 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+    <div className="bg-white border border-[#E6DDD2] rounded-[20px] shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-[#E6DDD2] bg-[#FAF7F1] flex items-center justify-between">
+        <h3 className="text-sm font-bold text-[#1F2933] uppercase tracking-wider">
           External Reputation Checks & IOCs
         </h3>
-        <span className="text-xs text-[var(--text-muted)] font-medium">
+        <span className="text-xs text-[#7C6F64] font-medium">
           Source: VirusTotal & AlienVault OTX Enrichment
         </span>
       </div>
@@ -84,7 +85,7 @@ export function IOCTable({ iocResults }: IOCTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
           <thead>
-            <tr className="bg-[var(--bg-page)]/20 text-[var(--text-muted)] font-medium border-b border-[var(--border-strong)]">
+            <tr className="bg-[#FAF7F1] text-[#7C6F64] font-medium border-b border-[#E6DDD2]">
               <th className="py-3 px-6 w-24">Type</th>
               <th className="py-3 px-6">Indicator Value</th>
               <th className="py-3 px-6 w-36">Sources</th>
@@ -93,10 +94,10 @@ export function IOCTable({ iocResults }: IOCTableProps) {
               <th className="py-3 px-6 w-12"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody className="divide-y divide-[#E6DDD2]">
             {iocResults.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-[var(--text-muted)] font-medium">
+                <td colSpan={6} className="py-12 text-center text-[#7C6F64] font-medium">
                   No external domains or IP indicators discovered to perform reputation lookups.
                 </td>
               </tr>
@@ -109,26 +110,26 @@ export function IOCTable({ iocResults }: IOCTableProps) {
                   <Fragment key={ioc.value + idx}>
                     <tr
                       onClick={() => toggleRow(idx)}
-                      className={`transition-colors hover:bg-[var(--bg-elevated)] cursor-pointer select-none ${
-                        isThreat ? "bg-red-500/[0.02]" : ""
-                      } ${isExpanded ? "bg-[var(--bg-elevated)]" : ""}`}
+                      className={`transition-colors hover:bg-[#FAF7F1] cursor-pointer select-none ${
+                        isThreat ? "bg-[#EF4444]/5" : ""
+                      } ${isExpanded ? "bg-[#FAF7F1]" : ""}`}
                     >
                       <td className="py-3.5 px-6">
                         <div className="flex items-center gap-2">
                           {getIndicatorIcon(ioc.indicator_type)}
-                          <span className="text-xs text-[var(--text-muted)] font-bold uppercase tracking-wider">
+                          <span className="text-xs text-[#7C6F64] font-bold uppercase tracking-wider">
                             {ioc.indicator_type}
                           </span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-6 font-mono text-xs text-[var(--text-secondary)] break-all">
+                      <td className="py-3.5 px-6 font-mono text-xs text-[#1F2933] break-all font-semibold">
                         {ioc.value}
                       </td>
                       <td className="py-3.5 px-6">
                         {getSourceBadge(ioc.source || "virustotal")}
                       </td>
                       <td className="py-3.5 px-6 text-center font-mono font-bold">
-                        <span className={isThreat ? "text-red-400" : "text-emerald-400"}>
+                        <span className={isThreat ? "text-[#EF4444]" : "text-[#10B981]"}>
                           {ioc.reputation_score ? `${ioc.reputation_score}%` : "0%"}
                         </span>
                       </td>
@@ -137,33 +138,33 @@ export function IOCTable({ iocResults }: IOCTableProps) {
                       </td>
                       <td className="py-3.5 px-6 text-right">
                         {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+                          <ChevronUp className="w-4 h-4 text-[#7C6F64]" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+                          <ChevronDown className="w-4 h-4 text-[#7C6F64]" />
                         )}
                       </td>
                     </tr>
 
                     {isExpanded && (
-                      <tr className="bg-[var(--bg-page)]/30">
-                        <td colSpan={6} className="py-5 px-8 border-t border-[var(--border-soft)]">
+                      <tr className="bg-[#FAF7F1]/50 border-t border-[#E6DDD2]">
+                        <td colSpan={6} className="py-5 px-8">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs">
                             {/* Summary Column */}
                             <div className="space-y-4">
                               <div>
-                                <h4 className="font-bold text-[var(--text-muted)] uppercase tracking-widest text-[9px] mb-1.5">
+                                <h4 className="font-bold text-[#7C6F64] uppercase tracking-widest text-[9px] mb-1.5">
                                   Reputation Summary
                                 </h4>
-                                <p className="text-[var(--text-secondary)] leading-relaxed font-sans text-sm">
+                                <p className="text-[#1F2933] leading-relaxed font-sans text-sm">
                                   {ioc.details?.risk_reason || "No detailed explanation returned from intelligence providers."}
                                 </p>
                               </div>
                               {ioc.details?.recommended_action && (
                                 <div>
-                                  <h4 className="font-bold text-[var(--text-muted)] uppercase tracking-widest text-[9px] mb-1">
+                                  <h4 className="font-bold text-[#7C6F64] uppercase tracking-widest text-[9px] mb-1">
                                     Analyst Recommended Action
                                   </h4>
-                                  <p className="text-[var(--primary)] font-sans leading-relaxed">
+                                  <p className="text-[#10B981] font-sans font-bold leading-relaxed">
                                     {ioc.details.recommended_action}
                                   </p>
                                 </div>
@@ -173,22 +174,22 @@ export function IOCTable({ iocResults }: IOCTableProps) {
                             {/* Threat Intelligence Pulses Column */}
                             <div className="space-y-4">
                               <div>
-                                <h4 className="font-bold text-[var(--text-muted)] uppercase tracking-widest text-[9px] mb-1.5">
+                                <h4 className="font-bold text-[#7C6F64] uppercase tracking-widest text-[9px] mb-1.5">
                                   AlienVault OTX Context
                                 </h4>
                                 {ioc.details?.otx_pulses && ioc.details.otx_pulses.length > 0 ? (
                                   <div className="space-y-2">
-                                    <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
+                                    <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
                                       Active Threat Pulses ({ioc.details.otx_pulses.length})
                                     </span>
-                                    <ul className="list-disc list-inside text-[var(--text-secondary)] pl-1 space-y-1 font-sans">
+                                    <ul className="list-disc list-inside text-[#1F2933] pl-1 space-y-1 font-sans">
                                       {ioc.details.otx_pulses.map((pulse: string, pIdx: number) => (
-                                        <li key={pIdx} className="text-[var(--text-primary)]">{pulse}</li>
+                                        <li key={pIdx} className="text-[#1F2933]">{pulse}</li>
                                       ))}
                                     </ul>
                                   </div>
                                 ) : (
-                                  <p className="text-[var(--text-muted)] italic font-sans">
+                                  <p className="text-[#7C6F64] italic font-sans">
                                     No associated AlienVault OTX pulses were found for this indicator.
                                   </p>
                                 )}
@@ -196,14 +197,14 @@ export function IOCTable({ iocResults }: IOCTableProps) {
 
                               {ioc.details?.threat_tags && ioc.details.threat_tags.length > 0 && (
                                 <div>
-                                  <h4 className="font-bold text-[var(--text-muted)] uppercase tracking-widest text-[9px] mb-1.5">
+                                  <h4 className="font-bold text-[#7C6F64] uppercase tracking-widest text-[9px] mb-1.5">
                                     Intelligence Tags
                                   </h4>
                                   <div className="flex flex-wrap gap-1">
                                     {ioc.details.threat_tags.map((tag: string, tIdx: number) => (
                                       <span
                                         key={tIdx}
-                                        className="bg-[var(--primary-soft)] border border-[var(--primary)] text-[var(--primary)] px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                                        className="bg-white border border-[#10B981]/50 text-[#10B981] px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
                                       >
                                         {tag}
                                       </span>
@@ -214,10 +215,10 @@ export function IOCTable({ iocResults }: IOCTableProps) {
 
                               {ioc.details?.related_malware_families && ioc.details.related_malware_families.length > 0 && (
                                 <div>
-                                  <h4 className="font-bold text-red-500/80 uppercase tracking-widest text-[9px] mb-1">
+                                  <h4 className="font-bold text-[#EF4444] uppercase tracking-widest text-[9px] mb-1">
                                     Malware Families Linked
                                   </h4>
-                                  <p className="text-red-400 font-semibold font-mono">
+                                  <p className="text-[#EF4444] font-semibold font-mono">
                                     {ioc.details.related_malware_families.join(", ")}
                                   </p>
                                 </div>
@@ -234,6 +235,6 @@ export function IOCTable({ iocResults }: IOCTableProps) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 }

@@ -71,7 +71,15 @@ async def scan_website(
     print(f"[DEBUG ORCH] enable_sqlmap = {getattr(config, 'enable_sqlmap', False)}")
 
     orchestrator = PentestOrchestrator(config=config)
-    result = await orchestrator.scan(target, selected, mode=request.mode or "safe")
+    import asyncio
+    from app.utils.loop import run_in_proactor_loop
+    
+    # Run the scan in a separate thread with a new ProactorEventLoop to support Playwright on Windows
+    result = await asyncio.to_thread(
+        run_in_proactor_loop,
+        orchestrator.scan,
+        target, selected, mode=request.mode or "safe"
+    )
 
     # Save to database
     try:

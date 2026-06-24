@@ -1,5 +1,6 @@
 "use client";
 
+import { TibsaRefreshButton } from "@/components/ui";
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,39 +19,39 @@ import type { AuditLogEntry } from "../types";
 
 // ─── Icons ──────────────────────────────────────────────────
 const IconAudit = () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <svg className="w-5 h-5 text-[#2F80ED]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
     </svg>
 );
 const IconSuccess = () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <svg className="w-5 h-5 text-[#10B981]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 const IconFail = () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <svg className="w-5 h-5 text-[#EF4444]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 const IconWarn = () => (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <svg className="w-5 h-5 text-[#F97316]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
     </svg>
 );
 
 // ─── Action Style Map ───────────────────────────────────────
 const ACTION_STYLES: Record<string, { bg: string; text: string }> = {
-    LOGIN: { bg: "bg-[var(--primary)]/10", text: "text-[var(--primary)]" },
-    LOGIN_FAILED: { bg: "bg-red-500/10", text: "text-red-400" },
-    SIGNUP: { bg: "bg-teal-500/10", text: "text-teal-400" },
-    SIGNUP_FAILED: { bg: "bg-rose-500/10", text: "text-rose-400" },
-    SCAN_CREATED: { bg: "bg-cyan-500/10", text: "text-cyan-400" },
-    USER_ROLE_CHANGE: { bg: "bg-[var(--primary-soft)]", text: "text-[var(--primary)]" },
-    THREAT_FEED_UPDATE: { bg: "bg-amber-500/10", text: "text-amber-400" },
-    REPORT_EXPORTED: { bg: "bg-emerald-500/10", text: "text-emerald-400" },
-    SYSTEM_CONFIG_CHANGE: { bg: "bg-orange-500/10", text: "text-orange-400" },
-    ACCOUNT_DEACTIVATED: { bg: "bg-red-500/10", text: "text-red-400" },
-    API_KEY_GENERATED: { bg: "bg-indigo-500/10", text: "text-indigo-400" },
+    LOGIN: { bg: "bg-[#2F80ED]/10", text: "text-[#2F80ED]" },
+    LOGIN_FAILED: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]" },
+    SIGNUP: { bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
+    SIGNUP_FAILED: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]" },
+    SCAN_CREATED: { bg: "bg-[#2F80ED]/10", text: "text-[#2F80ED]" },
+    USER_ROLE_CHANGE: { bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
+    THREAT_FEED_UPDATE: { bg: "bg-[#F97316]/10", text: "text-[#F97316]" },
+    REPORT_EXPORTED: { bg: "bg-[#10B981]/10", text: "text-[#10B981]" },
+    SYSTEM_CONFIG_CHANGE: { bg: "bg-[#F97316]/10", text: "text-[#F97316]" },
+    ACCOUNT_DEACTIVATED: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]" },
+    API_KEY_GENERATED: { bg: "bg-[#A855F7]/10", text: "text-[#A855F7]" },
 };
 
 export default function AuditLogPage() {
@@ -167,10 +168,10 @@ export default function AuditLogPage() {
             sortable: true,
             render: (entry) => (
                 <div className="space-y-0.5">
-                    <p className="text-xs text-[var(--text-secondary)] tabular-nums">
+                    <p className="text-xs text-[#1F2933] font-bold tabular-nums">
                         {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                     </p>
-                    <p className="text-[10px] text-[var(--text-muted)]">
+                    <p className="text-[10px] text-[#7C6F64] font-medium font-mono">
                         {new Date(entry.timestamp).toLocaleDateString()}
                     </p>
                 </div>
@@ -182,15 +183,15 @@ export default function AuditLogPage() {
             sortable: true,
             render: (entry) => (
                 <div 
-                    className="flex items-center gap-2 cursor-pointer group hover:bg-[var(--bg-elevated)] p-1.5 -m-1.5 rounded transition-colors"
+                    className="flex items-center gap-2 cursor-pointer group hover:bg-[#FAF7F1] p-1.5 -m-1.5 rounded-lg transition-colors"
                     onClick={() => setDrawerContext({ type: "user", value: entry.user_name })}
                 >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-bold text-[var(--text-primary)]">{entry.user_name.charAt(0)}</span>
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2F80ED] to-[#A855F7] flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-[10px] font-black text-white">{entry.user_name.charAt(0).toUpperCase()}</span>
                     </div>
                     <div>
-                        <p className="text-sm text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors">{entry.user_name}</p>
-                        <p className="text-[10px] text-[var(--text-muted)]">{entry.user_email}</p>
+                        <p className="text-sm font-bold text-[#1F2933] group-hover:text-[#00A884] transition-colors">{entry.user_name}</p>
+                        <p className="text-[10px] text-[#7C6F64] font-medium">{entry.user_email}</p>
                     </div>
                 </div>
             ),
@@ -200,9 +201,9 @@ export default function AuditLogPage() {
             label: "Action",
             sortable: true,
             render: (entry) => {
-                const style = ACTION_STYLES[entry.action] || { bg: "bg-[var(--bg-elevated)]", text: "text-[var(--text-muted)]" };
+                const style = ACTION_STYLES[entry.action] || { bg: "bg-[#FAF7F1]", text: "text-[#7C6F64]" };
                 return (
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${style.bg} ${style.text}`}>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-current/10 ${style.bg} ${style.text}`}>
                         {entry.action}
                     </span>
                 );
@@ -213,12 +214,12 @@ export default function AuditLogPage() {
             label: "Details",
             render: (entry) => (
                 <div className="space-y-0.5 max-w-[350px]">
-                    <p className="text-xs text-[var(--text-secondary)] whitespace-normal" title={entry.details}>
+                    <p className="text-xs text-[#1F2933] font-medium whitespace-normal" title={entry.details}>
                         {entry.details}
                     </p>
                     {entry.user_agent && entry.user_agent !== "Unknown Device" && (
-                        <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1 font-mono" title="Device Details">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--bg-elevated)]" />
+                        <p className="text-[10px] text-[#7C6F64] flex items-center gap-1 font-mono" title="Device Details">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#E6DDD2]" />
                             {entry.user_agent}
                         </p>
                     )}
@@ -230,7 +231,7 @@ export default function AuditLogPage() {
             label: "IP Address",
             render: (entry) => (
                 <span 
-                    className="text-xs text-[var(--primary)] font-mono cursor-pointer hover:underline"
+                    className="text-xs text-[#00A884] font-bold font-mono cursor-pointer hover:underline"
                     onClick={() => setDrawerContext({ type: "ip", value: entry.ip_address })}
                 >
                     {entry.ip_address}
@@ -242,13 +243,13 @@ export default function AuditLogPage() {
             label: "Status",
             sortable: true,
             render: (entry) => (
-                <span className={`flex items-center gap-1.5 text-xs font-medium ${
-                    entry.status === "success" ? "text-emerald-400" :
-                    entry.status === "failure" ? "text-red-400" : "text-amber-400"
+                <span className={`flex items-center gap-1.5 text-xs font-bold ${
+                    entry.status === "success" ? "text-[#10B981]" :
+                    entry.status === "failure" ? "text-[#EF4444]" : "text-[#F97316]"
                 }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${
-                        entry.status === "success" ? "bg-emerald-400" :
-                        entry.status === "failure" ? "bg-red-400" : "bg-amber-400"
+                        entry.status === "success" ? "bg-[#10B981]" :
+                        entry.status === "failure" ? "bg-[#EF4444]" : "bg-[#F97316]"
                     }`} />
                     {entry.status}
                 </span>
@@ -279,90 +280,104 @@ export default function AuditLogPage() {
     };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-6 max-w-[1400px]">
-            {/* ── Header ─────────────────────────────────── */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                    <div className="flex items-center gap-3 mb-1">
-                        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Security Event Timeline</h1>
-                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/20 text-amber-400 rounded-full">
-                            Security
-                        </span>
-                    </div>
-                    <p className="text-sm text-[var(--text-muted)]">Track all security events, admin actions, and system changes</p>
-                </div>
-                <div className="flex items-center gap-4 bg-black/40 border border-[var(--border-strong)] rounded-lg p-2 backdrop-blur-md">
-                    <button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded bg-[var(--bg-elevated)] border border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
-                    >
-                        <svg className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        {refreshing ? "Refreshing..." : "Refresh"}
-                    </button>
-                    <div className="w-px h-4 bg-[var(--bg-elevated)]" />
-                    <div className="flex items-center gap-2 text-xs">
-                        <span className="text-[var(--text-muted)] font-mono">AUTO-REFRESH</span>
-                        <button 
-                            onClick={() => setIsLive(!isLive)}
-                            className={`w-8 h-4 rounded-full transition-colors relative ${isLive ? 'bg-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-[var(--bg-elevated)]'}`}
-                        >
-                            <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isLive ? 'translate-x-4' : 'translate-x-0'}`} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Stats ──────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Total Events" value={logs.length} icon={<IconAudit />} color="blue" delay={0} />
-                <StatCard label="Successful" value={successCount} icon={<IconSuccess />} color="green" delay={100} />
-                <StatCard label="Failed" value={failureCount} icon={<IconFail />} color="red" delay={200} />
-                <StatCard label="Warnings" value={warningCount} icon={<IconWarn />} color="amber" delay={300} />
-            </div>
-
-            {/* ── Filters ────────────────────────────────── */}
-            <SOCFilterBar 
-                filters={socFilters}
-                onFilterChange={setSocFilters}
-                onExport={handleExport}
-                isExporting={isExporting}
-            />
-
-            {/* ── Audit Log Table ────────────────────────── */}
-            <AdminSectionCard
-                title="Event Timeline"
-                description={`Showing ${filteredLogs.length} events matching filters`}
+        <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] text-[#1F2933]">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="space-y-6 w-full max-w-[1600px] mx-auto animate-fade-in"
             >
-                <DataTable
-                    columns={columns}
-                    data={filteredLogs}
-                    searchable
-                    searchPlaceholder="Search by user, action, or details..."
-                    searchKeys={["user_name", "user_email", "action", "details", "ip_address"]}
-                    pageSize={10}
-                    emptyMessage={isLoading ? "Loading audit logs..." : "No audit logs found matching your filters."}
-                />
-                    
-                {logs.length >= 100 && (
-                    <div className="flex justify-center mt-4">
-                        <button 
-                            onClick={handleLoadMore}
-                            className="px-4 py-2 text-sm text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg transition-colors"
-                        >
-                            Load More
-                        </button>
+                {/* ── Header ─────────────────────────────────── */}
+                <div 
+                    style={{
+                        background: "linear-gradient(90deg, #FFFCF7 0%, #F4EFE7 45%, #E9EDF3 100%)"
+                    }}
+                    className="border border-[#E6DDD2] p-6 md:p-8 rounded-[24px] shadow-sm relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6"
+                >
+                    <div className="flex items-start gap-4">
+                        <div className="p-2.5 bg-[#2F80ED]/10 rounded-xl border border-[#2F80ED]/20 text-[#2F80ED] shadow-sm shrink-0 mt-1">
+                            <IconAudit />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-600 rounded-full">
+                                    Security
+                                </span>
+                            </div>
+                            <h1 className="text-2xl font-black text-[#1F2933] tracking-tight">Security Event Timeline</h1>
+                            <p className="text-[#7C6F64] mt-1 max-w-xl text-sm leading-relaxed font-medium">
+                                Track all security events, admin actions, and system changes in real-time.
+                            </p>
+                        </div>
                     </div>
-                )}
-            </AdminSectionCard>
+                    
+                    <div className="flex items-center gap-4 bg-white border border-[#E6DDD2] rounded-xl p-2 shadow-sm">
+                        <TibsaRefreshButton
+                            onClick={handleRefresh}
+                            isRefreshing={refreshing}
+                        />
+                        <div className="w-px h-4 bg-[#E6DDD2]" />
+                        <div className="flex items-center gap-2 text-xs">
+                            <span className="text-[#7C6F64] font-bold">AUTO-REFRESH</span>
+                            <button 
+                                onClick={() => setIsLive(!isLive)}
+                                className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${isLive ? 'bg-[#10B981]/80 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-gray-200'}`}
+                            >
+                                <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isLive ? 'translate-x-4' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-            <InvestigationDrawer
-                isOpen={!!drawerContext}
-                onClose={() => setDrawerContext(null)}
-                context={drawerContext}
-            />
-        </motion.div>
+                {/* ── Stats ──────────────────────────────────── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard label="Total Events" value={logs.length} icon={<IconAudit />} color="blue" delay={0} />
+                    <StatCard label="Successful" value={successCount} icon={<IconSuccess />} color="green" delay={100} />
+                    <StatCard label="Failed" value={failureCount} icon={<IconFail />} color="red" delay={200} />
+                    <StatCard label="Warnings" value={warningCount} icon={<IconWarn />} color="amber" delay={300} />
+                </div>
+
+                {/* ── Filters ────────────────────────────────── */}
+                <SOCFilterBar 
+                    filters={socFilters}
+                    onFilterChange={setSocFilters}
+                    onExport={handleExport}
+                    isExporting={isExporting}
+                />
+
+                {/* ── Audit Log Table ────────────────────────── */}
+                <AdminSectionCard
+                    title="Event Timeline"
+                    description={`Showing ${filteredLogs.length} events matching filters`}
+                >
+                    <DataTable
+                        columns={columns}
+                        data={filteredLogs}
+                        searchable
+                        searchPlaceholder="Search by user, action, or details..."
+                        searchKeys={["user_name", "user_email", "action", "details", "ip_address"]}
+                        pageSize={10}
+                        emptyMessage={isLoading ? "Loading audit logs..." : "No audit logs found matching your filters."}
+                    />
+                        
+                    {logs.length >= 100 && (
+                        <div className="flex justify-center mt-4">
+                            <button 
+                                onClick={handleLoadMore}
+                                className="px-4 py-2 text-sm text-[#F97316] bg-[#F97316]/10 hover:bg-[#F97316]/20 border border-[#F97316]/20 rounded-lg transition-colors cursor-pointer font-bold"
+                            >
+                                Load More
+                            </button>
+                        </div>
+                    )}
+                </AdminSectionCard>
+
+                <InvestigationDrawer
+                    isOpen={!!drawerContext}
+                    onClose={() => setDrawerContext(null)}
+                    context={drawerContext}
+                />
+            </motion.div>
+        </div>
     );
 }

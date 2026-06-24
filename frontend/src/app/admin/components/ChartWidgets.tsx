@@ -11,13 +11,13 @@ import type { ThreatTrend, ScanVolumeData, ThreatDistribution, UserGrowthData, S
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-[var(--bg-main)]/95 backdrop-blur-xl border border-[var(--border-strong)] rounded-lg px-3.5 py-2.5 shadow-2xl shadow-black/5">
-            <p className="text-[11px] font-medium text-[var(--text-secondary)] mb-1.5 border-b border-[var(--border-strong)] pb-1.5">{label}</p>
+        <div className="bg-white/95 backdrop-blur-xl border border-[#E6DDD2] rounded-lg px-3.5 py-2.5 shadow-lg">
+            <p className="text-[11px] font-medium text-[#7C6F64] mb-1.5 border-b border-[#E6DDD2] pb-1.5">{label}</p>
             {payload.map((entry, i) => (
                 <div key={i} className="flex items-center gap-2 py-0.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
-                    <span className="text-[10px] text-[var(--text-muted)] capitalize">{entry.name}</span>
-                    <span className="text-[11px] font-bold text-[var(--text-primary)] ml-auto tabular-nums">{entry.value.toLocaleString()}</span>
+                    <span className="text-[10px] text-[#7C6F64] capitalize">{entry.name}</span>
+                    <span className="text-[11px] font-bold text-[#1F2933] ml-auto tabular-nums">{entry.value.toLocaleString()}</span>
                 </div>
             ))}
         </div>
@@ -38,8 +38,8 @@ function ChartWrapper({ children, className = "" }: { children: React.ReactNode;
     );
 }
 
-const AXIS_STYLE = { fontSize: 10, fill: "#64748b" };
-const GRID_STYLE = { strokeDasharray: "3 3", stroke: "rgba(255,255,255,0.04)" };
+const AXIS_STYLE = { fontSize: 10, fill: "#7C6F64" };
+const GRID_STYLE = { strokeDasharray: "3 3", stroke: "rgba(0,0,0,0.06)" };
 
 // ─── 1. Threat Trend Chart (Stacked Area) ───────────────────
 export function ThreatTrendChart({ data }: { data: ThreatTrend[] }) {
@@ -120,12 +120,12 @@ export function ThreatDistributionChart({ data }: { data: ThreatDistribution[] }
                             if (!active || !payload?.length) return null;
                             const d = payload[0];
                             return (
-                                <div className="bg-[var(--bg-main)]/95 backdrop-blur-xl border border-[var(--border-strong)] rounded-lg px-3.5 py-2.5 shadow-2xl">
+                                <div className="bg-white/95 backdrop-blur-xl border border-[#E6DDD2] rounded-lg px-3.5 py-2.5 shadow-lg">
                                     <div className="flex items-center gap-2">
                                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.payload?.color }} />
-                                        <span className="text-xs text-[var(--text-primary)] font-medium">{d.name}</span>
+                                        <span className="text-xs text-[#1F2933] font-medium">{d.name}</span>
                                     </div>
-                                    <p className="text-lg font-bold text-[var(--text-primary)] mt-1">{(d.value as number).toLocaleString()}</p>
+                                    <p className="text-lg font-bold text-[#1F2933] mt-1">{(d.value as number).toLocaleString()}</p>
                                 </div>
                             );
                         }}
@@ -136,7 +136,7 @@ export function ThreatDistributionChart({ data }: { data: ThreatDistribution[] }
                         content={({ payload }) => (
                             <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
                                 {payload?.map((entry, i) => (
-                                    <span key={i} className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+                                    <span key={i} className="flex items-center gap-1.5 text-[10px] text-[#7C6F64]">
                                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
                                         {entry.value}
                                     </span>
@@ -158,20 +158,20 @@ export function UserGrowthChart({ data }: { data: UserGrowthData[] }) {
                 <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                     <defs>
                         <linearGradient id="gradUsers" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#2F80ED" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#2F80ED" stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="gradActive" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <CartesianGrid {...GRID_STYLE} />
                     <XAxis dataKey="month" tick={AXIS_STYLE} axisLine={false} tickLine={false} />
                     <YAxis tick={AXIS_STYLE} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="users" name="Total" stroke="#3b82f6" fill="url(#gradUsers)" strokeWidth={2} dot={{ r: 3, fill: "#3b82f6", strokeWidth: 0 }} animationDuration={1200} />
-                    <Area type="monotone" dataKey="active" name="Active" stroke="#10b981" fill="url(#gradActive)" strokeWidth={2} dot={{ r: 3, fill: "#10b981", strokeWidth: 0 }} animationDuration={1400} />
+                    <Area type="monotone" dataKey="users" name="Total" stroke="#2F80ED" fill="url(#gradUsers)" strokeWidth={2} dot={{ r: 3, fill: "#2F80ED", strokeWidth: 0 }} animationDuration={1200} />
+                    <Area type="monotone" dataKey="active" name="Active" stroke="#10B981" fill="url(#gradActive)" strokeWidth={2} dot={{ r: 3, fill: "#10B981", strokeWidth: 0 }} animationDuration={1400} />
                 </AreaChart>
             </ResponsiveContainer>
         </ChartWrapper>

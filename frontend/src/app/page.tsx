@@ -5,6 +5,25 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#f8f3eb] text-[#1d1d1d] font-sans overflow-x-hidden selection:bg-[#0f9d76]/20">
 
+
+      {/* ── Global Background Image ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-0 animate-[fadeIn_1.5s_ease-in-out_forwards]">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/images/landing-bg.png')" }}
+        />
+        {/* Soft light overlay */}
+        <div className="absolute inset-0" style={{ backgroundColor: "rgba(250, 247, 241, 0.72)" }} />
+      </div>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}} />
+
       {/* ── Background Decorative Layers ── */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Soft radial glow centered */}

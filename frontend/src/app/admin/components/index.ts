@@ -8,6 +8,9 @@ export { SOCFilterBar } from "./SOCFilterBar";
 export type { SOCFilters } from "./SOCFilterBar";
 export { InvestigationDrawer } from "./InvestigationDrawer";
 export type { InvestigationContext, EntityType } from "./InvestigationDrawer";
+export { LightAdminDropdown } from "./LightAdminDropdown";
+export type { DropdownOption } from "./LightAdminDropdown";
+export { LightActionLink } from "./LightActionLink";
 export {
     ThreatTrendChart,
     ScanVolumeChart,

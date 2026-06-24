@@ -493,36 +493,47 @@ class InvestigationOrchestrator:
                 # Format enriched_results for the frontend's IOCTable
                 ioc_results_formatted = []
                 for res in (enriched_results or []):
-                    # Determine source
-                    has_vt = res.get("vt_score", 0) > 0 or res.get("vt_status") in ["malicious", "suspicious"]
-                    has_otx = len(res.get("otx_pulses", [])) > 0
-                    
-                    if has_vt and has_otx:
-                        source = "both"
-                    elif has_otx:
-                        source = "alienvault"
-                    else:
-                        source = "virustotal"
-                        
+                    source = res.get("source", "VirusTotal")
+                    reputation_score = res.get("confidence_score", 10)
+                    threat_level = res.get("threat_level", "clean")
+                    flagged = res.get("flagged", False)
+
+                    # Log every IOC right before creating the final response
+                    logger.info(
+                        f"\n[FINAL IOC]\n"
+                        f"indicator = {res.get('ioc')}\n"
+                        f"source = {source}\n"
+                        f"vt_malicious = {res.get('vt_malicious', 0)}\n"
+                        f"vt_suspicious = {res.get('vt_suspicious', 0)}\n"
+                        f"otx_pulse_count = {res.get('otx_pulse_count', 0)}\n"
+                        f"reputation_score = {reputation_score}\n"
+                        f"threat_level = {threat_level}\n"
+                        f"flagged = {flagged}\n"
+                        f"reason = {res.get('risk_reason', '')}\n"
+                    )
+
                     ioc_results_formatted.append({
                         "indicator_type": res.get("type"),
                         "value": res.get("ioc"),
                         "source": source,
-                        "reputation_score": res.get("confidence_score", 10),
-                        "threat_level": res.get("vt_status", "clean"),
+                        "reputation_score": reputation_score,
+                        "threat_level": threat_level,
                         "details": {
                             "otx_pulses": res.get("otx_pulses", []),
                             "threat_tags": res.get("threat_tags", []),
                             "campaign_context": res.get("campaign_context", []),
                             "related_malware_families": res.get("related_malware_families", []),
                             "risk_reason": res.get("risk_reason", ""),
-                            "recommended_action": res.get("recommended_action", "")
+                            "recommended_action": res.get("recommended_action", ""),
+                            "vt_malicious": res.get("vt_malicious", 0),
+                            "vt_suspicious": res.get("vt_suspicious", 0),
+                            "otx_pulse_count": res.get("otx_pulse_count", 0),
                         },
-                        "flagged": res.get("vt_status") in ["malicious", "suspicious"]
+                        "flagged": flagged
                     })
                 
                 pipeline_state["reputation_context"] = {
-                    "source": "VirusTotal & AlienVault OTX",
+                    "source": "VirusTotal & AlienVault OTX Enrichment",
                     "last_seen": datetime.utcnow().isoformat() + "Z",
                     "ioc_results": ioc_results_formatted
                 }

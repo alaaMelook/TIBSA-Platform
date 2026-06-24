@@ -25,6 +25,7 @@ import {
     User
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { motion } from "framer-motion";
 import { Investigation, InvestigationStage, StageStatus, LiveEvent } from "@/types";
 
 // Helper to map current_stage & progress_percent & status to 6 stages
@@ -369,8 +370,8 @@ export default function AdminInvestigationWorkspace() {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center py-40 text-slate-500 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] flex flex-col items-center justify-center text-[#7C6F64] gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-[#10B981]" />
                 <p className="text-sm font-semibold uppercase tracking-wider">Loading Admin Workspace Viewer...</p>
             </div>
         );
@@ -378,27 +379,27 @@ export default function AdminInvestigationWorkspace() {
 
     if (error || !investigation) {
         return (
-            <div className="space-y-4">
-                <Button onClick={() => router.push("/admin/investigations")} variant="ghost" size="sm" className="gap-2">
+            <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] space-y-4">
+                <Button onClick={() => router.push("/admin/investigations")} variant="ghost" size="sm" className="gap-2 text-[#7C6F64] hover:text-[#10B981] hover:bg-[#10B981]/10">
                     <ArrowLeft className="w-4 h-4" /> Back to Investigations List
                 </Button>
-                <Card className="border border-red-500/20 bg-red-950/10 text-center py-12">
-                    <AlertOctagon className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-bold text-white">Workspace Loading Error</h3>
-                    <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
+                <div className="border border-[#EF4444]/20 bg-[#EF4444]/5 text-center py-12 rounded-[20px] shadow-sm max-w-3xl mx-auto mt-10">
+                    <AlertOctagon className="w-12 h-12 text-[#EF4444] mx-auto mb-4" />
+                    <h3 className="text-lg font-bold text-[#EF4444]">Workspace Loading Error</h3>
+                    <p className="text-sm text-[#EF4444] mt-2 max-w-md mx-auto">
                         {error || "We could not fetch details for this investigation. Please check if it exists or try again."}
                     </p>
-                </Card>
+                </div>
             </div>
         );
     }
 
     const statusColors: Record<string, string> = {
-        completed: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-        failed: "bg-red-500/10 text-red-400 border border-red-500/20",
-        pending: "bg-slate-800 text-slate-400 border border-slate-700",
-        running: "bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse",
-        stopped: "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+        completed: "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20",
+        failed: "bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20",
+        pending: "bg-orange-500/10 text-orange-600 border border-orange-500/20",
+        running: "bg-[#2F80ED]/10 text-[#2F80ED] border border-[#2F80ED]/20 animate-pulse",
+        stopped: "bg-orange-500/10 text-orange-600 border border-orange-500/20"
     };
 
     const getStatusText = (status: string) => {
@@ -410,44 +411,49 @@ export default function AdminInvestigationWorkspace() {
     };
 
     return (
-        <div className="space-y-4 max-w-7xl mx-auto">
+        <div className="-m-6 p-6 md:p-8 min-h-[calc(100vh-64px)] bg-[#FAF7F1] text-[#1F2933]">
+        <div className="space-y-6 max-w-[1600px] mx-auto">
             {/* Top Identity Header */}
-            <div className="bg-[#1e293b]/30 rounded-xl border border-white/[0.04] py-4 px-5 shadow-lg flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+                style={{ background: "linear-gradient(90deg, #FFFCF7 0%, #F4EFE7 45%, #E9EDF3 100%)" }}
+                className="rounded-[24px] border border-[#E6DDD2] py-6 px-8 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4"
+            >
                 <div className="space-y-2">
                     {/* Back CTA & Breadcrumbs */}
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => router.push("/admin/investigations")}
-                            className="text-xs text-slate-500 hover:text-slate-300 font-bold uppercase tracking-widest flex items-center gap-1 transition-colors cursor-pointer"
+                            className="text-xs text-[#7C6F64] hover:text-[#10B981] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors cursor-pointer"
                         >
                             <ArrowLeft className="w-3.5 h-3.5" /> SOC Workspace
                         </button>
-                        <span className="text-slate-600 font-mono text-xs">/</span>
-                        <span className="text-xs text-slate-400 font-mono select-all">
+                        <span className="text-[#E6DDD2] font-mono text-xs">/</span>
+                        <span className="text-xs text-[#7C6F64] font-mono select-all">
                             {investigation.scan_id}
                         </span>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="text-xl font-black text-white tracking-tight break-all">
+                        <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight break-all">
                             Target: {investigation.target}
                         </h1>
-                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${statusColors[investigation.status] || statusColors.running}`}>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusColors[investigation.status] || statusColors.running}`}>
                             {getStatusText(investigation.status)}
                         </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-500 font-mono">
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-[#7C6F64] font-mono mt-2">
                         <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-slate-600" />
-                            Runtime: <span className="text-slate-300 font-bold">{activeDuration}</span>
+                            <Clock className="w-3.5 h-3.5 text-[#7C6F64]" />
+                            Runtime: <span className="text-[#1F2933] font-bold">{activeDuration}</span>
                         </div>
                         <div>
-                            Stage: <span className="text-slate-300 font-semibold">{investigation.current_stage}</span>
+                            Stage: <span className="text-[#1F2933] font-semibold">{investigation.current_stage}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <User className="w-3.5 h-3.5 text-slate-600" />
-                            Analyst: <span className="text-slate-300 font-semibold">{analyst?.name || "System"}</span>
+                            <User className="w-3.5 h-3.5 text-[#7C6F64]" />
+                            Analyst: <span className="text-[#1F2933] font-semibold">{analyst?.name || "System"}</span>
                         </div>
                     </div>
                 </div>
@@ -455,12 +461,10 @@ export default function AdminInvestigationWorkspace() {
                 {/* Global actions */}
                 {investigation.status === "completed" ? (
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="secondary"
-                            size="sm"
+                        <button
                             onClick={() => handleExport("json")}
                             disabled={!!exportLoading}
-                            className="gap-2"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-[#1F2933] hover:border-[#10B981] hover:text-[#10B981] border border-[#E6DDD2] transition-colors text-sm font-semibold shadow-sm disabled:opacity-50 cursor-pointer"
                         >
                             {exportLoading === "json" ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -468,13 +472,11 @@ export default function AdminInvestigationWorkspace() {
                                 <FileJson className="w-3.5 h-3.5" />
                             )}
                             JSON
-                        </Button>
-                        <Button
-                            variant="primary"
-                            size="sm"
+                        </button>
+                        <button
                             onClick={() => handleExport("pdf")}
                             disabled={!!exportLoading}
-                            className="gap-2"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#10B981] to-teal-400 text-white hover:shadow-md hover:-translate-y-0.5 border border-transparent transition-all text-sm font-semibold shadow-sm disabled:opacity-50 cursor-pointer"
                         >
                             {exportLoading === "pdf" ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -482,16 +484,14 @@ export default function AdminInvestigationWorkspace() {
                                 <FileText className="w-3.5 h-3.5" />
                             )}
                             PDF Report
-                        </Button>
+                        </button>
                     </div>
                 ) : (investigation.status === "running" || investigation.status === "pending") && (
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="danger"
-                            size="sm"
+                        <button
                             onClick={handleStop}
                             disabled={stopLoading}
-                            className="gap-2 bg-red-600 hover:bg-red-500 border border-red-500/20 text-white font-bold"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#EF4444]/50 hover:bg-[#EF4444]/10 text-[#EF4444] transition-colors text-sm font-semibold shadow-sm disabled:opacity-50 cursor-pointer"
                         >
                             {stopLoading ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -499,31 +499,31 @@ export default function AdminInvestigationWorkspace() {
                                 <AlertOctagon className="w-3.5 h-3.5" />
                             )}
                             Stop Scan
-                        </Button>
+                        </button>
                     </div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Progress timeline */}
             <InvestigationTimeline stages={stages} />
 
             {/* Live Activity & Gauge */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-4 flex flex-col justify-center items-center bg-[#1e293b]/30 rounded-xl border border-white/[0.04] p-4 shadow-md min-h-[260px]">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="lg:col-span-4 flex flex-col justify-center items-center bg-white rounded-[20px] border border-[#E6DDD2] p-4 shadow-sm min-h-[260px]">
+                    <h3 className="text-xs font-bold text-[#7C6F64] uppercase tracking-widest mb-3">
                         Risk Progression
                     </h3>
                     <RiskGauge score={investigation.risk_score} />
-                </div>
+                </motion.div>
 
-                <div className="lg:col-span-8">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }} className="lg:col-span-8">
                     <SOCEventFeed events={liveEvents} />
-                </div>
+                </motion.div>
             </div>
 
             {/* Results Tabs */}
             <div className="space-y-4">
-                <div className="flex border-b border-white/[0.08] overflow-x-auto whitespace-nowrap scrollbar-none gap-2">
+                <div className="flex border-b border-[#E6DDD2] overflow-x-auto whitespace-nowrap scrollbar-none gap-2">
                     {[
                         { key: "findings", label: "Findings" },
                         { key: "intel", label: "Threat Intel" },
@@ -541,10 +541,10 @@ export default function AdminInvestigationWorkspace() {
                                 onClick={() => setActiveTab(tab.key)}
                                 className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
                                     active
-                                        ? "border-blue-500 text-blue-400"
+                                        ? "border-[#10B981] text-[#10B981]"
                                         : unlocked
-                                        ? "border-transparent text-slate-400 hover:text-slate-200"
-                                        : "border-transparent text-slate-600 cursor-not-allowed"
+                                        ? "border-transparent text-[#7C6F64] hover:text-[#10B981]"
+                                        : "border-transparent text-gray-400 cursor-not-allowed"
                                 }`}
                             >
                                 {getTabLabel(tab.key, tab.label)}
@@ -553,14 +553,14 @@ export default function AdminInvestigationWorkspace() {
                     })}
                 </div>
 
-                <div className="min-h-[300px]">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="min-h-[300px]">
                     {!isTabUnlocked(activeTab) ? (
-                        <Card className="border border-white/[0.06] bg-slate-900/10 text-center py-20">
-                            <Lock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                            <h4 className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+                        <div className="border border-[#E6DDD2] bg-white text-center py-20 rounded-[20px] shadow-sm">
+                            <Lock className="w-12 h-12 text-[#7C6F64] mx-auto mb-4 opacity-50" />
+                            <h4 className="text-[#7C6F64] font-bold uppercase tracking-widest text-xs">
                                 Stage Pending
                             </h4>
-                        </Card>
+                        </div>
                     ) : (
                         <>
                             {activeTab === "findings" && (
@@ -601,33 +601,33 @@ export default function AdminInvestigationWorkspace() {
                             {activeTab === "correlations" && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Card className="!p-5 bg-slate-900/20 border border-white/[0.04]">
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                                        <div className="p-5 bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm">
+                                            <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
                                                 Correlation Analysis
                                             </span>
-                                            <div className="text-3xl font-black text-white mt-1">
+                                            <div className="text-3xl font-black text-[#10B981] mt-1">
                                                 {investigation.final_result?.correlation?.unique_threats_identified || 0}
                                             </div>
-                                        </Card>
-                                        <Card className="!p-5 bg-slate-900/20 border border-white/[0.04]">
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                                        </div>
+                                        <div className="p-5 bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm">
+                                            <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
                                                 Escalated Risks
                                             </span>
-                                            <div className="text-3xl font-black text-orange-400 mt-1">
+                                            <div className="text-3xl font-black text-[#F97316] mt-1">
                                                 {investigation.final_result?.correlation?.escalated_risks_count || 0}
                                             </div>
-                                        </Card>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-4">
-                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        <h4 className="text-xs font-bold text-[#7C6F64] uppercase tracking-widest">
                                             Correlated Attack Chains
                                         </h4>
                                         {(!investigation.final_result?.correlation?.correlated_threats ||
                                             investigation.final_result.correlation.correlated_threats.length === 0) ? (
-                                            <Card className="py-12 text-center text-slate-500">
+                                            <div className="py-12 text-center text-[#7C6F64] bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm">
                                                 No correlated threat paths found.
-                                            </Card>
+                                            </div>
                                         ) : (
                                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                                 {investigation.final_result.correlation.correlated_threats.map((threat, idx) => (
@@ -640,46 +640,49 @@ export default function AdminInvestigationWorkspace() {
                             )}
 
                             {activeTab === "threat_model" && (
-                                <Card title="STRIDE Threat Vectors">
+                                <div className="bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-[#E6DDD2] bg-[#FAF7F1]">
+                                        <h3 className="font-semibold text-[#1F2933]">STRIDE Threat Vectors</h3>
+                                    </div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left text-sm">
                                             <thead>
-                                                <tr className="border-b border-white/[0.06] text-slate-400 font-semibold bg-slate-900/10">
+                                                <tr className="border-b border-[#E6DDD2] text-[#7C6F64] font-semibold bg-[#FAF7F1]">
                                                     <th className="py-3 px-4 w-40">STRIDE Category</th>
                                                     <th className="py-3 px-4">Threat Scenario</th>
                                                     <th className="py-3 px-4 w-32">Severity</th>
                                                     <th className="py-3 px-4">Remediation</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/[0.04]">
+                                            <tbody>
                                                 {(!investigation.final_result?.stride?.stride_threats ||
                                                     investigation.final_result.stride.stride_threats.length === 0) ? (
                                                     <tr>
-                                                        <td colSpan={4} className="py-12 text-center text-slate-500">
+                                                        <td colSpan={4} className="py-12 text-center text-[#7C6F64]">
                                                             No STRIDE threats generated.
                                                         </td>
                                                     </tr>
                                                 ) : (
                                                     investigation.final_result.stride.stride_threats.map((t, idx) => (
-                                                        <tr key={t.stride_id || idx} className="hover:bg-white/[0.01]">
+                                                        <tr key={t.stride_id || idx} className="hover:bg-[#FAF7F1] border-b border-[#E6DDD2]">
                                                             <td className="py-4 px-4">
-                                                                <span className="text-[10px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                                                <span className="text-[10px] bg-[#2F80ED]/10 border border-[#2F80ED]/20 text-[#2F80ED] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
                                                                     {t.category}
                                                                 </span>
                                                             </td>
-                                                            <td className="py-4 px-4 text-slate-300 text-xs leading-relaxed">
+                                                            <td className="py-4 px-4 text-[#1F2933] text-xs leading-relaxed">
                                                                 {t.attack_scenario?.split("[Evidence Tracing]")[0].trim()}
                                                             </td>
                                                             <td className="py-4 px-4">
                                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
                                                                     (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
-                                                                        ? "border-red-500/25 bg-red-500/10 text-red-400"
-                                                                        : "border-orange-500/25 bg-orange-500/10 text-orange-400"
+                                                                        ? "border-[#EF4444]/25 bg-[#EF4444]/10 text-[#EF4444]"
+                                                                        : "border-orange-500/25 bg-orange-500/10 text-orange-600"
                                                                 }`}>
                                                                     {t.severity}
                                                                 </span>
                                                             </td>
-                                                            <td className="py-4 px-4 text-xs text-slate-300 leading-relaxed">
+                                                            <td className="py-4 px-4 text-xs text-[#7C6F64] leading-relaxed">
                                                                 {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations}
                                                             </td>
                                                         </tr>
@@ -688,39 +691,40 @@ export default function AdminInvestigationWorkspace() {
                                             </tbody>
                                         </table>
                                     </div>
-                                </Card>
+                                </div>
                             )}
 
                             {activeTab === "ai_summary" && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                                        <Card className="lg:col-span-3 !p-6 flex flex-col justify-center bg-slate-900/15 border border-white/[0.04]">
-                                            <div className="flex items-center gap-2 text-blue-400 font-semibold text-sm">
+                                        <div className="lg:col-span-3 p-6 flex flex-col justify-center bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm">
+                                            <div className="flex items-center gap-2 text-[#10B981] font-semibold text-sm">
                                                 <Sparkles className="w-4 h-4 animate-bounce" />
                                                 Executive Summary
                                             </div>
-                                            <div className="text-slate-200 text-sm leading-relaxed mt-4 whitespace-pre-line font-sans">
+                                            <div className="text-[#1F2933] text-sm leading-relaxed mt-4 whitespace-pre-line font-sans">
                                                 <ReactMarkdown>
                                                     {investigation.final_result?.reporter?.ai_summary?.executive_summary || "Generating summary..."}
                                                 </ReactMarkdown>
                                             </div>
-                                        </Card>
+                                        </div>
 
-                                        <Card className="lg:col-span-1 !p-6 flex flex-col items-center justify-center bg-slate-900/15 border border-white/[0.04] text-center">
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                                        <div className="lg:col-span-1 p-6 flex flex-col items-center justify-center bg-white rounded-[20px] border border-[#E6DDD2] text-center shadow-sm">
+                                            <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
                                                 AI Confidence
                                             </span>
-                                            <div className="text-5xl font-black text-white tracking-tight mt-3">
+                                            <div className="text-5xl font-black text-[#10B981] tracking-tight mt-3">
                                                 {investigation.final_result?.reporter?.confidence || 85}%
                                             </div>
-                                        </Card>
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </>
                     )}
-                </div>
+                </motion.div>
             </div>
+        </div>
         </div>
     );
 }

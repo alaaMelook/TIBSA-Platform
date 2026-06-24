@@ -58,10 +58,10 @@ export const TechnicalEvidenceTable = ({ evidence }: TechnicalEvidenceTableProps
           return (
             <div className="space-y-1.5 py-1 w-full">
               {Object.entries(parsed).map(([pk, pv]) => (
-                <div key={pk} className="flex flex-col sm:flex-row sm:gap-3 text-[10px] border-l border-emerald-500/20 pl-3">
-                  <span className="text-[var(--text-muted)] font-bold sm:min-w-[120px]">{pk}:</span>
-                  <span className="text-emerald-300 break-all">{String(pv)}</span>
-                </div>
+                  <div key={pk} className="flex flex-col sm:flex-row sm:gap-3 text-[10px] border-l border-[#E6DDD2] pl-3">
+                    <span className="text-[#7C6F64] font-bold sm:min-w-[120px]">{pk}:</span>
+                    <span className="text-[#1F2933] break-all">{String(pv)}</span>
+                  </div>
               ))}
             </div>
           );
@@ -79,7 +79,7 @@ export const TechnicalEvidenceTable = ({ evidence }: TechnicalEvidenceTableProps
         {isLong && (
           <button 
             onClick={() => toggleExpand(rowKey)}
-            className="ml-3 text-[9px] font-black text-[var(--primary)]/70 hover:text-[var(--primary)] transition-colors uppercase underline underline-offset-2 cursor-pointer"
+            className="ml-3 text-[9px] font-black text-[#10B981] hover:text-[#10B981]/80 transition-colors uppercase underline underline-offset-2 cursor-pointer"
           >
             {isExpanded ? "[Collapse]" : "[Show Full]"}
           </button>
@@ -89,32 +89,32 @@ export const TechnicalEvidenceTable = ({ evidence }: TechnicalEvidenceTableProps
   };
 
   return (
-    <div className="bg-[var(--bg-card)]/40 border border-[var(--border-strong)] rounded-xl overflow-hidden shadow-2xl font-mono text-[11px] w-full">
-      <div className="flex flex-col divide-y divide-white/5">
+    <div className="bg-white border border-[#E6DDD2] rounded-[20px] overflow-hidden shadow-sm font-mono text-[11px] w-full">
+      <div className="flex flex-col divide-y divide-[#E6DDD2]">
         {rows.map((row, idx) => {
           const rowKey = `${row.key}-${idx}`;
           const isCopyable = copyableFields.some(f => row.key.includes(f));
 
           return (
-            <div key={idx} className="flex flex-col md:grid md:grid-cols-[220px_1fr] group hover:bg-[var(--bg-elevated)] transition-colors relative">
+            <div key={idx} className="flex flex-col md:grid md:grid-cols-[220px_1fr] group hover:bg-[#FAF7F1] transition-colors relative">
               {/* Key Column */}
-              <div className="px-5 py-4 text-[var(--text-muted)] bg-[var(--bg-elevated)] border-b md:border-b-0 md:border-r border-[var(--border-soft)] font-sans uppercase text-[10px] font-black tracking-widest flex items-center whitespace-nowrap overflow-hidden text-ellipsis">
+              <div className="px-5 py-4 text-[#7C6F64] bg-[#FAF7F1]/50 border-b md:border-b-0 md:border-r border-[#E6DDD2] font-sans uppercase text-[10px] font-black tracking-widest flex items-center whitespace-nowrap overflow-hidden text-ellipsis">
                 {row.key}
               </div>
               
               {/* Value Column */}
-              <div className="px-5 py-4 text-emerald-400/90 relative flex items-start group/val">
+              <div className="px-5 py-4 text-[#1F2933] font-semibold relative flex items-start group/val">
                 {renderValue(row.key, row.value, rowKey)}
                 
                 {/* Copy Button on the right */}
                 {isCopyable && (
                   <button 
                     onClick={() => copyToClipboard(row.value, rowKey)}
-                    className="absolute right-4 top-4 p-1.5 bg-[var(--bg-elevated)]/80 hover:bg-emerald-600/50 border border-[var(--border-strong)] rounded-md text-[var(--text-primary)] transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 z-10 cursor-pointer"
+                    className="absolute right-4 top-4 p-1.5 bg-white hover:bg-[#FAF7F1] border border-[#E6DDD2] rounded-md text-[#7C6F64] transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5 z-10 cursor-pointer shadow-sm"
                     title="Copy Value"
                   >
-                    {copiedKey === rowKey ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    {copiedKey === rowKey && <span className="text-[9px] font-bold">COPIED</span>}
+                    {copiedKey === rowKey ? <CheckCircle2 className="w-3 h-3 text-[#10B981]" /> : <Copy className="w-3 h-3" />}
+                    {copiedKey === rowKey && <span className="text-[9px] font-bold text-[#10B981]">COPIED</span>}
                   </button>
                 )}
               </div>

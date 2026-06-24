@@ -21,12 +21,12 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
   const getStageIcon = (name: string, status: string) => {
     const iconClass = `w-5 h-5 ${
       status === "running"
-        ? "animate-pulse text-[var(--primary)]"
+        ? "animate-pulse text-[#2F80ED]"
         : status === "completed"
-        ? "text-emerald-400"
+        ? "text-[#10B981]"
         : status === "failed"
-        ? "text-red-400"
-        : "text-[var(--text-muted)]"
+        ? "text-[#EF4444]"
+        : "text-[#7C6F64]"
     }`;
 
     if (name.includes("Pentest")) return <Search className={iconClass} />;
@@ -40,21 +40,21 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "border-emerald-500/30 bg-emerald-950/20 text-emerald-400";
+        return "border-[#10B981]/20 bg-[#10B981]/10 text-[#10B981]";
       case "running":
-        return "border-[var(--primary)] bg-blue-950/20 text-[var(--primary)] border-dashed animate-pulse";
+        return "border-[#2F80ED]/50 bg-[#2F80ED]/5 text-[#2F80ED] border-dashed animate-pulse";
       case "failed":
-        return "border-red-500/30 bg-red-950/20 text-red-400";
+        return "border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444]";
       case "skipped":
-        return "border-[var(--border-strong)] bg-[var(--bg-card)]/50 text-[var(--text-muted)]";
+        return "border-[#E6DDD2] bg-[#FAF7F1] text-[#7C6F64]";
       default:
-        return "border-[var(--border-strong)] bg-[var(--bg-card)]/10 text-[var(--text-muted)]";
+        return "border-[#E6DDD2] bg-[#FAF7F1]/50 text-[#7C6F64]";
     }
   };
 
   return (
-    <div className="w-full bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] p-6 shadow-md">
-      <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-6">
+    <div className="w-full bg-white rounded-[20px] border border-[#E6DDD2] p-6 shadow-sm">
+      <h3 className="text-xs font-semibold text-[#7C6F64] uppercase tracking-widest mb-6">
         Investigation Progress Pipeline
       </h3>
 
@@ -67,28 +67,28 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
           return (
             <React.Fragment key={stage.stage}>
               {/* Stage Node */}
-              <div className="flex-1 flex flex-col items-center text-center p-3 rounded-xl border bg-[var(--bg-card)]/25 relative transition-all duration-300">
+              <div className="flex-1 flex flex-col items-center text-center p-4 rounded-[16px] border border-[#E6DDD2] bg-white hover:border-[#10B981]/50 hover:shadow-md hover:-translate-y-1 relative transition-all duration-300">
                 {/* Node Top Icon */}
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center border ${
                     status === "running"
-                      ? "border-blue-500 bg-blue-950/50 shadow-md shadow-[var(--primary-soft)]"
+                      ? "border-[#2F80ED]/30 bg-[#2F80ED]/10 shadow-sm"
                       : status === "completed"
-                      ? "border-emerald-500 bg-emerald-950/30"
+                      ? "border-[#10B981]/30 bg-[#10B981]/10"
                       : status === "failed"
-                      ? "border-red-500 bg-red-950/30"
-                      : "border-[var(--border-strong)] bg-[var(--bg-card)]/60"
+                      ? "border-[#EF4444]/30 bg-[#EF4444]/10"
+                      : "border-[#E6DDD2] bg-[#FAF7F1]"
                   } mb-3`}
                 >
                   {getStageIcon(stage.stage, status)}
                 </div>
 
                 {/* Info */}
-                <span className="text-sm font-semibold text-[var(--text-primary)] block truncate max-w-full">
+                <span className="text-sm font-semibold text-[#1F2933] block truncate max-w-full">
                   {stage.stage}
                 </span>
 
-                <div className={`mt-2.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusClass}`}>
+                <div className={`mt-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusClass}`}>
                   {status === "running" ? (
                     <span className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping" />
@@ -102,9 +102,9 @@ export function InvestigationTimeline({ stages }: InvestigationTimelineProps) {
 
               {/* Connecting line */}
               {!isLast && (
-                <div className="hidden md:block w-8 h-[2px] bg-[var(--bg-elevated)] relative self-center">
+                <div className="hidden md:block w-8 h-[2px] bg-[#E6DDD2] relative self-center">
                   {status === "completed" && (
-                    <div className="absolute inset-0 bg-emerald-500/50 transition-all duration-500" />
+                    <div className="absolute inset-0 bg-[#10B981] transition-all duration-500" />
                   )}
                 </div>
               )}

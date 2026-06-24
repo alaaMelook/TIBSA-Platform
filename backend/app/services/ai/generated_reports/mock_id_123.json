@@ -3,51 +3,18 @@
     "executive_summary": "This is a mocked executive summary.",
     "detection_summary": "Mock detection summary.",
     "final_verdict": "Suspicious",
-    "confidence_score": 85,
-    "technical_analysis": "Mock technical analysis.",
-    "behavioral_analysis": {
-      "persistence": [
-        "Mock persistence"
-      ],
-      "injection": [],
-      "execution": [
-        "Mock execution"
-      ],
-      "network_activity": [],
-      "evasion": []
-    },
-    "yara_analysis": [
-      {
-        "rule": "mock_rule",
-        "explanation": "mock explanation"
-      }
-    ],
-    "malice_av_analysis": {
-      "detection_ratio": "5/50",
-      "engines_triggered": [
-        "MockAV"
-      ]
-    },
-    "mitre_attack_mapping": [
-      {
-        "id": "T1059",
-        "tactic": "Execution",
-        "technique": "Command and Scripting Interpreter",
-        "evidence": "Mock evidence"
-      }
-    ],
+    "malware_classification": "Unknown",
+    "confidence_assessment": "No assessment available.",
+    "technical_findings": "No technical analysis available.",
     "indicators_of_compromise": [
       "mock_hash"
     ],
     "risk_assessment": {
-      "final_score": 75,
-      "breakdown": {
-        "ml_contribution": "Mock ML",
-        "yara_contribution": "Mock Yara",
-        "capa_contribution": "Mock Capa",
-        "av_contribution": "Mock AV"
-      }
+      "risk_score": 50,
+      "risk_level": "Medium",
+      "justification": ""
     },
+    "potential_impact": "Unknown",
     "recommended_actions": [
       "Mock Action 1"
     ],

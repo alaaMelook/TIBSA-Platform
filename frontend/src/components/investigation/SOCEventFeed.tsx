@@ -21,15 +21,15 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
     switch (severity) {
       case "critical":
       case "high":
-        return <AlertTriangle className={`${sizeClass} text-red-400`} />;
+        return <AlertTriangle className={`${sizeClass} text-[#EF4444]`} />;
       case "warning":
       case "medium":
-        return <AlertTriangle className={`${sizeClass} text-orange-400`} />;
+        return <AlertTriangle className={`${sizeClass} text-[#F97316]`} />;
       case "success":
-        return <CheckCircle className={`${sizeClass} text-emerald-400`} />;
+        return <CheckCircle className={`${sizeClass} text-[#10B981]`} />;
       case "info":
       default:
-        return <Info className={`${sizeClass} text-[var(--primary)]`} />;
+        return <Info className={`${sizeClass} text-[#2F80ED]`} />;
     }
   };
 
@@ -37,29 +37,29 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
     switch (severity) {
       case "critical":
       case "high":
-        return "bg-red-500/10 border-red-500/20 text-red-200";
+        return "bg-[#EF4444]/5 border-[#EF4444]/20 text-[#1F2933]";
       case "warning":
       case "medium":
-        return "bg-orange-500/10 border-orange-500/20 text-orange-200";
+        return "bg-[#F97316]/5 border-[#F97316]/20 text-[#1F2933]";
       case "success":
-        return "bg-emerald-500/10 border-emerald-500/20 text-emerald-200";
+        return "bg-[#10B981]/5 border-[#10B981]/20 text-[#1F2933]";
       case "info":
       default:
-        return "bg-[var(--primary)]/10 border-[var(--primary)] text-blue-200";
+        return "bg-[#2F80ED]/5 border-[#2F80ED]/20 text-[#1F2933]";
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-page)]/70 rounded-xl border border-[var(--border-strong)] shadow-inner">
+    <div className="flex flex-col h-full bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-strong)] bg-[var(--bg-card)]/40">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6DDD2] bg-[#FAF7F1]">
         <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-[var(--primary)] animate-pulse" />
-          <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-widest">
+          <Terminal className="w-4 h-4 text-[#10B981] animate-pulse" />
+          <span className="text-xs font-bold text-[#1F2933] uppercase tracking-widest">
             SOC Live Stream
           </span>
         </div>
-        <span className="text-[10px] bg-[var(--bg-elevated)] text-[var(--text-muted)] px-2 py-0.5 rounded font-mono">
+        <span className="text-[10px] bg-white border border-[#E6DDD2] text-[#7C6F64] px-2 py-0.5 rounded-md font-mono font-semibold">
           {events.length} logs
         </span>
       </div>
@@ -70,7 +70,7 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
         className="flex-1 p-4 overflow-y-auto font-mono text-xs space-y-2.5 max-h-[260px]"
       >
         {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] py-12">
+          <div className="flex flex-col items-center justify-center h-full text-[#7C6F64] py-12">
             <Shield className="w-8 h-8 mb-2 opacity-20" />
             <p className="text-[11px] uppercase tracking-wider">Awaiting pipeline trigger...</p>
           </div>
@@ -86,22 +86,22 @@ export function SOCEventFeed({ events }: SOCEventFeedProps) {
             return (
               <div
                 key={evt.id + idx}
-                className={`flex items-start gap-2.5 p-2 rounded border transition-all duration-200 hover:bg-[var(--bg-card)]/50 ${getEventBg(
+                className={`flex items-start gap-2.5 p-2.5 rounded-lg border transition-all duration-200 hover:brightness-95 ${getEventBg(
                   evt.severity
                 )}`}
               >
                 {/* Time stamp */}
-                <span className="text-[var(--text-muted)] font-semibold select-none flex-shrink-0">
+                <span className="text-[#7C6F64] font-semibold select-none flex-shrink-0">
                   [{timeStr}]
                 </span>
 
                 {/* Tag label */}
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--bg-card)]/60 border border-[var(--border-soft)] text-[var(--text-muted)] flex-shrink-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white border border-[#E6DDD2] text-[#7C6F64] flex-shrink-0">
                   {evt.stage}
                 </span>
 
                 {/* Message */}
-                <div className="flex-1 flex items-center gap-1.5 leading-relaxed">
+                <div className="flex-1 flex items-center gap-1.5 leading-relaxed font-sans font-medium text-[#1F2933]">
                   {getEventIcon(evt.severity)}
                   <span className="break-all">{evt.message}</span>
                 </div>

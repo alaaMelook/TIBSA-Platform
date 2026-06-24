@@ -6,10 +6,10 @@ import type { RecentActivity } from "../types";
 
 // ─── Severity Style Map ──────────────────────────────────────
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; text: string; pulse: string }> = {
-    critical: { border: "border-l-red-500", bg: "bg-red-500/[0.04]", text: "text-red-400", pulse: "bg-red-400" },
-    warning: { border: "border-l-amber-500", bg: "bg-amber-500/[0.03]", text: "text-amber-400", pulse: "bg-amber-400" },
-    success: { border: "border-l-emerald-500", bg: "bg-emerald-500/[0.03]", text: "text-emerald-400", pulse: "bg-emerald-400" },
-    info: { border: "border-l-blue-500", bg: "bg-[var(--primary)]/[0.03]", text: "text-[var(--primary)]", pulse: "bg-blue-400" },
+    critical: { border: "border-l-[#EF4444]", bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", pulse: "bg-[#EF4444]" },
+    warning: { border: "border-l-amber-500", bg: "bg-amber-500/10", text: "text-amber-600", pulse: "bg-amber-500" },
+    success: { border: "border-l-[#10B981]", bg: "bg-[#10B981]/10", text: "text-[#10B981]", pulse: "bg-[#10B981]" },
+    info: { border: "border-l-[#2F80ED]", bg: "bg-[#2F80ED]/10", text: "text-[#2F80ED]", pulse: "bg-[#2F80ED]" },
 };
 
 // ─── Type Icon Map ───────────────────────────────────────────
@@ -76,12 +76,12 @@ export function ActivityFeed({ activities, maxItems = 8 }: ActivityFeedProps) {
     if (items.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-strong)] flex items-center justify-center mb-3">
-                    <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <div className="w-12 h-12 rounded-full bg-[#FAF7F1] border border-[#E6DDD2] flex items-center justify-center mb-3">
+                    <svg className="w-5 h-5 text-[#7C6F64]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <p className="text-sm text-[var(--text-muted)]">No recent activity</p>
+                <p className="text-sm text-[#7C6F64]">No recent activity</p>
             </div>
         );
     }
@@ -102,7 +102,7 @@ export function ActivityFeed({ activities, maxItems = 8 }: ActivityFeedProps) {
                         key={activity.id}
                         variants={item}
                         whileHover={{ x: 2, transition: { duration: 0.15 } }}
-                        className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border-l-2 ${style.border} ${style.bg} hover:bg-[var(--bg-elevated)] transition-colors duration-150 cursor-default group`}
+                        className={`flex items-start gap-3 px-3 py-2.5 rounded-lg border-l-[3px] ${style.border} bg-white hover:bg-[#F8FDFB] hover:shadow-sm border border-transparent hover:border-[#E6DDD2] hover:border-l-[3px] hover:border-l-[#10B981] transition-all duration-150 cursor-default group`}
                     >
                         {/* Severity dot + Icon */}
                         <div className="relative flex-shrink-0 mt-0.5">
@@ -119,22 +119,22 @@ export function ActivityFeed({ activities, maxItems = 8 }: ActivityFeedProps) {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed group-hover:text-[var(--text-primary)] transition-colors">
+                            <p className="text-[13px] font-medium text-[#1F2933] leading-relaxed group-hover:text-[#10B981] transition-colors">
                                 {activity.message}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] text-[var(--text-muted)]">{timeAgo(activity.timestamp)}</span>
+                                <span className="text-[10px] text-[#7C6F64] font-medium">{timeAgo(activity.timestamp)}</span>
                                 {activity.user && (
                                     <>
-                                        <span className="text-[10px] text-[var(--text-muted)]">•</span>
-                                        <span className="text-[10px] text-[var(--text-muted)] font-medium">{activity.user}</span>
+                                        <span className="text-[10px] text-[#7C6F64]">•</span>
+                                        <span className="text-[10px] text-[#1F2933] font-bold">{activity.user}</span>
                                     </>
                                 )}
                             </div>
                         </div>
 
                         {/* Severity badge */}
-                        <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${style.text} opacity-60 group-hover:opacity-100 transition-opacity`}>
+                        <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${style.bg} ${style.text} opacity-60 group-hover:opacity-100 transition-opacity`}>
                             {activity.severity}
                         </span>
                     </motion.div>

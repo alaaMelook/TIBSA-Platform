@@ -154,99 +154,114 @@ class OTXProvider:
 class IntelAggregator:
     """
     Aggregates and normalizes VirusTotal & AlienVault OTX lookups.
-    Computes a unified confidence_score (0-100) and extracts malware, tags, campaigns.
+    VirusTotal is the ONLY source allowed to decide reputation, score, and threat status.
+    AlienVault OTX is enrichment/context only and never affects scoring or status.
     """
     @staticmethod
     def aggregate(indicator: str, type_: str, vt_res: dict, otx_res: dict) -> dict:
+        vt_found = vt_res.get("found", False)
         vt_malicious = vt_res.get("malicious", 0)
+        vt_suspicious = vt_res.get("suspicious", 0)
         vt_total = vt_res.get("total_engines", 0)
+        
         pulses = otx_res.get("pulses", [])
         pulse_count = len(pulses)
+        otx_found = otx_res.get("found", False)
 
-        # 1. Realistic Threat Intelligence Enforcement thresholds:
-        # - domain/JS asset is malicious ONLY IF VT malicious detections >= 3 AND OTX pulse count >= 1
-        is_real_threat = vt_malicious >= 3 and pulse_count >= 1
-
-        if is_real_threat:
-            vt_status = "malicious"
-            confidence_score = min(100, 90 + vt_malicious)
-            severity = "high" if confidence_score < 95 else "critical"
-        elif vt_malicious >= 1 or pulse_count >= 1:
-            vt_status = "suspicious"
-            confidence_score = min(75, 45 + vt_malicious + pulse_count)
-            severity = "medium"
+        # 1. Source label rules (for display only)
+        if vt_found and otx_found and pulse_count > 0:
+            source = "VirusTotal + OTX Context"
         else:
-            vt_status = "clean"
-            confidence_score = 10
-            severity = "info"
+            source = "VirusTotal"
 
-        # Extract details only if threshold is met, otherwise scrub malicious details
-        pulse_names = []
+        # 2. VirusTotal ONLY scoring rules
+        if not vt_found:
+            threat_level = "unknown"
+            flagged = False
+            reputation_score = 10
+            risk_reason = "VirusTotal has no reputation data for this host."
+            severity = "info"
+        elif vt_malicious == 0 and vt_suspicious == 0:
+            threat_level = "clean"
+            flagged = False
+            reputation_score = 10
+            risk_reason = "VirusTotal analysis clean (0 malicious, 0 suspicious engines)."
+            severity = "info"
+        elif vt_malicious == 0 and vt_suspicious > 0:
+            threat_level = "suspicious"
+            flagged = True
+            # reputation_score between 30 and 50
+            reputation_score = min(50, 30 + vt_suspicious * 5)
+            risk_reason = f"VirusTotal: 0 malicious but {vt_suspicious} suspicious engines flagged."
+            severity = "medium"
+        elif vt_malicious == 1:
+            threat_level = "suspicious"
+            flagged = True
+            # reputation_score between 50 and 60
+            reputation_score = 55
+            risk_reason = "VirusTotal: 1 security engine flagged malicious."
+            severity = "medium"
+        else:  # vt_malicious >= 2
+            threat_level = "malicious"
+            flagged = True
+            # reputation_score between 70 and 100
+            reputation_score = min(100, 70 + vt_malicious * 5)
+            risk_reason = f"VirusTotal: {vt_malicious}/{vt_total} engines flagged malicious."
+            severity = "high" if reputation_score < 90 else "critical"
+
+        # Recommended action based on threat_level
+        if threat_level == "malicious":
+            recommended_action = "Block resource load at proxy level and review local system assets."
+        elif threat_level == "suspicious":
+            recommended_action = "Monitor host network connections. No immediate block required."
+        else:
+            recommended_action = "No action required. Resource appears benign."
+
+        # OTX pulses and tags as context only
+        pulse_names = [p.get("name", "Unknown Pulse") for p in pulses]
         threat_tags = []
         campaign_context = []
         malware_families = []
         
-        if vt_status == "malicious":
-            pulse_names = [p["name"] for p in pulses]
-            for p in pulses:
-                threat_tags.extend(p.get("tags", []))
-                if "campaign" in p.get("description", "").lower() or p.get("name").endswith("Campaign"):
-                    campaign_context.append(p["name"])
-                malware_families.extend(p.get("malware_families", []))
-        elif vt_status == "suspicious":
-            # For suspicious, we only extract generic indicators and avoid aggressive campaigns/malware naming
-            pulse_names = [p["name"] for p in pulses]
-            for p in pulses:
-                for tag in p.get("tags", []):
-                    # Filter out malware/attacker tags
-                    if not any(w in tag.lower() for w in ["malware", "apt", "campaign", "attacker", "stealer", "ransomware"]):
-                        threat_tags.append(tag)
+        for p in pulses:
+            threat_tags.extend(p.get("tags", []))
+            desc = p.get("description", "").lower()
+            if "campaign" in desc or p.get("name", "").endswith("Campaign"):
+                campaign_context.append(p.get("name"))
+            malware_families.extend(p.get("malware_families", []))
         
         threat_tags = list(set(threat_tags))
         campaign_context = list(set(campaign_context))
         malware_families = list(set(malware_families))
 
-        # Risk explanation and recommended action
-        if vt_status == "malicious":
-            risk_reason = f"Flagged by {vt_malicious}/{vt_total} security engines on VirusTotal and matching active OTX pulses."
-            rec_action = "Block resource load at proxy level and review local system assets."
-        elif vt_status == "suspicious":
-            risk_reason = "Indicator shows minor suspicious reputation patterns. Classified as suspicious."
-            rec_action = "Monitor host network connections. No immediate block required."
+        # Confidence level mapping based on reputation_score
+        if threat_level == "clean" or threat_level == "unknown":
+            confidence_level = "low"
+        elif reputation_score >= 70:
+            confidence_level = "high"
         else:
-            risk_reason = "clean/no significant reputation"
-            rec_action = "No action required. Resource appears benign."
-
-        confidence_levels = {
-            10: "low",
-            60: "medium",
-            75: "high",
-            90: "high",
-            100: "critical"
-        }
-        conf_level_label = "low"
-        for thresh, label in sorted(confidence_levels.items()):
-            if confidence_score >= thresh:
-                conf_level_label = label
-
-        # Final check: enforce low confidence label for clean/no-reputation
-        if vt_status == "clean":
-            conf_level_label = "low"
+            confidence_level = "medium"
 
         return {
             "ioc": indicator,
             "type": type_,
-            "vt_score": vt_malicious if vt_status != "clean" else 0,
-            "vt_status": vt_status,
+            "source": source,
+            "vt_score": vt_malicious,
+            "vt_status": threat_level,
+            "vt_malicious": vt_malicious,
+            "vt_suspicious": vt_suspicious,
             "otx_pulses": pulse_names,
+            "otx_pulse_count": pulse_count,
             "threat_tags": threat_tags,
             "campaign_context": campaign_context,
             "related_malware_families": malware_families,
-            "confidence_level": conf_level_label,
-            "confidence_score": confidence_score,
+            "confidence_level": confidence_level,
+            "confidence_score": reputation_score,
             "risk_reason": risk_reason,
-            "recommended_action": rec_action,
-            "severity": severity
+            "recommended_action": recommended_action,
+            "severity": severity,
+            "flagged": flagged,
+            "threat_level": threat_level
         }
 
 class ThreatIntelService:
@@ -271,9 +286,13 @@ class ThreatIntelService:
                 return {
                     "ioc": indicator,
                     "type": type_,
+                    "source": "VirusTotal",
                     "vt_score": 0,
                     "vt_status": "unverified",
+                    "vt_malicious": 0,
+                    "vt_suspicious": 0,
                     "otx_pulses": [],
+                    "otx_pulse_count": 0,
                     "threat_tags": [],
                     "campaign_context": [],
                     "related_malware_families": [],
@@ -281,7 +300,9 @@ class ThreatIntelService:
                     "confidence_score": 10,
                     "risk_reason": "Threat intelligence check encountered an unhandled lookup error.",
                     "recommended_action": "No actions required.",
-                    "severity": "info"
+                    "severity": "info",
+                    "flagged": False,
+                    "threat_level": "unknown"
                 }
             
             return IntelAggregator.aggregate(indicator, type_, vt_res, otx_res)
@@ -290,9 +311,13 @@ class ThreatIntelService:
             return {
                 "ioc": indicator,
                 "type": type_,
+                "source": "VirusTotal",
                 "vt_score": 0,
                 "vt_status": "unverified",
+                "vt_malicious": 0,
+                "vt_suspicious": 0,
                 "otx_pulses": [],
+                "otx_pulse_count": 0,
                 "threat_tags": [],
                 "campaign_context": [],
                 "related_malware_families": [],
@@ -300,5 +325,7 @@ class ThreatIntelService:
                 "confidence_score": 10,
                 "risk_reason": f"Threat intelligence enrichment failed: {str(e)}",
                 "recommended_action": "No actions required.",
-                "severity": "info"
+                "severity": "info",
+                "flagged": False,
+                "threat_level": "unknown"
             }
