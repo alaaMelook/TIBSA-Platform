@@ -108,6 +108,7 @@ class AISecurityReporter:
             started_at=started_at,
             completed_at=completed_at,
             duration_seconds=round(duration, 2),
+            confidence=getattr(ai_summary, 'confidence', 85.0),
         )
 
         logger.info("[AI-REPORTER] Report generation completed in %.2fs", duration)
@@ -172,6 +173,7 @@ Your task is to generate a structured JSON response with the following fields:
 - "immediate_actions": List of strings for critical immediate tasks (next 24-48 hours).
 - "long_term_improvements": List of strings representing defense-in-depth architectural hardening.
 - "technical_appendix": Brief technical overview of security scanners and threat modeling tooling used.
+- "confidence": A float from 0 to 100 capturing the AI's confidence index in this analysis. Represent the firmness of your conclusions based on the provided findings, correlated threats, and severity. If the evidence is strong and multi-faceted, provide a higher score (e.g., 90-98). If the evidence is purely informational or loosely correlated, provide a moderate score (e.g., 60-80).
 
 IMPORTANT:
 - Be strictly evidence-based. Never claim "malicious JS", "active campaign", "attacker infrastructure", or "known malware family" unless VirusTotal detections >= 3 and OTX pulse count >= 1 are present.
@@ -269,6 +271,7 @@ IMPORTANT:
             immediate_actions=raw.get("immediate_actions") or [],
             long_term_improvements=raw.get("long_term_improvements") or [],
             technical_appendix=raw.get("technical_appendix"),
+            confidence=raw.get("confidence", 85.0),
         )
 
     # ── Rule-Based Fallback Summary ─────────────────────────────────
@@ -414,6 +417,11 @@ IMPORTANT:
             "SOC Cybersecurity Investigation platform coordinates finding normalization across STRIDE threat matrices and active reputation providers."
         )
 
+        # Basic formula for fallback confidence index based on findings
+        base_confidence = 75.0
+        confidence_boost = min(20.0, len(findings) * 0.5 + len(correlated_threats) * 2.0)
+        fallback_confidence = round(base_confidence + confidence_boost, 1)
+
         return AISummary(
             executive_summary=executive_summary,
             technical_summary=technical_summary,
@@ -432,6 +440,7 @@ IMPORTANT:
             immediate_actions=immediate_actions,
             long_term_improvements=long_term_improvements,
             technical_appendix=technical_appendix,
+            confidence=fallback_confidence,
         )
 
     def _generate_executive_fallback(

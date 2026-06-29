@@ -264,6 +264,7 @@ class AISummary(BaseModel):
     immediate_actions: Optional[List[str]] = []
     long_term_improvements: Optional[List[str]] = []
     technical_appendix: Optional[str] = None
+    confidence: Optional[float] = Field(85.0, description="AI confidence index")
 
 
 class ExportMetadata(BaseModel):
@@ -300,6 +301,11 @@ class ReporterStageOutput(BaseModel):
     )
     export_status: str = Field(
         default="pending", description="e.g., 'pending', 'completed', 'failed'"
+    )
+    
+    # Confidence Score
+    confidence: Optional[float] = Field(
+        85.0, description="AI confidence index"
     )
     
     # Timing
