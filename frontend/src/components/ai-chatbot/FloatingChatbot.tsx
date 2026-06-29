@@ -214,14 +214,39 @@ export default function FloatingChatbot() {
 
   return (
     <>
-      {/* FAB */}
+      {/* FAB — Cybersecurity Mascot */}
       <button 
         id="ai-chatbot-fab" 
         onClick={() => setOpen(o => !o)}
         aria-label="Open AI Security Chatbot"
-        className={`fixed bottom-6 right-6 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-hover)] !text-white shadow-sm transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/30 ${open ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}
+        className={`fixed bottom-6 right-6 z-[9999] flex h-[60px] w-[60px] items-center justify-center rounded-full bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] shadow-[0_4px_20px_rgba(15,157,118,0.35)] transition-all duration-300 hover:scale-110 hover:shadow-[0_6px_28px_rgba(15,157,118,0.45)] focus:outline-none focus:ring-4 focus:ring-[#0f9d76]/30 ${open ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100 chatbot-fab-pulse'}`}
       >
-        <MessageCircle size={28} />
+        {/* Custom mascot SVG */}
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Chat bubble body */}
+          <rect x="6" y="7" width="28" height="22" rx="8" fill="white" fillOpacity="0.95" />
+          <rect x="6" y="7" width="28" height="22" rx="8" stroke="white" strokeWidth="0.5" strokeOpacity="0.3" />
+          {/* Bubble tail */}
+          <path d="M12 29 L9 35 L17 29" fill="white" fillOpacity="0.95" />
+          {/* Left eye */}
+          <circle cx="16" cy="17" r="2.2" fill="#0f9d76" />
+          <circle cx="16.6" cy="16.4" r="0.7" fill="white" />
+          {/* Right eye */}
+          <circle cx="24" cy="17" r="2.2" fill="#0f9d76" />
+          <circle cx="24.6" cy="16.4" r="0.7" fill="white" />
+          {/* Smile */}
+          <path d="M16.5 22.5 Q20 25.5 23.5 22.5" stroke="#0f9d76" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Shield badge (bottom-right of bubble) */}
+          <g transform="translate(28, 22)">
+            <path d="M0-1.5 L4-1.5 L4 2 Q4 5 2 6.5 Q0 5 0 2 Z" fill="#0f9d76" stroke="white" strokeWidth="1" />
+            <path d="M1.3 1.5 L1.8 2.2 L3 0.8" stroke="white" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </g>
+          {/* Sparkle accent (top-right) */}
+          <g transform="translate(31, 6)" className="chatbot-sparkle">
+            <line x1="2" y1="0" x2="2" y2="4" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.9" />
+            <line x1="0" y1="2" x2="4" y2="2" stroke="white" strokeWidth="1" strokeLinecap="round" opacity="0.9" />
+          </g>
+        </svg>
       </button>
 
       {/* Window */}
@@ -420,6 +445,23 @@ export default function FloatingChatbot() {
         @keyframes chatDotPulse {
           0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
           40% { opacity: 1; transform: scale(1.1); }
+        }
+        /* Soft breathing pulse for the FAB */
+        @keyframes fabPulse {
+          0%, 100% { box-shadow: 0 4px 20px rgba(15, 157, 118, 0.35); }
+          50% { box-shadow: 0 4px 28px rgba(15, 157, 118, 0.5), 0 0 0 8px rgba(15, 157, 118, 0.08); }
+        }
+        .chatbot-fab-pulse {
+          animation: fabPulse 3s ease-in-out infinite;
+        }
+        /* Sparkle twinkle */
+        @keyframes sparkleTwinkle {
+          0%, 100% { opacity: 0.5; transform: scale(0.8) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.15) rotate(15deg); }
+        }
+        .chatbot-sparkle {
+          animation: sparkleTwinkle 2.5s ease-in-out infinite;
+          transform-origin: center;
         }
         /* Custom scrollbar for chatbot body */
         #ai-chatbot-window ::-webkit-scrollbar {

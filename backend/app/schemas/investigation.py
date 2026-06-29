@@ -96,6 +96,7 @@ class InvestigationCreate(InvestigationBase):
     authz_transition_checks: Optional[bool] = False
     session_cookie: Optional[str] = None
     enable_strict_correlation_hardening: Optional[bool] = True
+    auth: Optional[Dict[str, Any]] = None
 
 class InvestigationStatusResponse(BaseModel):
     id: str

@@ -280,104 +280,555 @@ function formatBytes(b: number): string {
 // PDF generation (pure client-side, no external lib needed)
 // ─────────────────────────────────────────────────────────────────────
 
-function buildPdfHtml(form: FormState, result: AnalysisResult): string {
-    const riskColor: Record<string, string> = {
-        High: "#ef4444", Medium: "#f97316", Low: "#eab308", Critical: "#dc2626",
-    };
-    const label = getRiskLabel(result.riskScore);
-    const now = new Date().toLocaleString();
-    const stackTags = [...form.frameworks, ...form.languages, ...form.deployEnvs, ...form.deployTypes, ...form.databases, ...form.protocols];
+function safePdfText(value: any, fallback: string): string {
+    if (value === null || value === undefined) return fallback;
+    let cleaned = String(value)
+        .replace(/[\u2018\u2019]/g, "'") // smart single quotes
+        .replace(/[\u201C\u201D]/g, '"') // smart double quotes
+        .replace(/[\u2013\u2014]/g, "-") // en/em dashes
+        .replace(/\u00A0/g, " ")         // non-breaking space
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n");
 
-    const threatsHtml = result.threats.map(t => `
-        <div style="margin-bottom:16px;padding:14px;border:1px solid #e2e8f0;border-radius:8px;border-left:4px solid ${riskColor[t.risk] || "#94a3b8"}">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                <span style="font-weight:700;font-size:15px;color:#1e293b">${t.title}</span>
-                <span style="font-size:12px;font-weight:600;color:${riskColor[t.risk]};background:${riskColor[t.risk]}22;padding:2px 10px;border-radius:999px;border:1px solid ${riskColor[t.risk]}44">${t.risk}</span>
-            </div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">${t.category}</div>
-            <p style="font-size:13px;color:#475569;margin:0 0 8px 0;line-height:1.6"><strong>Risk:</strong> ${t.description}</p>
-            <p style="font-size:13px;color:#0f766e;margin:0;line-height:1.6;background:#f0fdf4;padding:8px;border-radius:6px"><strong>✅ Mitigation:</strong> ${t.mitigation}</p>
-        </div>`).join("");
+    // Remove emojis or other control characters not supported by standard PDF fonts
+    cleaned = cleaned.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
 
-    const tagsHtml = stackTags.length > 0
-        ? stackTags.map(t => `<span style="display:inline-block;padding:3px 10px;margin:3px;background:#eff6ff;color:#1d4ed8;border-radius:999px;font-size:12px;border:1px solid #bfdbfe">${t}</span>`).join("")
-        : "<span style='color:#94a3b8;font-size:13px'>None selected</span>";
+    // Check if the string contains Arabic/non-Latin scripts.
+    // Arabic script range is \u0600-\u06FF, \u0750-\u077F, \u08A0-\u08FF, \uFB50-\uFDFF, \uFE70-\uFEFF
+    const hasArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(cleaned);
+    
+    if (hasArabic) {
+        // Strip out the non-ASCII parts. If the resulting string has very little Latin text left, use the fallback.
+        const asciiOnly = cleaned.replace(/[^\x00-\x7F]/g, "").replace(/\s+/g, " ").trim();
+        if (asciiOnly.length < 2) {
+            return fallback;
+        }
+        cleaned = asciiOnly;
+    }
+
+    // Finally, filter characters to ensure they fit in WinAnsiEncoding (codepoint <= 255)
+    cleaned = cleaned
+        .split("")
+        .filter(char => {
+            const code = char.charCodeAt(0);
+            return code <= 255;
+        })
+        .join("");
+
+    return cleaned.trim() || fallback;
+}
+
+function drawRow(
+    doc: any,
+    cells: string[],
+    startX: number,
+    startY: number,
+    widths: number[],
+    isHeader = false
+): number {
+    const pageHeight = 297;
+    const margin = 15;
+    const pageWidth = 210;
+
+    const cellLines = cells.map((text, idx) => {
+        const safeText = safePdfText(text, "");
+        return doc.splitTextToSize(safeText, widths[idx] - 4);
+    });
+    const maxLines = Math.max(...cellLines.map(lines => lines.length));
+    const rowHeight = maxLines * 4.5 + 4;
+
+    let currentY = startY;
+
+    // Page break check
+    if (currentY + rowHeight > pageHeight - margin - 15) {
+        doc.addPage();
+        currentY = margin + 12; // Start content lower (27mm) to avoid overlap
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text("TIBSA Threat Model Report - STRIDE Mapping", margin, margin - 5);
+        doc.setDrawColor(209, 250, 229);
+        doc.line(margin, margin - 3, pageWidth - margin, margin - 3);
+    }
+
+    // Draw background
+    if (isHeader) {
+        doc.setFillColor(240, 253, 244); // Light emerald green tint
+        doc.rect(startX, currentY, widths.reduce((a, b) => a + b, 0), rowHeight, "F");
+    } else {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(startX, currentY, widths.reduce((a, b) => a + b, 0), rowHeight, "F");
+    }
+
+    // Draw cells
+    let currentX = startX;
+    cells.forEach((text, idx) => {
+        doc.setDrawColor(229, 231, 235);
+        doc.rect(currentX, currentY, widths[idx], rowHeight, "S");
+        
+        if (isHeader) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(6, 95, 70); // Deep green
+        } else {
+            if (idx === 2) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8.5);
+                if (text === "High" || text === "Critical") doc.setTextColor(220, 38, 38);
+                else if (text === "Medium") doc.setTextColor(217, 119, 6);
+                else doc.setTextColor(22, 163, 74);
+            } else {
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.5);
+                doc.setTextColor(55, 65, 81);
+            }
+        }
+
+        const lines = cellLines[idx];
+        lines.forEach((line: string, lineIdx: number) => {
+            doc.text(line, currentX + 2, currentY + 4.5 + lineIdx * 4.5);
+        });
+        currentX += widths[idx];
+    });
+
+    return currentY + rowHeight;
+}
+
+async function downloadAsPDF(form: FormState, result: AnalysisResult): Promise<void> {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+    });
+
+    const margin = 15;
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const contentWidth = pageWidth - 2 * margin; // 180mm
+    let y = 15;
+
+    // Fully sanitised basic strings
+    const cleanProjName = safePdfText(form.projectName, "Untitled Project");
+    const truncatedProjName = cleanProjName.length > 40 ? cleanProjName.substring(0, 37) + "..." : cleanProjName;
+    const cleanAppType = safePdfText(form.appType, "Web Application");
 
     const highCount = result.threats.filter(t => t.risk === "High").length;
     const medCount = result.threats.filter(t => t.risk === "Medium").length;
     const lowCount = result.threats.filter(t => t.risk === "Low").length;
+    const label = getRiskLabel(result.riskScore);
+    const dateStr = new Date().toLocaleString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>Threat Report — ${form.projectName}</title>
-    <style>
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:32px;color:#1e293b;background:#fff}
-        @media print{body{padding:0}}
-        h1{margin:0;font-size:26px} h2{font-size:17px;margin:24px 0 12px;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:6px}
-        .badge{display:inline-block;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px}
-        table{width:100%;border-collapse:collapse;font-size:13px} td{padding:6px 10px;border-bottom:1px solid #f1f5f9} td:first-child{color:#64748b;width:160px}
-    </style></head><body>
-    <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);color:white;padding:28px 32px;border-radius:12px;margin-bottom:28px">
-        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;opacity:0.7;margin-bottom:6px">TIBSA · Security Analysis · TMaaS</div>
-        <h1>Threat Report — ${form.projectName}</h1>
-        <div style="opacity:0.8;margin-top:6px;font-size:14px">${form.appType} Application · Generated ${now}</div>
-    </div>
+    function checkPageBreak(neededHeight: number) {
+        if (y + neededHeight > pageHeight - margin - 15) { // leave 15mm for footer
+            doc.addPage();
+            y = margin + 12; // Start content lower (27mm) to avoid overlap with header line
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(156, 163, 175);
+            doc.text(`TIBSA Threat Model Report: ${truncatedProjName}`, margin, margin - 5);
+            doc.setDrawColor(209, 250, 229);
+            doc.line(margin, margin - 3, pageWidth - margin, margin - 3);
+        }
+    }
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px">
-        <div style="padding:16px;background:#fef2f2;border-radius:10px;text-align:center;border:1px solid #fecaca">
-            <div style="font-size:28px;font-weight:800;color:#ef4444">${highCount}</div>
-            <div style="font-size:12px;color:#b91c1c;font-weight:600">HIGH RISK</div>
-        </div>
-        <div style="padding:16px;background:#fff7ed;border-radius:10px;text-align:center;border:1px solid #fed7aa">
-            <div style="font-size:28px;font-weight:800;color:#f97316">${medCount}</div>
-            <div style="font-size:12px;color:#c2410c;font-weight:600">MEDIUM RISK</div>
-        </div>
-        <div style="padding:16px;background:#fefce8;border-radius:10px;text-align:center;border:1px solid #fde68a">
-            <div style="font-size:28px;font-weight:800;color:#eab308">${lowCount}</div>
-            <div style="font-size:12px;color:#a16207;font-weight:600">LOW RISK</div>
-        </div>
-        <div style="padding:16px;background:#f0f9ff;border-radius:10px;text-align:center;border:1px solid #bae6fd">
-            <div style="font-size:28px;font-weight:800;color:${riskColor[label] || "#0ea5e9"}">${result.riskScore}</div>
-            <div style="font-size:12px;color:#0369a1;font-weight:600">RISK SCORE</div>
-        </div>
-    </div>
+    // ═══ 1. COVER HEADER BANNER ═══
+    doc.setFillColor(6, 78, 59); // Deep Emerald green theme banner
+    doc.rect(0, 0, pageWidth, 45, "F");
 
-    <h2>Project Information</h2>
-    <table>
-        <tr><td>Project Name</td><td><strong>${form.projectName}</strong></td></tr>
-        <tr><td>App Type</td><td>${form.appType}</td></tr>
-        <tr><td>Risk Label</td><td><span class="badge" style="background:${riskColor[label]}22;color:${riskColor[label]};border:1px solid ${riskColor[label]}44">${label}</span></td></tr>
-        <tr><td>Uses Auth</td><td>${form.usesAuth ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>Uses Database</td><td>${form.usesDatabase ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>Admin Panel</td><td>${form.hasAdminPanel ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>External APIs</td><td>${form.usesExternalAPIs ? "✅ Yes" : "❌ No"}</td></tr>
-        <tr><td>Sensitive Data</td><td>${form.storesSensitiveData ? "✅ Yes" : "❌ No"}</td></tr>
-    </table>
+    // Title text
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255);
+    doc.text("TIBSA Threat Modeling Report", margin, 18);
 
-    <h2>Technology Stack</h2>
-    <div style="margin-bottom:8px">${tagsHtml}</div>
+    // Subtitle (Project name and application type details - limited to 130mm width to prevent risk box overlap)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(209, 250, 229); // Light mint text
+    const subtitleText = `${truncatedProjName}  |  ${cleanAppType} Application  |  Generated: ${dateStr}`;
+    const subtitleLines = doc.splitTextToSize(subtitleText, 130);
+    doc.text(subtitleLines, margin, 26);
 
-    <h2>Identified Threats (${result.threats.length})</h2>
-    ${threatsHtml}
+    // Risk score box on right
+    doc.setFillColor(255, 255, 255, 0.12);
+    doc.rect(pageWidth - margin - 45, 8, 45, 28, "F");
+    doc.setDrawColor(255, 255, 255, 0.3);
+    doc.rect(pageWidth - margin - 45, 8, 45, 28, "S");
 
-    <div style="margin-top:32px;padding:14px;background:#f8fafc;border-radius:8px;font-size:12px;color:#94a3b8;text-align:center;border:1px solid #e2e8f0">
-        Generated by TIBSA Platform · Threat Modeling as a Service · ${now}
-    </div>
-    </body></html>`;
-}
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${label} Risk`, pageWidth - margin - 40, 14);
 
-function downloadAsPDF(form: FormState, result: AnalysisResult) {
-    const html = buildPdfHtml(form, result);
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) {
-        win.addEventListener("load", () => {
-            setTimeout(() => {
-                win.print();
-                URL.revokeObjectURL(url);
-            }, 400);
+    doc.setFontSize(24);
+    doc.text(`${result.riskScore ?? "N/A"}`, pageWidth - margin - 40, 28);
+    doc.setFontSize(10);
+    doc.setTextColor(200, 200, 200);
+    doc.text("/100", pageWidth - margin - 15, 28);
+
+    y = 55;
+
+    // ═══ 2. SECTION 1: EXECUTIVE SUMMARY ═══
+    checkPageBreak(35);
+    doc.setFillColor(16, 185, 129); // Emerald accent vertical bar
+    doc.rect(margin, y - 4.5, 3, 5.5, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(6, 78, 59);
+    doc.text("1. Executive Summary", margin + 6, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(55, 65, 81);
+    const execText = `This report presents the findings of a STRIDE-based threat modeling assessment conducted on the ${cleanProjName} system (${cleanAppType} application). The assessment analyzed the system characteristics, storage systems, and network protocols to identify potential security risks. A total of ${result.threats.length} threats were identified, resulting in a risk score of ${result.riskScore ?? "N/A"}/100 (${label} Risk).`;
+    const execLines = doc.splitTextToSize(execText, contentWidth);
+    doc.text(execLines, margin, y);
+    y += execLines.length * 5 + 6;
+
+    // Draw 4 neat summary boxes side-by-side
+    const boxWidth = (contentWidth - 9) / 4;
+    const boxHeight = 18;
+
+    const draws = [
+        { label: "High Risk", count: highCount, bg: [254, 242, 242], border: [254, 202, 202], text: [220, 38, 38] },
+        { label: "Medium Risk", count: medCount, bg: [255, 251, 235], border: [253, 230, 138], text: [217, 119, 6] },
+        { label: "Low Risk", count: lowCount, bg: [240, 253, 244], border: [187, 247, 208], text: [22, 163, 74] },
+        { label: "Risk Score", count: result.riskScore ?? "N/A", bg: [236, 253, 245], border: [167, 243, 208], text: [6, 95, 70] },
+    ];
+
+    let currentBoxX = margin;
+    draws.forEach(b => {
+        doc.setFillColor(b.bg[0], b.bg[1], b.bg[2]);
+        doc.rect(currentBoxX, y, boxWidth, boxHeight, "F");
+        doc.setDrawColor(b.border[0], b.border[1], b.border[2]);
+        doc.rect(currentBoxX, y, boxWidth, boxHeight, "S");
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(b.text[0], b.text[1], b.text[2]);
+        doc.text(String(b.count), currentBoxX + boxWidth/2, y + 7, { align: "center" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.text(b.label.toUpperCase(), currentBoxX + boxWidth/2, y + 13, { align: "center" });
+
+        currentBoxX += boxWidth + 3;
+    });
+    y += boxHeight + 10;
+
+    // ═══ 3. SECTION 2: PROJECT INFORMATION ═══
+    checkPageBreak(50);
+    doc.setFillColor(16, 185, 129); // Emerald accent vertical bar
+    doc.rect(margin, y - 4.5, 3, 5.5, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(6, 78, 59);
+    doc.text("2. Project Information", margin + 6, y);
+    y += 8;
+
+    const infoItems = [
+        ["Project Name", cleanProjName],
+        ["Application Type", cleanAppType],
+        ["Authentication", form.usesAuth ? "Enabled" : "Not Enabled"],
+        ["Database Storage", form.usesDatabase ? "Enabled" : "Not Enabled"],
+        ["Admin Interface", form.hasAdminPanel ? "Present" : "Not Present"],
+        ["External API Usage", form.usesExternalAPIs ? "Yes" : "No"],
+        ["Sensitive Data Storage", form.storesSensitiveData ? "Yes" : "No"],
+    ];
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setDrawColor(229, 231, 235);
+
+    infoItems.forEach((item, idx) => {
+        const valText = safePdfText(item[1], "N/A");
+        const valLines = doc.splitTextToSize(valText, contentWidth - 82); // Limit value column width
+        const rowHeight = Math.max(7, valLines.length * 4.5 + 2);
+        
+        checkPageBreak(rowHeight);
+
+        if (idx % 2 === 0) {
+            doc.setFillColor(249, 251, 249); // Clean green-gray tint zebra striping
+            doc.rect(margin, y, contentWidth, rowHeight, "F");
+        }
+        
+        // Key
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(6, 95, 70); // Deep green key
+        doc.text(item[0], margin + 4, y + 4.5);
+
+        // Value (supports wrapped text safely)
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(30, 41, 59); // Slate dark text
+        doc.text(valLines, margin + 80, y + 4.5);
+
+        doc.line(margin, y + rowHeight, margin + contentWidth, y + rowHeight);
+        y += rowHeight;
+    });
+    y += 10;
+
+    // ═══ 4. SECTION 3: TECHNOLOGY STACK ═══
+    checkPageBreak(35);
+    doc.setFillColor(16, 185, 129); // Emerald accent vertical bar
+    doc.rect(margin, y - 4.5, 3, 5.5, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(6, 78, 59);
+    doc.text("3. Technology Stack", margin + 6, y);
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(55, 65, 81);
+
+    const cleanFrameworks = form.frameworks.map(f => safePdfText(f, "Unknown"));
+    const cleanLanguages = form.languages.map(l => safePdfText(l, "Unknown"));
+    const cleanDatabases = form.databases.map(d => safePdfText(d, "Unknown"));
+    const cleanProtocols = form.protocols.map(p => safePdfText(p, "Unknown"));
+    const cleanDeployEnvs = form.deployEnvs.map(e => safePdfText(e, "Unknown"));
+
+    const frameworksText = `Frameworks/Libraries: ${cleanFrameworks.join(", ") || "None selected"}`;
+    const languagesText = `Languages: ${cleanLanguages.join(", ") || "None selected"}`;
+    const databasesText = `Databases/Storage: ${cleanDatabases.join(", ") || "None selected"}`;
+    const protocolsText = `Protocols: ${cleanProtocols.join(", ") || "None selected"}`;
+    const envsText = `Deploy Environment: ${cleanDeployEnvs.join(", ") || "None selected"}`;
+
+    const stackLines = [frameworksText, languagesText, databasesText, protocolsText, envsText];
+
+    stackLines.forEach(line => {
+        const splitLines = doc.splitTextToSize(line, contentWidth - 6);
+        checkPageBreak(splitLines.length * 5 + 4);
+        
+        doc.setFillColor(249, 251, 249);
+        doc.rect(margin, y, contentWidth, splitLines.length * 5 + 2, "F");
+        doc.setDrawColor(167, 243, 208); // Emerald border
+        doc.rect(margin, y, contentWidth, splitLines.length * 5 + 2, "S");
+        
+        doc.setTextColor(30, 41, 59);
+        doc.text(splitLines, margin + 4, y + 4.5);
+        y += splitLines.length * 5 + 6;
+    });
+    y += 6;
+
+    // ═══ 5. SECTION 4: IDENTIFIED THREATS ═══
+    checkPageBreak(30);
+    doc.setFillColor(16, 185, 129); // Emerald accent vertical bar
+    doc.rect(margin, y - 4.5, 3, 5.5, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(6, 78, 59);
+    doc.text(`4. Identified Threats (${result.threats.length})`, margin + 6, y);
+    y += 10;
+
+    if (result.threats.length === 0) {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(10);
+        doc.setTextColor(107, 114, 128);
+        doc.text("No threats were generated for this model.", margin + 4, y);
+        y += 10;
+    } else {
+        result.threats.forEach((t, idx) => {
+            const cleanTitle = safePdfText(t.title, "Threat");
+            const cleanCat = safePdfText(t.category, "Category");
+            const cleanStride = t.stride_category ? safePdfText(t.stride_category, "") : "";
+            const cleanDesc = safePdfText(t.description, "No description provided.");
+            const cleanMit = safePdfText(t.mitigation, "No mitigation provided.");
+
+            const titleText = `${idx + 1}. ${cleanTitle} [${t.risk.toUpperCase()}]`;
+            const titleLines = doc.splitTextToSize(titleText, contentWidth - 10);
+            
+            const catText = `Category: ${cleanCat}${cleanStride ? `  |  STRIDE: ${cleanStride}` : ""}`;
+            const catLines = doc.splitTextToSize(catText, contentWidth - 10);
+            
+            const descText = `Description: ${cleanDesc}`;
+            const descLines = doc.splitTextToSize(descText, contentWidth - 10);
+            
+            const mitText = `Mitigation: ${cleanMit}`;
+            const mitLines = doc.splitTextToSize(mitText, contentWidth - 14);
+
+            const mitBoxHeight = mitLines.length * 4.5 + 4;
+            const cardHeight = (titleLines.length + catLines.length + descLines.length) * 4.5 + mitBoxHeight + 12;
+
+            checkPageBreak(cardHeight + 10);
+
+            doc.setFillColor(255, 255, 255);
+            doc.rect(margin, y, contentWidth, cardHeight, "F");
+            doc.setDrawColor(209, 250, 229); // soft emerald green card border
+            doc.rect(margin, y, contentWidth, cardHeight, "S");
+
+            let sevColor = [16, 185, 129]; // Emerald for low
+            if (t.risk === "High") sevColor = [220, 38, 38]; // Red for high
+            else if (t.risk === "Medium") sevColor = [217, 119, 6]; // Amber for medium
+
+            doc.setFillColor(sevColor[0], sevColor[1], sevColor[2]);
+            doc.rect(margin, y, 4, cardHeight, "F");
+
+            let currentCardY = y + 6;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(30, 41, 59); // Slate dark
+            doc.text(titleLines, margin + 8, currentCardY);
+            currentCardY += titleLines.length * 4.5 + 2;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8.5);
+            doc.setTextColor(107, 114, 128);
+            doc.text(catLines, margin + 8, currentCardY);
+            currentCardY += catLines.length * 4.5 + 2;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9.5);
+            doc.setTextColor(55, 65, 81);
+            doc.text(descLines, margin + 8, currentCardY);
+            currentCardY += descLines.length * 4.5 + 3;
+
+            doc.setFillColor(240, 253, 244); // light mint bg for mitigation
+            doc.rect(margin + 8, currentCardY, contentWidth - 14, mitBoxHeight, "F");
+            doc.setDrawColor(187, 247, 208);
+            doc.rect(margin + 8, currentCardY, contentWidth - 14, mitBoxHeight, "S");
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(6, 95, 70); // Deep green mitigation text
+            doc.text(mitLines, margin + 11, currentCardY + 4);
+
+            y += cardHeight + 8;
         });
     }
+
+    // ═══ 6. STRIDE MAPPING ═══
+    const strideCategories = ["Spoofing", "Tampering", "Repudiation", "Information Disclosure", "Denial of Service", "Elevation of Privilege"];
+    const strideMappedItems: Array<[string, string, string, string]> = [];
+
+    strideCategories.forEach(cat => {
+        const related = result.threats.filter(t =>
+            (t.stride_category || t.category || "").toLowerCase().includes(cat.toLowerCase()) ||
+            (t.category || "").toLowerCase().includes(cat.split(" ")[0].toLowerCase())
+        );
+        related.forEach(t => {
+            const cleanTTitle = safePdfText(t.title, "Threat");
+            const cleanTMit = safePdfText(t.mitigation, "No mitigation provided.");
+            strideMappedItems.push([cat, cleanTTitle, t.risk, cleanTMit]);
+        });
+    });
+
+    if (strideMappedItems.length > 0) {
+        checkPageBreak(30);
+        doc.setFillColor(16, 185, 129); // Emerald accent vertical bar
+        doc.rect(margin, y - 4.5, 3, 5.5, "F");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(6, 78, 59);
+        doc.text("5. STRIDE Mapping", margin + 6, y);
+        y += 10;
+
+        const colWidths = [35, 50, 25, 70];
+        
+        y = drawRow(doc, ["STRIDE Category", "Related Threat", "Severity", "Mitigation"], margin, y, colWidths, true);
+
+        strideMappedItems.forEach(item => {
+            y = drawRow(doc, item, margin, y, colWidths, false);
+        });
+        y += 10;
+    }
+
+    // ═══ 7. RECOMMENDATIONS ROADMAP ═══
+    const highThreats = result.threats.filter(t => t.risk === "High");
+    const medThreats = result.threats.filter(t => t.risk === "Medium");
+    const lowThreats = result.threats.filter(t => t.risk === "Low");
+
+    if (highThreats.length > 0 || medThreats.length > 0 || lowThreats.length > 0) {
+        checkPageBreak(30);
+        doc.setFillColor(16, 185, 129); // Emerald accent vertical bar
+        doc.rect(margin, y - 4.5, 3, 5.5, "F");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(6, 78, 59);
+        const sectionNum = strideMappedItems.length > 0 ? "6" : "5";
+        doc.text(`${sectionNum}. Recommendations Roadmap`, margin + 6, y);
+        y += 10;
+
+        const drawRoadmapBlock = (title: string, color: number[], bg: number[], items: ThreatItem[]) => {
+            if (items.length === 0) return;
+            
+            checkPageBreak(25);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(color[0], color[1], color[2]);
+            doc.text(title, margin, y);
+            y += 5;
+
+            items.forEach(t => {
+                const cleanTTitle = safePdfText(t.title, "Threat");
+                const cleanTMit = safePdfText(t.mitigation, "No mitigation provided.");
+                const itemText = `• ${cleanTTitle}: ${cleanTMit}`;
+                const itemLines = doc.splitTextToSize(itemText, contentWidth - 6);
+                const neededH = itemLines.length * 4.5 + 4;
+                
+                checkPageBreak(neededH);
+
+                doc.setFillColor(bg[0], bg[1], bg[2]);
+                doc.rect(margin, y, contentWidth, neededH, "F");
+                doc.setDrawColor(color[0], color[1], color[2], 0.2);
+                doc.rect(margin, y, contentWidth, neededH, "S");
+
+                doc.setDrawColor(color[0], color[1], color[2]);
+                doc.setLineWidth(1);
+                doc.line(margin, y, margin, y + neededH);
+                doc.setLineWidth(0.2);
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(55, 65, 81);
+                doc.text(itemLines, margin + 4, y + 4.5);
+                
+                y += neededH + 3;
+            });
+            y += 4;
+        };
+
+        drawRoadmapBlock("Immediate Actions (High Priority)", [220, 38, 38], [254, 242, 242], highThreats);
+        drawRoadmapBlock("Medium-Term Improvements", [217, 119, 6], [255, 251, 235], medThreats);
+        drawRoadmapBlock("Best-Practice Hardening", [22, 163, 74], [240, 253, 244], lowThreats);
+    }
+
+    // ═══ 8. ADD PAGE NUMBERS TO FOOTERS ═══
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 116, 139); // Slate gray footer text
+        
+        // Draw thin footer divider
+        doc.setDrawColor(209, 250, 229); // soft green footer line
+        doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+        
+        doc.text("TIBSA Security Platform  |  Threat Modeling Report", margin, pageHeight - 10);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 20, pageHeight - 10);
+    }
+
+    const safeName = (form.projectName || "unnamed").replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, "-").replace(/-+/g, "-").toLowerCase();
+    const dateStrShort = new Date().toISOString().split("T")[0];
+    const filename = `tibsa-threat-model-report-${safeName}-${dateStrShort}.pdf`;
+    
+    // Safety verification: Check document has content
+    if (doc.getNumberOfPages() === 0) {
+        throw new Error("PDF content could not be generated.");
+    }
+
+    doc.save(filename);
 }
 
 function downloadAsJSON(form: FormState, result: AnalysisResult) {
@@ -445,6 +896,7 @@ export default function ThreatModelingPage() {
     const [autoSaved, setAutoSaved] = useState(false);
     const [nameError, setNameErr] = useState("");
     const [showWarning, setShowWarning] = useState(false);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     const canSubmit = !!token && !isLoading;
     const canSave = !!token && !isSaving;
@@ -652,9 +1104,18 @@ export default function ThreatModelingPage() {
         }
     };
 
-    const handleDownloadPDF = () => {
-        if (!result) return;
-        downloadAsPDF(form, result);
+    const handleDownloadPDF = async () => {
+        if (!result || isGeneratingPdf) return;
+        setIsGeneratingPdf(true);
+        try {
+            await downloadAsPDF(form, result);
+            notifySuccess("PDF Downloaded", "Your threat model report has been saved.");
+        } catch (err) {
+            console.error("PDF generation failed:", err);
+            notifyError("PDF Generation Failed", "Could not generate the report. Please try again.");
+        } finally {
+            setIsGeneratingPdf(false);
+        }
     };
 
     const handleDownloadJSON = () => {
@@ -699,7 +1160,7 @@ export default function ThreatModelingPage() {
                     </h1>
 
                     <p className="text-[#7C6F64] text-lg max-w-2xl mb-10 font-medium leading-relaxed">
-                        Proactively discover architectural vulnerabilities and continuously adapt your defenses with AI-driven threat intelligence.
+                        Design and analyze threat models for applications and system architectures to identify risks, map attack paths, and plan effective security controls.
                     </p>
 
                     {!result && (
@@ -985,12 +1446,19 @@ export default function ThreatModelingPage() {
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-3 flex-shrink-0">
-                                    <button onClick={handleDownloadPDF} className="group relative inline-flex items-center gap-2 bg-gradient-to-br from-[#10B981] to-[#00A884] text-white font-semibold text-sm px-5 py-2.5 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(16,185,129,0.2)] hover:shadow-[0_8px_24px_rgba(16,185,129,0.35)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300">
+                                    <button onClick={handleDownloadPDF} disabled={isGeneratingPdf} className={`group relative inline-flex items-center gap-2 bg-gradient-to-br from-[#10B981] to-[#00A884] text-white font-semibold text-sm px-5 py-2.5 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(16,185,129,0.2)] hover:shadow-[0_8px_24px_rgba(16,185,129,0.35)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ${isGeneratingPdf ? 'opacity-70 cursor-wait pointer-events-none' : ''}`}>
                                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-                                        <svg className="w-4 h-4 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        <span className="relative">Download PDF</span>
+                                        {isGeneratingPdf ? (
+                                            <svg className="w-4 h-4 relative animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-4 h-4 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2v-5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        )}
+                                        <span className="relative">{isGeneratingPdf ? 'Generating PDF…' : 'Download PDF'}</span>
                                     </button>
                                     <button onClick={handleDownloadJSON} className="group relative inline-flex items-center gap-2 bg-gradient-to-br from-[#FBBF24] to-[#F59E0B] text-[#1F2933] font-semibold text-sm px-5 py-2.5 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(245,158,11,0.2)] hover:shadow-[0_8px_24px_rgba(245,158,11,0.35)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300">
                                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />

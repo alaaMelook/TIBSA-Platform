@@ -109,9 +109,9 @@ STRIDE_MAPPINGS: List[Dict[str, Any]] = [
         "keywords": ["header", "hsts", "x-frame", "csp", "hardening"],
         "categories": [STRIDEType.INFORMATION_DISCLOSURE],
         "scenario_template": (
-            "Missing security headers on {asset} expose the application to various "
-            "attacks. Information Disclosure: internal server details, technology stack, "
-            "or sensitive data may leak through unprotected responses."
+            "Missing or weak security headers on {asset} may reduce browser-side protections "
+            "such as content isolation, clickjacking resistance, and privacy controls. "
+            "This is a hardening recommendation, not confirmed data exposure."
         ),
         "mitigations": [
             "Configure all recommended security headers (CSP, HSTS, X-Frame-Options, etc.)",
@@ -132,20 +132,20 @@ STRIDE_MAPPINGS: List[Dict[str, Any]] = [
         "keywords": ["cookie", "session security"],
         "categories": [STRIDEType.SPOOFING, STRIDEType.INFORMATION_DISCLOSURE],
         "scenario_template": (
-            "Insecure cookie configuration on {asset} enables session theft. "
-            "Spoofing: stolen session cookies allow identity impersonation. "
-            "Information Disclosure: cookie values transmitted in clear text."
+            "Insecure cookie configuration on {asset} may increase risk of session exposure. "
+            "Spoofing: weakly-protected session cookies may be accessible to unauthorized parties. "
+            "Information Disclosure: cookie values may be exposed in transit or to client-side scripts."
         ),
         "mitigations": [
+            "Review cookie attributes and ensure appropriate flags for each cookie's sensitivity level",
             "Set Secure flag on all cookies to prevent HTTP transmission",
             "Set HttpOnly flag to prevent JavaScript access",
             "Set SameSite=Strict or Lax to mitigate CSRF",
-            "Implement session rotation on authentication state changes",
         ],
         "severity": ThreatSeverity.MEDIUM,
         "likelihood": ThreatSeverity.MEDIUM,
         "attack_prerequisites": "Session cookies are transmitted over plaintext HTTP or do not restrict client-side scripting access.",
-        "business_impact": "Intercepted session tokens, session takeover, and cross-site request forgery attacks.",
+        "business_impact": "Potential interception of cookie values and cross-site request forgery risk.",
         "detection_recommendations": [
             "Audit cookie flags in backend HTTP response headers",
             "Alert on cookie usage from multiple IPs in short timeframes"
@@ -156,15 +156,11 @@ STRIDE_MAPPINGS: List[Dict[str, Any]] = [
         "keywords": ["cors", "cross-origin", "api security"],
         "categories": [STRIDEType.INFORMATION_DISCLOSURE, STRIDEType.TAMPERING],
         "scenario_template": (
-            "CORS misconfiguration on {asset} allows unauthorized cross-origin access. "
-            "Information Disclosure: sensitive API data leaked to attacker domains. "
-            "Tampering: unauthorized cross-origin requests modify server state."
+            "CORS policy on {asset} accepts untrusted origins and may increase exposure risk "
+            "if sensitive authenticated endpoints are accessible."
         ),
         "mitigations": [
-            "Restrict Access-Control-Allow-Origin to specific trusted domains",
-            "Never use wildcard (*) with credentials",
-            "Validate Origin header server-side",
-            "Implement CSRF tokens for state-changing operations",
+            "Restrict Access-Control-Allow-Origin to trusted domains, avoid wildcard origins with credentials, validate Origin server-side, and apply CSRF protection for state-changing operations."
         ],
         "severity": ThreatSeverity.HIGH,
         "likelihood": ThreatSeverity.MEDIUM,
@@ -273,10 +269,6 @@ class AutomatedSTRIDEModeler:
         if "robots.txt" in title_lower or "sitemap.xml" in title_lower:
             return []
 
-        # 15. General Headers / Hardening (Do NOT generate STRIDE for headers)
-        if "header" in title_lower or "header" in cat_lower or "hardening" in title_lower or "hardening" in cat_lower:
-            return []
-
         # 1. SQL Injection / Injection
         if "sqli" in title_lower or "sql injection" in title_lower or "injection" in title_lower or "injection" in cat_lower:
             return [STRIDEType.TAMPERING, STRIDEType.ELEVATION_OF_PRIVILEGE, STRIDEType.INFORMATION_DISCLOSURE]
@@ -308,29 +300,34 @@ class AutomatedSTRIDEModeler:
         if "directory listing" in title_lower or "dir_listing" in title_lower or "index of" in title_lower:
             return [STRIDEType.INFORMATION_DISCLOSURE]
 
-        # 9. CSP Findings (Treated as hardening/headers, excluded)
+        # 9. CSP / Missing CSP — potential/advisory Information Disclosure only (not confirmed Tampering)
         if "csp" in title_lower or "content-security-policy" in title_lower or "content security policy" in title_lower:
-            return []
+            return [STRIDEType.INFORMATION_DISCLOSURE]
 
-        # 10. Clickjacking (Treated as headers, excluded unless explicitly requested, but let's exclude to be safe)
+        # 10. Clickjacking / X-Frame-Options — potential/advisory only
         if "clickjacking" in title_lower or "x-frame-options" in title_lower or "frame-ancestors" in title_lower:
-            return []
+            return [STRIDEType.INFORMATION_DISCLOSURE]
 
-        # 11. Missing HSTS (Headers, excluded)
+        # 11. Missing HSTS — potential/advisory only
         if "hsts" in title_lower or "strict-transport-security" in title_lower or "strict transport security" in title_lower:
-            return []
+            return [STRIDEType.INFORMATION_DISCLOSURE]
 
-        # 12. Cookie Findings
-        # Do NOT generate cookie/session STRIDE rows unless sensitive_cookies > 0 OR jwt_cookies > 0 and confirmed
+        # 12. Cookie Findings — check before general hardening to correctly route session cookies
+        # Session wording only for: sensitive_cookies > 0, jwt_cookies > 0, "session cookie" in title, or auth-related
         if "cookie" in title_lower or "cookie" in cat_lower:
-            has_sensitive = "sensitive_cookies" in evidence_lower and not "sensitive_cookies: 0" in evidence_lower and not "sensitive_cookies:0" in evidence_lower
-            has_jwt = "jwt_cookies" in evidence_lower and not "jwt_cookies: 0" in evidence_lower and not "jwt_cookies:0" in evidence_lower
-            has_session = "session" in evidence_lower or "auth" in evidence_lower
-            
-            # If evidence doesn't explicitly mention the counters, but confidence is confirmed and it's a session cookie
-            if conf_lower in ("confirmed", "verified", "high") and (has_sensitive or has_jwt or has_session):
+            has_sensitive = "sensitive_cookies" in evidence_lower and "sensitive_cookies: 0" not in evidence_lower and "sensitive_cookies:0" not in evidence_lower
+            has_jwt = "jwt_cookies" in evidence_lower and "jwt_cookies: 0" not in evidence_lower and "jwt_cookies:0" not in evidence_lower
+            has_session_title = "session" in title_lower or "auth" in title_lower
+
+            if has_sensitive or has_jwt or has_session_title:
                 return [STRIDEType.SPOOFING, STRIDEType.INFORMATION_DISCLOSURE]
-            return []
+            # Non-sensitive cookies: advisory hardening only — Information Disclosure
+            return [STRIDEType.INFORMATION_DISCLOSURE]
+
+        # 15. General Security Headers / Hardening — generate potential/advisory Information Disclosure
+        if "header" in title_lower or "header" in cat_lower or "hardening" in title_lower or "hardening" in cat_lower:
+            return [STRIDEType.INFORMATION_DISCLOSURE]
+
 
         # 13. Authorization / Access Control / IDOR
         if any(kw in title_lower or kw in cat_lower for kw in ["authorization", "authz", "privilege", "idor", "bac", "access control"]):
@@ -351,6 +348,7 @@ class AutomatedSTRIDEModeler:
         investigation_id: str,
         findings: List[Dict[str, Any]],
         correlated_threats: List[Dict[str, Any]],
+        detected_technologies: Optional[List[str]] = None,
     ) -> STRIDEStageOutput:
         """
         Generate STRIDE threat model from investigation findings.
@@ -363,6 +361,7 @@ class AutomatedSTRIDEModeler:
 
         stride_threats: List[STRIDEThreat] = []
         processed_findings: set = set()
+        _detected_technologies = detected_technologies or []
 
         # Generate STRIDE threats from each finding
         for finding in findings:
@@ -385,6 +384,7 @@ class AutomatedSTRIDEModeler:
                         finding=finding,
                         category=stride_category,
                         mapping=mapping,
+                        detected_technologies=_detected_technologies,
                     )
                     # Sanitize exaggerated claims dynamically
                     threat = self._sanitize_stride_threat(threat, findings)
@@ -399,6 +399,41 @@ class AutomatedSTRIDEModeler:
 
         # Remove duplicate STRIDE threats (same category + same asset) and merge them
         stride_threats = self._deduplicate_stride(stride_threats, findings)
+
+        # Enforce severity cap on potential threats in the final pass
+        for threat in stride_threats:
+            # Check if exploit is confirmed for any of the related findings
+            exploit_confirmed = False
+            supporting = [f for f in findings if (f.get("finding_id") or f.get("id")) in threat.related_findings]
+            for f in supporting:
+                exploit_score = f.get("exploitability_score")
+                if exploit_score is not None and exploit_score >= 8.0:
+                    conf = str(f.get("confidence") or "").lower()
+                    if conf in ["confirmed", "probable"]:
+                        from app.services.translators.finding_normalizer import FindingNormalizer
+                        if not FindingNormalizer.is_passive_finding((f.get("title") or "").lower(), f.get("affected_url") or f.get("url") or ""):
+                            exploit_confirmed = True
+                            break
+            
+            is_potential = (
+                str(threat.status).lower() == "potential"
+                or str(threat.confidence).lower() == "advisory"
+                or str(threat.evidence_type).lower() == "hardening"
+                or str(threat.classification).lower() == "hardening"
+            )
+            if is_potential and not exploit_confirmed:
+                _order = {
+                    ThreatSeverity.INFO: 0,
+                    ThreatSeverity.LOW: 1,
+                    ThreatSeverity.MEDIUM: 2,
+                    ThreatSeverity.HIGH: 3,
+                    ThreatSeverity.CRITICAL: 4,
+                }
+                if _order.get(threat.severity, 0) > 2: # > Medium
+                    threat.severity = ThreatSeverity.MEDIUM
+                    threat.mitigation_priority = "Medium"
+                if _order.get(threat.likelihood, 0) > 2:
+                    threat.likelihood = ThreatSeverity.MEDIUM
 
         # Sort threats deterministically by (category.value, affected_asset, severity)
         stride_threats = sorted(
@@ -473,17 +508,65 @@ class AutomatedSTRIDEModeler:
         finding: Dict[str, Any],
         category: STRIDEType,
         mapping: Dict[str, Any],
+        detected_technologies: Optional[List[str]] = None,
     ) -> STRIDEThreat:
         """Create a single STRIDEThreat from a finding and mapping."""
         asset = finding.get("affected_url") or finding.get("url") or "the target application"
         finding_id = finding.get("finding_id") or finding.get("id") or "unknown"
         finding_severity = (finding.get("severity") or "medium").lower()
+        finding_cat = (finding.get("category") or "unknown").lower()
+        title_lower = (finding.get("title") or "").lower()
+        conf_lower = str(finding.get("confidence") or "").lower()
+        source_mod = finding.get("source") or "pentest_engine_module"
+        _techs = detected_technologies or []
 
-        # Determine severity — use the higher of finding severity and mapping severity
+        # ── Determine if this is a hardening/advisory finding ────────
+        is_hardening = (
+            finding_cat in ("hardening", "informational")
+            or conf_lower == "heuristic"
+            or any(kw in title_lower for kw in [
+                "missing", "header", "csp", "hsts", "x-frame", "cookie",
+                "clickjacking", "hardening"
+            ])
+        )
+        is_confirmed = conf_lower in ("confirmed", "verified", "high")
+
+        # ── Determine status / confidence / evidence_type ────────────
+        if is_confirmed and not is_hardening:
+            status = "confirmed"
+            confidence_label = "verified"
+            evidence_type = "vulnerability"
+            why_not_confirmed = None
+        else:
+            status = "potential"
+            confidence_label = "advisory"
+            evidence_type = "hardening"
+            why_not_confirmed = (
+                "Finding is based on configuration observation (heuristic) without active exploitation evidence."
+            )
+
+        why_generated = (
+            f"Finding '{finding.get('title', '')}' (ID: {finding_id}) matches "
+            f"STRIDE category {category.value}. "
+            f"Category: {finding_cat}. Confidence: {conf_lower or 'unknown'}."
+        )
+
+        # ── Severity — use the higher of finding vs mapping, then cap potential ──
         severity = self._resolve_severity(finding_severity, mapping["severity"])
-        likelihood = mapping.get("likelihood", ThreatSeverity.MEDIUM)
+        if status == "potential":
+            # Hard-cap potential/advisory threats at Medium
+            _order = {
+                ThreatSeverity.INFO: 0, ThreatSeverity.LOW: 1,
+                ThreatSeverity.MEDIUM: 2, ThreatSeverity.HIGH: 3,
+                ThreatSeverity.CRITICAL: 4,
+            }
+            if _order.get(severity, 0) > 2:  # > Medium
+                severity = ThreatSeverity.MEDIUM
 
-        # Dynamic priority based on severity
+        likelihood = mapping.get("likelihood", ThreatSeverity.MEDIUM)
+        if status == "potential" and _order.get(likelihood, 0) > 2:
+            likelihood = ThreatSeverity.MEDIUM
+
         priority_map = {
             ThreatSeverity.CRITICAL: "Critical",
             ThreatSeverity.HIGH: "High",
@@ -493,10 +576,34 @@ class AutomatedSTRIDEModeler:
         }
         priority = priority_map.get(severity, "Medium")
 
-        finding_cat = finding.get("category") or "Unknown"
         finding_ev = finding.get("evidence") or "No direct evidence provided"
 
-        scenario = mapping["scenario_template"].format(asset=asset)
+        # ── Build contextual scenario based on finding type ──────────
+        is_csp = "csp" in title_lower or "content-security-policy" in title_lower or "content security policy" in title_lower
+        is_cookie = "cookie" in title_lower
+        has_session_cookie = "session" in title_lower or "auth" in title_lower
+        evidence_lower = str(finding_ev).lower()
+        has_sensitive = "sensitive_cookies" in evidence_lower and "sensitive_cookies: 0" not in evidence_lower
+
+        react_detected = any("react" in t.lower() for t in _techs)
+
+        if is_csp:
+            # CSP finding: must say "if XSS exists", must NOT say XSS is confirmed
+            react_note = " React and other SPA frameworks rely on CSP to prevent script injection via dynamic rendering." if react_detected else ""
+            scenario = (
+                f"Missing or weak Content-Security-Policy on {asset} may increase the impact if XSS exists, but it does not confirm XSS by itself."
+                f"{react_note}"
+            )
+        elif is_cookie and not has_sensitive and not has_session_cookie:
+            # Non-sensitive cookie: hardening advisory only
+            scenario = (
+                f"Cookie hardening advisory for {asset}: cookie attribute configuration does not "
+                f"follow current hardening guidelines. Review cookie attributes to ensure "
+                f"appropriate flags are set for the sensitivity level of each cookie."
+            )
+        else:
+            scenario = mapping["scenario_template"].format(asset=asset)
+
         scenario += f"\n\n[Evidence Tracing]\n- Supporting Finding ID: {finding_id}\n- Supporting Category: {finding_cat}\n- Supporting Evidence: {finding_ev}"
 
         return STRIDEThreat(
@@ -512,7 +619,14 @@ class AutomatedSTRIDEModeler:
             business_impact=mapping.get("business_impact"),
             mitigation_priority=priority,
             detection_recommendations=mapping.get("detection_recommendations", []),
-            sources=["Pentest Engine"]
+            sources=["Pentest Engine"],
+            status=status,
+            confidence=confidence_label,
+            evidence_type=evidence_type,
+            source_module=source_mod,
+            classification="contextual" if status == "potential" else "confirmed",
+            why_generated=why_generated,
+            why_not_confirmed=why_not_confirmed,
         )
 
     # ── Correlation-based STRIDE threats ───────────────────────────

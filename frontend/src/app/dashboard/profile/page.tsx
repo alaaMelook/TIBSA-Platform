@@ -99,7 +99,7 @@ export default function ProfilePage() {
                             <p className="text-sm text-[var(--text-muted)] mt-1">Manage Two-Factor Authentication (2FA) and password settings.</p>
                         </div>
                         <Link href="/dashboard/settings/security">
-                            <Button variant="secondary" className="whitespace-nowrap">
+                            <Button variant="primary" className="whitespace-nowrap">
                                 Security Settings & 2FA
                             </Button>
                         </Link>

@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Card, Button, Input } from "@/components/ui";
-import { Shield, Search, ArrowRight, Play, Database, ServerCrash, Clock, Sparkles, Code, Globe, Cookie, Sliders, FolderOpen, Lock, AlertTriangle } from "lucide-react";
+import { Shield, Search, ArrowRight, Play, Database, ServerCrash, Clock, Sparkles, Code, Globe, Cookie, Sliders, FolderOpen, Lock, AlertTriangle, ChevronDown } from "lucide-react";
 import { InvestigationStatusResponse } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function InvestigationsDashboard() {
   const router = useRouter();
@@ -24,6 +25,14 @@ export default function InvestigationsDashboard() {
   const [authLifecycleChecks, setAuthLifecycleChecks] = useState(false);
   const [authzTransitionChecks, setAuthzTransitionChecks] = useState(false);
   const [sessionCookie, setSessionCookie] = useState("");
+
+  // Optional Auth fields
+  const [authEnabled, setAuthEnabled] = useState(false);
+  const [loginUrl, setLoginUrl] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [securityLevel, setSecurityLevel] = useState("");
+  const [isSecurityLevelDropdownOpen, setIsSecurityLevelDropdownOpen] = useState(false);
 
   const [tests, setTests] = useState<string[]>([
     "security_headers",
@@ -93,26 +102,72 @@ export default function InvestigationsDashboard() {
     e.preventDefault();
     if (!target.trim() || !token) return;
 
+    let authConfig: any = null;
+    if (authEnabled) {
+      if (!loginUrl.trim() || !username.trim() || !password.trim()) {
+        setLaunchError("Login URL, Username, and Password are required for Authenticated Scans.");
+        return;
+      }
+      authConfig = {
+        mode: "auto_login",
+        login_url: loginUrl.trim(),
+        username: username.trim(),
+        password: password,
+      };
+      
+      if (securityLevel && securityLevel.trim() !== "") {
+        authConfig.security_level = securityLevel.trim();
+      }
+
+      console.log(`[INVESTIGATION FRONTEND AUTH PAYLOAD]
+auth_enabled = true
+login_url = ${loginUrl.trim()}
+username_present = ${!!username.trim()}
+password_present = ${!!password.trim()}
+security_level_selected = ${!!securityLevel.trim()}`);
+    } else {
+      console.log(`[INVESTIGATION FRONTEND AUTH PAYLOAD]
+auth_enabled = false
+login_url = 
+username_present = false
+password_present = false
+security_level_selected = false`);
+    }
+
     setIsLaunching(true);
     setLaunchError(null);
 
+    const payload = {
+      target_url: target.trim(),
+      target: target.trim(),
+      mode,
+      scan_mode: mode,
+      tests,
+      include_ti: includeTi,
+      tm_mode: tmMode,
+      enable_sqlmap: enableSqlmap,
+      auth_browser_analysis: authBrowserAnalysis,
+      authorized_auth_mode: authorizedAuthMode,
+      auth_lifecycle_checks: authLifecycleChecks,
+      authz_transition_checks: authzTransitionChecks,
+      session_cookie: sessionCookie ? sessionCookie.trim() : null,
+      auth: authConfig
+    };
+
+    console.log("[INVESTIGATION FINAL REQUEST PAYLOAD]", {
+      target_url: payload.target_url,
+      scan_mode: payload.scan_mode,
+      tests: payload.tests,
+      auth_present: !!payload.auth,
+      auth_mode: payload.auth?.mode ?? null,
+      login_url: payload.auth?.login_url ?? null,
+      username_present: !!payload.auth?.username,
+      password_present: !!payload.auth?.password,
+      security_level: payload.auth?.security_level ?? null,
+    });
+
     try {
-      const response = await api.investigations.create(
-        {
-          target: target.trim(),
-          mode,
-          tests,
-          include_ti: includeTi,
-          tm_mode: tmMode,
-          enable_sqlmap: enableSqlmap,
-          auth_browser_analysis: authBrowserAnalysis,
-          authorized_auth_mode: authorizedAuthMode,
-          auth_lifecycle_checks: authLifecycleChecks,
-          authz_transition_checks: authzTransitionChecks,
-          session_cookie: sessionCookie ? sessionCookie.trim() : null
-        },
-        token
-      );
+      const response = await api.investigations.create(payload, token);
 
       if (response && response.success && response.data) {
         const newId = response.data.investigation_id;
@@ -160,7 +215,7 @@ export default function InvestigationsDashboard() {
             Security Investigations
           </h1>
           <p className="text-[var(--text-muted)] max-w-xl text-sm leading-relaxed">
-            Run automated endpoint intelligence pipelines. Discover assets, normalise vulnerabilities, run external reputation lookups, build STRIDE models, and compose AI analysis.
+            Investigate websites, detect security issues, enrich results with threat intelligence, build STRIDE threat models, and generate clear AI-powered reports.
           </p>
         </div>
         <Shield className="w-12 h-12 text-[var(--primary)]/20 hidden md:block" />
@@ -243,6 +298,125 @@ export default function InvestigationsDashboard() {
                       </button>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              {/* Authentication Configuration */}
+              <div className="border-t border-[var(--border-strong)] pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest block">
+                    Authenticated Scan
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border border-[var(--border-soft)] text-[var(--text-muted)]">
+                    Optional
+                  </span>
+                </div>
+                
+                <div className={`flex flex-col p-3 rounded-xl border transition-all duration-200 ${authEnabled ? 'border-[var(--primary)] bg-[var(--primary)]/[0.03] shadow-sm shadow-[var(--primary)]/[0.1]' : 'border-[var(--border-soft)] bg-[var(--bg-page)]/20 hover:bg-[var(--bg-card)]/30'}`}>
+                  <div className="flex items-center justify-between cursor-pointer" onClick={() => setAuthEnabled(!authEnabled)}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-lg border transition-colors ${authEnabled ? 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]' : 'text-[var(--text-muted)] bg-[var(--bg-card)]/40 border-[var(--border-soft)]'}`}>
+                        <Lock className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-[var(--text-primary)]">Automated Login</span>
+                        <span className="text-[9px] text-[var(--text-muted)] mt-0.5 leading-tight font-medium max-w-[190px]">Use login credentials when scanning protected pages.</span>
+                      </div>
+                    </div>
+                    {/* Toggle Switch */}
+                    <div className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out ${authEnabled ? "bg-[var(--primary-hover)] border-[#0f9d76]" : "bg-[var(--bg-elevated)] border-[var(--border-strong)]"}`}>
+                      <span className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-md transition duration-200 ease-in-out ${authEnabled ? "translate-x-3" : "translate-x-0"}`} />
+                    </div>
+                  </div>
+
+                  {authEnabled && (
+                    <div className="mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-[var(--text-secondary)]">Login URL <span className="text-red-400">*</span></label>
+                        <Input
+                          placeholder="https://example.com/login.php"
+                          value={loginUrl}
+                          onChange={(e) => setLoginUrl(e.target.value)}
+                          className="w-full text-xs h-8 bg-[var(--bg-page)] border-[var(--border-soft)]"
+                          required={authEnabled}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-semibold text-[var(--text-secondary)]">Username or Email <span className="text-red-400">*</span></label>
+                          <Input
+                            placeholder="Enter username or email"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full text-xs h-8 bg-[var(--bg-page)] border-[var(--border-soft)]"
+                            required={authEnabled}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-semibold text-[var(--text-secondary)]">Password <span className="text-red-400">*</span></label>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full text-xs h-8 bg-[var(--bg-page)] border-[var(--border-soft)]"
+                            required={authEnabled}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1 relative">
+                        <label className="text-[10px] font-semibold text-[var(--text-secondary)]">Security Level / Extra Field</label>
+                        <div 
+                          className="relative w-full text-xs h-8 px-3 rounded-md bg-[var(--bg-page)] border border-[var(--border-soft)] cursor-pointer flex items-center justify-between transition-all focus:outline-none focus:ring-1 focus:ring-[var(--primary)] hover:border-[var(--primary)]/50"
+                          onClick={() => setIsSecurityLevelDropdownOpen(!isSecurityLevelDropdownOpen)}
+                        >
+                          <span className={securityLevel ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}>
+                            {securityLevel || "Select security level"}
+                          </span>
+                          <motion.div
+                            animate={{ rotate: isSecurityLevelDropdownOpen ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+                          </motion.div>
+                        </div>
+
+                        <AnimatePresence>
+                          {isSecurityLevelDropdownOpen && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setIsSecurityLevelDropdownOpen(false)} />
+                              <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute top-[calc(100%+4px)] left-0 w-full z-50 bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-md shadow-lg overflow-hidden flex flex-col py-1"
+                              >
+                                {["low", "medium", "high"].map((level) => (
+                                  <div
+                                    key={level}
+                                    className={`px-3 py-2 text-xs cursor-pointer transition-colors ${securityLevel === level ? "bg-[var(--primary)]/10 text-[var(--primary)] font-medium" : "text-[var(--text-secondary)] hover:bg-[var(--bg-page)]"}`}
+                                    onClick={() => {
+                                      setSecurityLevel(securityLevel === level ? "" : level);
+                                      setIsSecurityLevelDropdownOpen(false);
+                                    }}
+                                  >
+                                    {level}
+                                  </div>
+                                ))}
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      <div className="bg-[var(--bg-elevated)] border border-[var(--border-soft)] p-2 rounded-lg flex gap-2 items-start">
+                        <Shield className="w-3.5 h-3.5 text-[var(--text-muted)] mt-0.5 shrink-0" />
+                        <span className="text-[9px] text-[var(--text-muted)] leading-tight">
+                          Credentials are used only for this scan session and are never persistently stored.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

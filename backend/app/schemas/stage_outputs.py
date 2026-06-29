@@ -171,6 +171,15 @@ class STRIDEThreat(BaseModel):
     detection_recommendations: Optional[List[str]] = Field(default_factory=list, description="Detection recommendations")
     sources: List[str] = Field(default_factory=list, description="Originating engine sources")
 
+    # Contextual evidence contract fields (required by test_evidence_contract)
+    status: str = Field(default="potential", description="'confirmed' or 'potential'")
+    confidence: str = Field(default="advisory", description="'verified' or 'advisory'")
+    evidence_type: str = Field(default="hardening", description="'exploit', 'vulnerability', or 'hardening'")
+    source_module: str = Field(default="pentest_engine_module", description="Module that produced this threat")
+    classification: str = Field(default="contextual", description="Threat classification label")
+    why_generated: Optional[str] = Field(None, description="Why this threat scenario was generated")
+    why_not_confirmed: Optional[str] = Field(None, description="Why this is not confirmed (if potential)")
+
 
 class STRIDEMatrix(BaseModel):
     """STRIDE threat matrix summary."""

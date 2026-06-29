@@ -21,6 +21,11 @@ export default function DashboardPage() {
 
     // First letter for profile fallback if user has no avatar
     const userDisplayName = user?.full_name || "kr";
+    
+    // Capitalized first name for welcome greeting
+    const rawDisplayName = user?.full_name || "Mahmoud";
+    const firstName = rawDisplayName.trim().split(/\s+/)[0];
+    const capitalizedName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 
     const fetchStats = useCallback(async () => {
         if (!token) return;
@@ -67,41 +72,51 @@ export default function DashboardPage() {
     };
 
     return (
-        <div 
-            className="min-h-screen flex flex-col justify-between py-16 px-4 md:px-8 relative overflow-hidden"
-            style={{
-                background: `
-                    radial-gradient(circle at 50% 0%, rgba(15, 157, 118, 0.16), transparent 32%),
-                    radial-gradient(circle at 15% 35%, rgba(15, 157, 118, 0.08), transparent 28%),
-                    radial-gradient(circle at 85% 40%, rgba(11, 125, 93, 0.08), transparent 30%),
-                    linear-gradient(180deg, #f8f3eb 0%, #f6f0e7 100%)
-                `
-            }}
-        >
-            {/* Very subtle grid texture with soft emerald tint */}
-            <div 
-                className="absolute inset-0 z-0 pointer-events-none opacity-[0.02] mix-blend-multiply transition-opacity duration-1000 motion-reduce:transition-none"
-                style={{
-                    backgroundImage: `linear-gradient(rgba(15, 157, 118, 0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 157, 118, 0.8) 1px, transparent 1px)`,
-                    backgroundSize: '32px 32px'
-                }}
-            />
+        <div className="-m-6 min-h-screen flex flex-col justify-between py-16 px-4 md:px-8 relative overflow-hidden">
+            {/* Full-width Ambient Background Glow Layer */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <div 
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                        background: `
+                            radial-gradient(ellipse at 50% 0%, rgba(15, 157, 118, 0.15), transparent 55%),
+                            radial-gradient(circle at 15% 15%, rgba(15, 157, 118, 0.07), transparent 35%),
+                            radial-gradient(circle at 85% 15%, rgba(15, 157, 118, 0.07), transparent 35%),
+                            radial-gradient(circle at 30% 30%, rgba(15, 157, 118, 0.04), transparent 25%),
+                            radial-gradient(circle at 70% 30%, rgba(15, 157, 118, 0.04), transparent 25%),
+                            linear-gradient(180deg, #f8f3eb 0%, #f6f0e7 100%)
+                        `
+                    }}
+                />
+                {/* Very subtle grid texture with soft emerald tint */}
+                <div 
+                    className="absolute inset-0 opacity-[0.02] mix-blend-multiply transition-opacity duration-1000 motion-reduce:transition-none"
+                    style={{
+                        backgroundImage: `linear-gradient(rgba(15, 157, 118, 0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 157, 118, 0.8) 1px, transparent 1px)`,
+                        backgroundSize: '32px 32px'
+                    }}
+                />
+            </div>
 
             <div className="max-w-7xl mx-auto w-full space-y-20 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 
                 {/* ── Welcome Banner ─────────────────────────────────── */}
                 <div className="flex flex-col items-center text-center space-y-6 pt-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#ffffff] border border-[#e7ddd1] text-[#4f4a45] text-xs font-semibold shadow-sm">
-                        <span>Welcome back, {userDisplayName}</span>
-                        <span className="text-amber-500">👋</span>
+                    <div className="inline-flex items-center gap-2.5 px-4.5 py-2 rounded-full bg-white/40 backdrop-blur-md border border-[#0f9d76]/20 text-[#4f4a45] text-xs font-semibold shadow-[0_2px_8px_rgba(15,157,118,0.04)] hover:shadow-[0_4px_16px_rgba(15,157,118,0.1)] hover:border-[#0f9d76]/40 transition-all duration-300 hover:-translate-y-0.5 group cursor-default">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0f9d76] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0f9d76]"></span>
+                        </span>
+                        <span>Welcome back, <span className="text-[#0f9d76] font-bold">{capitalizedName}</span>. Threats won&apos;t find themselves.</span>
+                        <span className="inline-block transition-transform duration-300 group-hover:rotate-[20deg] text-amber-500">👋</span>
                     </div>
                     
                     <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight max-w-3xl leading-tight text-[#1d1d1d]">
-                        TIBSA Unified <span className="text-[#0f9d76]">Cyber Security</span> & Intelligent Defense Platform
+                        TIBSA Unified <span className="text-[#0f9d76]">Cyber Security</span> & Intelligence Platform
                     </h1>
                     
                     <p className="text-[#4f4a45] max-w-3xl text-sm md:text-base font-medium leading-relaxed">
-                        TIBSA integrates automated penetration testing, multi-stage threat correlation, machine learning-driven malware sandboxing, and real-time threat intelligence enrichment to map complex attack vectors, assess security posture, and generate automated response roadmaps.
+                        TIBSA combines website security scanning, threat intelligence enrichment, contextual risk analysis, STRIDE threat modeling, static malware analysis, and AI-powered reporting to help teams understand, prioritize, and respond to security risks.
                     </p>
                 </div>
 
@@ -148,7 +163,7 @@ export default function DashboardPage() {
                                     <p className="text-xs font-semibold text-[#0f9d76] tracking-wider uppercase">(Penetration Testing & Security Assessment)</p>
                                 </div>
                                 <p className="text-[#8a8178] text-sm leading-relaxed px-4">
-                                    Run security assessments and correlate findings with threat intelligence to uncover risks, attack paths, and business impact.
+                                    Run safe website security assessments, detect vulnerabilities and misconfigurations, then correlate findings to identify real risk impact and reduce false positives.
                                 </p>
                             </div>
 
@@ -189,7 +204,7 @@ export default function DashboardPage() {
                                 </div>
                                 <h3 className="text-xl font-bold text-[#1d1d1d] tracking-wide">Threat Intelligence Layer</h3>
                                 <p className="text-[#8a8178] text-sm leading-relaxed px-4">
-                                    Explore global threat intelligence, indicators of compromise, campaigns, and adversary activity in real time.
+                                    Enrich scanned indicators, domains, technologies, and findings with external intelligence sources to understand reputation, context, and potential exposure.
                                 </p>
                             </div>
 
@@ -231,9 +246,9 @@ export default function DashboardPage() {
                                         <path d="M53 53 A8 8 0 0 1 69 53" stroke="#0f9d76" strokeWidth="1" opacity="0.5" strokeLinecap="round" />
                                     </svg>
                                 </div>
-                                <h3 className="text-xl font-bold text-[#1d1d1d] tracking-wide">Malware & Threat Analysis Layer</h3>
+                                <h3 className="text-xl font-bold text-[#1d1d1d] tracking-wide">Malware Analysis Layer</h3>
                                 <p className="text-[#8a8178] text-sm leading-relaxed px-4">
-                                    Upload files, analyze malware behavior, and extract advanced indicators with sandboxing and static & dynamic analysis.
+                                    Analyze suspicious files using static feature extraction and AI-based malware classification to identify potential threats without executing the file.
                                 </p>
                             </div>
 
@@ -257,57 +272,64 @@ export default function DashboardPage() {
                         <span className="text-xs font-bold text-[#0f9d76] tracking-widest uppercase">• STANDALONE SERVICES •</span>
                         <div className="h-px w-20 bg-gradient-to-l from-transparent to-[#0f9d76]/40" />
                     </div>
-                    <p className="text-[#8a8178] text-center text-xs mb-8">Access individual security tools and capabilities.</p>
+                    <p className="text-[#8a8178] text-center text-xs mb-8">Access focused security modules for scanning, testing, modeling, and reporting.</p>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         
                         {/* Service 1: Scans */}
-                        <Link href="/dashboard/scans" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
-                            <div className="p-2.5 rounded-lg bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                        <Link href="/dashboard/scans" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-2xl p-5 hover:bg-[#ffffff] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-start hover:-translate-y-1.5 hover:shadow-[0_12px_32px_rgba(15,157,118,0.1)] active:scale-[0.98]">
+                            <div className="flex items-center justify-between w-full mb-4">
+                                <div className="p-2.5 rounded-xl bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35"/></svg>
+                                </div>
+                                <svg className="w-4 h-4 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                             </div>
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-[#1d1d1d]">Scans</h4>
-                                <p className="text-[11px] text-[#8a8178] leading-tight">View and manage your scans</p>
+                            <div className="space-y-2 flex-1">
+                                <h4 className="text-base font-bold text-[#1d1d1d]">Scans</h4>
+                                <p className="text-[12px] text-[#8a8178] font-medium leading-relaxed">Launch and manage website security scans, review findings, and track investigation results.</p>
                             </div>
-                            <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </Link>
 
                         {/* Service 2: Pen Test */}
-                        <Link href="/dashboard/website-scanner" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
-                            <div className="p-2.5 rounded-lg bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
+                        <Link href="/dashboard/website-scanner" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-2xl p-5 hover:bg-[#ffffff] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-start hover:-translate-y-1.5 hover:shadow-[0_12px_32px_rgba(15,157,118,0.1)] active:scale-[0.98]">
+                            <div className="flex items-center justify-between w-full mb-4">
+                                <div className="p-2.5 rounded-xl bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/></svg>
+                                </div>
+                                <svg className="w-4 h-4 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                             </div>
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-[#1d1d1d]">Penetration Testing</h4>
-                                <p className="text-[11px] text-[#8a8178] leading-tight">Manual penetration testing</p>
+                            <div className="space-y-2 flex-1">
+                                <h4 className="text-base font-bold text-[#1d1d1d]">Penetration Testing</h4>
+                                <p className="text-[12px] text-[#8a8178] font-medium leading-relaxed">Run focused security tests to validate vulnerabilities and assess web application exposure.</p>
                             </div>
-                            <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </Link>
 
-
                         {/* Service 4: Threat Modeling */}
-                        <Link href="/dashboard/threat-modeling" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
-                            <div className="p-2.5 rounded-lg bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <Link href="/dashboard/threat-modeling" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-2xl p-5 hover:bg-[#ffffff] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-start hover:-translate-y-1.5 hover:shadow-[0_12px_32px_rgba(15,157,118,0.1)] active:scale-[0.98]">
+                            <div className="flex items-center justify-between w-full mb-4">
+                                <div className="p-2.5 rounded-xl bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                </div>
+                                <svg className="w-4 h-4 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                             </div>
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-[#1d1d1d]">Threat Modeling</h4>
-                                <p className="text-[11px] text-[#8a8178] leading-tight">Create and manage threat models</p>
+                            <div className="space-y-2 flex-1">
+                                <h4 className="text-base font-bold text-[#1d1d1d]">Threat Modeling</h4>
+                                <p className="text-[12px] text-[#8a8178] font-medium leading-relaxed">Build STRIDE-based threat models from confirmed findings and potential risk scenarios.</p>
                             </div>
-                            <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </Link>
 
                         {/* Service 6: Reports History */}
-                        <Link href="/dashboard/reports" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-xl p-4 text-center hover:bg-[#fffaf4] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-center min-h-[140px] hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(15,157,118,0.08)] active:scale-[0.98]">
-                            <div className="p-2.5 rounded-lg bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <Link href="/dashboard/reports" className="group bg-[#ffffff] border border-[#e7ddd1] rounded-2xl p-5 hover:bg-[#ffffff] hover:border-[#0f9d76] transition-all duration-300 flex flex-col justify-between items-start hover:-translate-y-1.5 hover:shadow-[0_12px_32px_rgba(15,157,118,0.1)] active:scale-[0.98]">
+                            <div className="flex items-center justify-between w-full mb-4">
+                                <div className="p-2.5 rounded-xl bg-[#edf8f3] text-[#0f9d76] group-hover:scale-110 transition-transform duration-200">
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
+                                <svg className="w-4 h-4 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                             </div>
-                            <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-[#1d1d1d]">Reports History</h4>
-                                <p className="text-[11px] text-[#8a8178] leading-tight">View action logs and security histories</p>
+                            <div className="space-y-2 flex-1">
+                                <h4 className="text-base font-bold text-[#1d1d1d]">Reports History</h4>
+                                <p className="text-[12px] text-[#8a8178] font-medium leading-relaxed">Review previous security reports, scan summaries, risk scores, and investigation activity.</p>
                             </div>
-                            <svg className="w-3.5 h-3.5 text-[#8a8178] group-hover:text-[#0f9d76] group-hover:translate-x-0.5 transition-all mt-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </Link>
 
                     </div>
@@ -323,7 +345,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="space-y-1">
                             <h5 className="text-sm font-bold text-[#1d1d1d] leading-snug">Unified Security Platform</h5>
-                            <p className="text-xs text-[#8a8178] leading-normal">All-in-one cybersecurity investigation platform.</p>
+                            <p className="text-xs text-[#8a8178] leading-normal">Centralize website scanning, threat intelligence, risk analysis, and reporting in one workflow.</p>
                         </div>
                     </div>
 
@@ -334,7 +356,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="space-y-1">
                             <h5 className="text-sm font-bold text-[#1d1d1d] leading-snug">AI-Powered Intelligence</h5>
-                            <p className="text-xs text-[#8a8178] leading-normal">Advanced AI models for smarter threat detection and analysis.</p>
+                            <p className="text-xs text-[#8a8178] leading-normal">Use AI-assisted analysis to summarize findings, prioritize risks, and generate clear security insights.</p>
                         </div>
                     </div>
 
@@ -344,8 +366,8 @@ export default function DashboardPage() {
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 8V12l3 3"/></svg>
                         </div>
                         <div className="space-y-1">
-                            <h5 className="text-sm font-bold text-[#1d1d1d] leading-snug">Real-time Threat Data</h5>
-                            <p className="text-xs text-[#8a8178] leading-normal">Integrated with global intelligence sources and threat feeds.</p>
+                            <h5 className="text-sm font-bold text-[#1d1d1d] leading-snug">Real-Time Threat Context</h5>
+                            <p className="text-xs text-[#8a8178] leading-normal">Enrich indicators, domains, technologies, and findings with external threat intelligence context.</p>
                         </div>
                     </div>
 
@@ -355,8 +377,8 @@ export default function DashboardPage() {
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
                         <div className="space-y-1">
-                            <h5 className="text-sm font-bold text-[#1d1d1d] leading-snug">Enterprise Grade Security</h5>
-                            <p className="text-xs text-[#8a8178] leading-normal">Built with security, privacy, and reliability in mind.</p>
+                            <h5 className="text-sm font-bold text-[#1d1d1d] leading-snug">Secure by Design</h5>
+                            <p className="text-xs text-[#8a8178] leading-normal">Built with authentication, privacy-aware workflows, and secure handling of sensitive scan data.</p>
                         </div>
                     </div>
 

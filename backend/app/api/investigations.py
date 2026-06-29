@@ -106,6 +106,16 @@ async def start_investigation(
         from app.dependencies import get_supabase
         from app.utils.loop import run_in_proactor_loop
 
+        auth_payload = request.auth
+        
+        print(f"""[INVESTIGATION API AUTH RECEIVED]
+auth_present = {auth_payload is not None}
+auth_mode = {auth_payload.get('mode') if auth_payload else None}
+login_url = {auth_payload.get('login_url') if auth_payload else None}
+username_present = {bool(auth_payload and auth_payload.get('username'))}
+password_present = {bool(auth_payload and auth_payload.get('password'))}
+security_level_present = {bool(auth_payload and auth_payload.get('security_level'))}""")
+
         def run_pipeline_task(
             inv_id: str,
             run_tests: List[str],
@@ -116,7 +126,8 @@ async def start_investigation(
             auth_lifecycle_checks: bool,
             authz_transition_checks: bool,
             session_cookie: Optional[str],
-            enable_strict_correlation_hardening: bool
+            enable_strict_correlation_hardening: bool,
+            auth_config: Optional[Dict[str, Any]]
         ):
             bg_supabase = get_supabase()
             bg_orch = InvestigationOrchestrator(bg_supabase)
@@ -132,7 +143,8 @@ async def start_investigation(
                 auth_lifecycle_checks=auth_lifecycle_checks,
                 authz_transition_checks=authz_transition_checks,
                 session_cookie=session_cookie,
-                enable_strict_correlation_hardening=enable_strict_correlation_hardening
+                enable_strict_correlation_hardening=enable_strict_correlation_hardening,
+                auth_config=auth_config
             )
 
         background_tasks.add_task(
@@ -146,7 +158,8 @@ async def start_investigation(
             request.auth_lifecycle_checks or False,
             request.authz_transition_checks or False,
             request.session_cookie,
-            request.enable_strict_correlation_hardening if request.enable_strict_correlation_hardening is not None else True
+            request.enable_strict_correlation_hardening if request.enable_strict_correlation_hardening is not None else True,
+            auth_payload
         )
         
         return APIResponse(

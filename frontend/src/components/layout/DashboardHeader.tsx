@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Page title map ───────────────────────────────────────────
 const PAGE_TITLES: Record<string, string> = {
@@ -314,46 +315,76 @@ export function DashboardHeader() {
                         </button>
 
                         {/* Profile dropdown */}
-                        {profileOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-[#ffffff] border border-[#e7ddd1] shadow-[0_12px_32px_rgba(15,157,118,0.1)] overflow-hidden animate-in fade-in zoom-in-98 slide-in-from-top-2 duration-200 ease-out">
-                                {/* User info header */}
-                                <div className="px-4 py-3 border-b border-[#e7ddd1] bg-[#fcf9f5]">
-                                    <p className="text-sm font-bold text-[#1d1d1d] truncate">{user?.full_name}</p>
-                                    <p className="text-xs font-medium text-[#8a8178] truncate mt-0.5">{user?.email}</p>
-                                </div>
-                                {/* Menu items */}
-                                <div className="py-1.5">
-                                    <Link href="/dashboard/profile" onClick={() => setProfileOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] transition-colors group/item">
-                                        <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        Profile Settings
-                                    </Link>
-                                    {user?.role === "admin" && (
-                                        <Link href="/admin" onClick={() => setProfileOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] transition-colors group/item">
-                                            <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" />
+                        <AnimatePresence>
+                            {profileOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                    className="absolute right-0 top-full mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-[#edf8f3] shadow-[0_20px_50px_rgba(15,157,118,0.15)] overflow-hidden"
+                                >
+                                    {/* User info header */}
+                                    <div className="px-4 py-4 border-b border-[#e7ddd1]/60 bg-gradient-to-b from-[#fcf9f5]/80 to-[#ffffff]/90 flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0f9d76] to-[#0b7d5d] flex items-center justify-center shadow-md">
+                                            <span className="text-sm font-extrabold text-white leading-none">{initial}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <p className="text-sm font-bold text-[#1d1d1d] truncate">{user?.full_name}</p>
+                                                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#edf8f3] text-[#0f9d76] uppercase tracking-wide border border-[#0f9d76]/20">
+                                                    {user?.role || "user"}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs font-semibold text-[#8a8178] truncate mt-0.5">{user?.email}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Menu items */}
+                                    <div className="p-1.5 space-y-1">
+                                        <Link href="/dashboard/profile" onClick={() => setProfileOpen(false)}
+                                            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:translate-x-0.5 transition-all duration-200 group/item">
+                                            <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                             </svg>
-                                            TIBSA SOC Nexus
+                                            Profile Settings
                                         </Link>
-                                    )}
-                                </div>
-                                {/* Logout */}
-                                <div className="border-t border-[#e7ddd1] py-1.5 bg-[#fcf9f5]">
-                                    <button
-                                        onClick={() => { setProfileOpen(false); logout(); }}
-                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors group/logout"
-                                    >
-                                        <svg className="w-4 h-4 text-red-400 group-hover/logout:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                        </svg>
-                                        Sign Out
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                                        {user?.role === "admin" && (
+                                            pathname.startsWith("/admin") ? (
+                                                <Link href="/dashboard" onClick={() => setProfileOpen(false)}
+                                                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:translate-x-0.5 transition-all duration-200 group/item">
+                                                    <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                                                    </svg>
+                                                    Back to User
+                                                </Link>
+                                            ) : (
+                                                <Link href="/admin" onClick={() => setProfileOpen(false)}
+                                                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76] hover:translate-x-0.5 transition-all duration-200 group/item">
+                                                    <svg className="w-4 h-4 text-[#8a8178] group-hover/item:text-[#0f9d76] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                    TIBSA SOC Nexus
+                                                </Link>
+                                            )
+                                        )}
+                                    </div>
+
+                                    {/* Logout */}
+                                    <div className="border-t border-[#e7ddd1]/60 p-1.5 bg-[#fcf9f5]/40">
+                                        <button
+                                            onClick={() => { setProfileOpen(false); logout(); }}
+                                            className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 hover:translate-x-0.5 transition-all duration-200 group/logout"
+                                        >
+                                            <svg className="w-4 h-4 text-red-400 group-hover/logout:text-red-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>

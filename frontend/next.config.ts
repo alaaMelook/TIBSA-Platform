@@ -59,7 +59,7 @@ const nextConfig: NextConfig = {
   // Limit Turbopack to only watch and scan the repository root to prevent
   // out-of-memory errors caused by scanning the entire user home directory.
   turbopack: {
-    root: path.resolve(__dirname, ".."),
+    root: __dirname,
   },
 
 

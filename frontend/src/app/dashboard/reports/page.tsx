@@ -417,7 +417,7 @@ export default function ReportsHistoryPage() {
         </div>
         <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Reports History</h1>
         <p className="text-[#4f4a45] mt-1 max-w-xl text-sm leading-relaxed font-medium">
-          Unified audit logs and security posture records compiled across all standalone services and ingestion pipelines.
+          Review generated security reports, scan summaries, risk scores, investigation history, and previous analysis results in one organized place.
         </p>
 
         {/* Tab Controls */}

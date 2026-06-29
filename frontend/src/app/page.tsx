@@ -1,7 +1,48 @@
+"use client";
 import Link from "next/link";
-import { ArrowRight, Shield, Globe, FileSearch, BarChart3, ShieldCheck, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Shield, Globe, FileSearch, BarChart3, ShieldCheck, Microscope } from "lucide-react";
+import LandingSections from "@/components/landing/LandingSections";
 
 export default function Home() {
+  const [activeSection, setActiveSection] = useState("home");
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = "smooth";
+
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+
+      const sections = [
+        "home",
+        "features",
+        "about",
+        "workflow",
+        "threat-modeling",
+        "report-preview",
+      ];
+      
+      const scrollPosition = window.scrollY + 160;
+
+      for (const section of sections) {
+        const el = document.getElementById(section);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-[#f8f3eb] text-[#1d1d1d] font-sans overflow-x-hidden selection:bg-[#0f9d76]/20">
 
@@ -48,88 +89,163 @@ export default function Home() {
       </div>
 
       {/* ── Navbar ── */}
-      <header className="relative z-50 container mx-auto flex items-center justify-between px-6 py-8">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[linear-gradient(135deg,#0f9d76,#0b7d5d)] flex items-center justify-center shadow-sm shadow-[#0f9d76]/20">
-            <span className="text-white font-black text-xl tracking-tighter">T</span>
+      <header className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-[#f8f3eb]/80 backdrop-blur-md border-b border-[#e7ddd1]/60 shadow-sm' : 'bg-transparent'}`}>
+        <div className="container mx-auto flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[linear-gradient(135deg,#0f9d76,#0b7d5d)] flex items-center justify-center shadow-sm shadow-[#0f9d76]/20">
+              <span className="text-white font-black text-xl tracking-tighter">T</span>
+            </div>
+            <span className="text-2xl font-black text-[#1d1d1d] tracking-tight">TIBSA</span>
           </div>
-          <span className="text-2xl font-black text-[#1d1d1d] tracking-tight">TIBSA</span>
-        </div>
-
-        <div className="flex items-center gap-5">
-          <Link
-            href="/login"
-            className="text-sm font-bold text-[#4f4a45] hover:text-[#0f9d76] transition-colors"
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="text-sm px-6 py-2.5 rounded-full font-bold btn-animated btn-primary-emerald"
-          >
-            Get Started
-          </Link>
+          <nav className="hidden lg:flex items-center gap-2">
+            {[
+              { label: "Home", href: "#home", id: "home" },
+              { label: "Features", href: "#features", id: "features" },
+              { label: "About", href: "#about", id: "about" },
+              { label: "Workflow", href: "#workflow", id: "workflow" },
+              { label: "Threat Modeling", href: "#threat-modeling", id: "threat-modeling" },
+              { label: "Report Preview", href: "#report-preview", id: "report-preview" },
+            ].map(({ label, href, id }) => {
+              const isActive = activeSection === id;
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  className={`text-[13px] font-bold px-3.5 py-1.5 rounded-full transition-all duration-200 ${
+                    isActive
+                      ? "bg-[#0f9d76] text-white shadow-sm shadow-[#0f9d76]/20"
+                      : "text-[#4f4a45] hover:bg-[#edf8f3] hover:text-[#0f9d76]"
+                  }`}
+                >
+                  {label}
+                </a>
+              );
+            })}
+          </nav>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="hidden sm:block text-sm font-bold text-[#4f4a45] hover:text-[#0f9d76] transition-colors">
+              Login
+            </Link>
+            <Link href="/register" className="text-sm px-5 py-2.5 rounded-full font-bold btn-animated btn-primary-emerald">
+              Get Started
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* ── Main Hero Section ── */}
-      <main className="relative z-10 container mx-auto px-6 pt-12 pb-32">
+      <main className="relative z-10 container mx-auto px-6 pt-24 pb-32">
 
-        <div className="relative w-full flex flex-col items-center justify-center min-h-[60vh]">
+        <div id="home" className="scroll-mt-28 relative w-full flex flex-col items-center justify-center min-h-[60vh]">
 
           {/* Left Decorative Visual: Translucent 3D Shield */}
           <div className="hidden xl:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-8 w-72 h-[340px] items-center justify-center z-10">
-            <div className="relative w-full h-full rounded-[2.5rem] bg-white/30 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(15,157,118,0.12)] flex items-center justify-center transform -rotate-12 hover:rotate-0 transition-transform duration-700 ease-out group">
+            <div className="relative w-full h-full rounded-[2.5rem] bg-white/30 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(15,157,118,0.12)] p-6 flex flex-col justify-between transform -rotate-12 hover:rotate-0 transition-transform duration-700 ease-out group">
               {/* Internal glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent rounded-[2.5rem] pointer-events-none"></div>
-              <div className="absolute w-32 h-40 bg-[#0f9d76] blur-3xl opacity-20 rounded-full group-hover:opacity-30 transition-opacity duration-700"></div>
+              <div className="absolute w-32 h-40 bg-[#0f9d76] blur-3xl opacity-15 rounded-full group-hover:opacity-25 transition-opacity duration-700 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
 
-              {/* Shield Icon */}
-              <Shield className="w-28 h-28 text-[#0f9d76]/70 drop-shadow-md relative z-10 stroke-[1.5]" />
+              {/* Card Header */}
+              <div className="relative z-10 flex items-center justify-between pb-3 border-b border-white/40">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0f9d76] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0f9d76]"></span>
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#4f4a45]">Secure Scan</span>
+                </div>
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20">ACTIVE</span>
+              </div>
 
-              {/* Tech accents */}
-              <div className="absolute top-8 right-8 w-2 h-2 rounded-full bg-[#0f9d76] animate-pulse"></div>
-              <div className="absolute bottom-8 left-8 flex gap-1.5 items-end">
-                <div className="w-1.5 h-4 bg-[#0f9d76]/30 rounded-full"></div>
-                <div className="w-1.5 h-7 bg-[#0f9d76]/60 rounded-full"></div>
-                <div className="w-1.5 h-3 bg-[#0f9d76]/40 rounded-full"></div>
+              {/* Center: Shield with layered rings */}
+              <div className="relative z-10 flex-1 flex items-center justify-center py-4">
+                {/* Outer dashed spinning ring */}
+                <div className="absolute w-32 h-32 rounded-full border border-dashed border-[#0f9d76]/30 animate-[spin_30s_linear_infinite]" />
+                {/* Inner solid ring */}
+                <div className="absolute w-24 h-24 rounded-full border border-[#e7ddd1] bg-white/30 backdrop-blur-sm flex items-center justify-center shadow-inner" />
+                {/* Glowing center */}
+                <div className="absolute w-16 h-16 rounded-full bg-[#0f9d76]/10 blur-md" />
+                
+                {/* Shield icon */}
+                <ShieldCheck className="w-12 h-12 text-[#0f9d76] drop-shadow-sm relative z-10 stroke-[1.8]" />
+              </div>
+
+              {/* Card Footer: Status List */}
+              <div className="relative z-10 flex flex-col gap-2 bg-white/50 backdrop-blur-sm border border-white/50 rounded-2xl p-3">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-[#8a8178] font-bold">Threat Level</span>
+                  <span className="text-[#0f9d76] font-extrabold uppercase">Safe</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#f0ebe3] rounded-full overflow-hidden">
+                  <div className="h-full w-1/4 bg-[#0f9d76] rounded-full" />
+                </div>
+                <div className="flex items-center justify-between text-[9px] text-[#4f4a45] font-bold mt-1">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-[#0f9d76]" />
+                    Headers Ok
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-[#0f9d76]" />
+                    Cookies Sec
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Right Decorative Visual: Translucent Dashboard Analytics */}
           <div className="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-8 w-72 h-[340px] items-center justify-center z-10">
-            <div className="relative w-full h-full rounded-[2.5rem] bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(15,157,118,0.12)] p-6 flex flex-col gap-4 transform rotate-6 hover:rotate-0 transition-transform duration-700 ease-out group">
+            <div className="relative w-full h-full rounded-[2.5rem] bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_rgba(15,157,118,0.12)] p-6 flex flex-col justify-between transform rotate-6 hover:rotate-0 transition-transform duration-700 ease-out group">
               <div className="absolute inset-0 bg-gradient-to-tl from-white/50 to-transparent rounded-[2.5rem] pointer-events-none"></div>
+              <div className="absolute w-32 h-40 bg-[#0f9d76] blur-3xl opacity-15 rounded-full group-hover:opacity-25 transition-opacity duration-700 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
 
-              {/* Mock Header */}
-              <div className="flex justify-between items-center pb-3 border-b border-white/40 relative z-10">
-                <div className="h-3.5 w-20 bg-[#0f9d76]/20 rounded-full"></div>
-                <div className="h-2.5 w-2.5 rounded-full bg-[#0f9d76] animate-pulse"></div>
+              {/* Card Header */}
+              <div className="relative z-10 flex items-center justify-between pb-3 border-b border-white/40">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#4f4a45]">Security Intelligence</span>
+                <span className="text-[9px] font-black px-2 py-0.5 rounded bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20">READY</span>
               </div>
 
-              {/* Bar Chart Mockup */}
-              <div className="flex-1 bg-white/40 rounded-2xl p-4 border border-white/50 flex flex-col justify-end relative overflow-hidden z-10">
-                {/* Micro grid */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(15,157,118,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(15,157,118,0.05)_1px,transparent_1px)] bg-[size:14px_14px]"></div>
+              {/* Center: Circular Risk Score + Mini Bar Chart */}
+              <div className="relative z-10 flex-1 flex flex-col justify-center gap-4 py-3">
+                <div className="flex items-center justify-between gap-4">
+                  {/* Circular Risk Indicator */}
+                  <div className="relative w-16 h-16 rounded-full border-4 border-[#0f9d76]/10 border-t-[#0f9d76] border-r-[#0f9d76]/50 flex items-center justify-center">
+                    <span className="text-xs font-black text-[#1d1d1d]">57%</span>
+                    <span className="absolute text-[8px] font-bold text-[#8a8178] -bottom-3">Risk</span>
+                  </div>
 
-                <div className="relative z-10 flex items-end gap-2.5 h-full pb-1 justify-center w-full">
-                  <div className="w-full max-w-[12px] bg-[#0f9d76]/30 rounded-t-sm h-[30%]"></div>
-                  <div className="w-full max-w-[12px] bg-[#0f9d76]/50 rounded-t-sm h-[50%]"></div>
-                  <div className="w-full max-w-[12px] bg-[linear-gradient(180deg,#0f9d76,rgba(15,157,118,0.4))] rounded-t-sm h-[90%] shadow-[0_0_10px_rgba(15,157,118,0.4)]"></div>
-                  <div className="w-full max-w-[12px] bg-[#0f9d76]/40 rounded-t-sm h-[60%]"></div>
-                  <div className="w-full max-w-[12px] bg-[#0f9d76]/20 rounded-t-sm h-[25%]"></div>
+                  {/* Severities mini chart */}
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex justify-between text-[8px] font-bold text-[#8a8178]">
+                      <span>Findings</span>
+                      <span className="text-[#0f9d76]">4 Total</span>
+                    </div>
+                    {/* High (Red), Med (Amber), Low (Green) bars */}
+                    <div className="flex gap-1 items-end h-7 justify-center bg-white/30 backdrop-blur-sm rounded-lg p-1.5 border border-white/40">
+                      <div className="w-2.5 bg-red-400 rounded-sm h-[80%]" title="High" />
+                      <div className="w-2.5 bg-amber-400 rounded-sm h-[50%]" title="Medium" />
+                      <div className="w-2.5 bg-[#0f9d76] rounded-sm h-[30%]" title="Low" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Status Indicator Mockup */}
-              <div className="h-24 bg-white/40 rounded-2xl p-4 border border-white/50 flex items-center justify-between relative z-10">
-                <div className="w-14 h-14 rounded-full border-4 border-[#0f9d76]/10 border-t-[#0f9d76] border-r-[#0f9d76]/50 flex items-center justify-center animate-[spin_8s_linear_infinite]">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#0f9d76]"></div>
-                </div>
-                <div className="flex flex-col gap-2.5 w-1/2">
-                  <div className="h-2 w-full bg-[#0f9d76]/20 rounded-full"></div>
-                  <div className="h-2 w-3/4 bg-[#0f9d76]/10 rounded-full"></div>
+              {/* Card Footer: Metrics & Details */}
+              <div className="relative z-10 flex flex-col gap-2 bg-white/50 backdrop-blur-sm border border-white/50 rounded-2xl p-3">
+                <div className="flex flex-col gap-1 text-[9px] text-[#4f4a45] font-bold">
+                  <div className="flex justify-between">
+                    <span>Threat Category</span>
+                    <span className="text-red-500 font-extrabold">STRIDE</span>
+                  </div>
+                  <div className="h-px bg-white/40 my-0.5" />
+                  <div className="flex justify-between text-[#8a8178] font-semibold">
+                    <span>Tampering Risks</span>
+                    <span>Detected</span>
+                  </div>
+                  <div className="flex justify-between text-[#8a8178] font-semibold">
+                    <span>Mitigation Plan</span>
+                    <span>Generated</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -148,19 +264,21 @@ export default function Home() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-8 text-[#1d1d1d] max-w-3xl">
-              Protect Your Digital <br className="hidden sm:block" />
-              <span className="text-transparent bg-clip-text bg-[linear-gradient(135deg,#0f9d76,#0b7d5d)] relative inline-block">
-                Assets
-                {/* Tiny glowing dot accent for flair */}
-                <div className="absolute -top-1 -right-4 w-2 h-2 bg-[#0f9d76] rounded-full blur-[2px]"></div>
+            <h1 className="text-5xl sm:text-6xl lg:text-6xl font-black leading-[1.15] tracking-tight mb-8 text-[#1d1d1d] max-w-5xl w-full">
+              <span className="block whitespace-nowrap">Turn Security Findings into</span>
+              <span className="block whitespace-nowrap">
+                <span className="text-transparent bg-clip-text bg-[linear-gradient(135deg,#0f9d76,#0b7d5d)] relative inline-block">
+                  Actionable
+                  {/* Tiny glowing dot accent for flair */}
+                  <div className="absolute -top-1 -right-4 w-2 h-2 bg-[#0f9d76] rounded-full blur-[2px]"></div>
+                </span>
+                {" "}Intelligence
               </span>
-              {" "}with Intelligence
             </h1>
 
             {/* Subtitle */}
             <p className="text-lg md:text-xl text-[#4f4a45] font-medium max-w-2xl mx-auto mb-12 leading-relaxed">
-              TIBSA is a comprehensive threat intelligence platform that helps you scan URLs, analyze files, and detect threats using advanced security analysis.
+              TIBSA scans websites, detects vulnerabilities, enriches findings with threat intelligence, maps STRIDE risks, and generates AI-powered security reports.
             </p>
 
             {/* CTAs */}
@@ -182,40 +300,116 @@ export default function Home() {
         </div>
 
         {/* ── Feature Cards ── */}
-        <div className="relative z-20 grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-24 lg:mt-32 max-w-5xl mx-auto">
+        <div id="features" className="scroll-mt-28 relative z-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5 mt-16 lg:mt-20 max-w-5xl mx-auto">
 
-          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-8 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
-            <div className="w-12 h-12 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Globe className="w-6 h-6" />
+          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-6 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
+            <div className="w-10 h-10 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+              <Globe className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-[#1d1d1d]">URL Scanning</h3>
-            <p className="text-[#8a8178] leading-relaxed font-medium text-sm">
-              Scan suspicious domains and URLs instantly with deep infrastructure profiling and AI-driven phishing detection.
+            <h3 className="text-[15px] font-bold mb-2 text-[#1d1d1d]">Website Scanner</h3>
+            <p className="text-[#8a8178] leading-relaxed font-medium text-[13px] mb-4">
+              Detect headers, cookies, exposed paths, misconfigurations, XSS, and SQL injection risks with safe automated scanning.
             </p>
+            <div className="flex flex-wrap gap-1.5 mt-auto">
+              {["Headers", "Cookies", "SQLi", "XSS"].map((tag) => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20 tracking-wide">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-8 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
-            <div className="w-12 h-12 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <FileSearch className="w-6 h-6" />
+          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-6 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
+            <div className="w-10 h-10 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+              <FileSearch className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-[#1d1d1d]">Threat Intelligence</h3>
-            <p className="text-[#8a8178] leading-relaxed font-medium text-sm">
-              Cross-reference file hashes and indicators of compromise against global threat feeds and historical databases.
+            <h3 className="text-[15px] font-bold mb-2 text-[#1d1d1d]">Threat Intelligence</h3>
+            <p className="text-[#8a8178] leading-relaxed font-medium text-[13px] mb-4">
+              Enrich scan results with IOC reputation, detected technologies, and external threat context.
             </p>
+            <div className="flex flex-wrap gap-1.5 mt-auto">
+              {["IOC Reputation", "Technologies", "Risk Context"].map((tag) => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20 tracking-wide">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-8 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
-            <div className="w-12 h-12 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <ShieldCheck className="w-6 h-6" />
+          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-6 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
+            <div className="w-10 h-10 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-[#1d1d1d]">Security Reports</h3>
-            <p className="text-[#8a8178] leading-relaxed font-medium text-sm">
-              Export clean, executive-ready threat reports summarizing risk scores, malicious behavior, and mitigation steps.
+            <h3 className="text-[15px] font-bold mb-2 text-[#1d1d1d]">AI Security Reports</h3>
+            <p className="text-[#8a8178] leading-relaxed font-medium text-[13px] mb-4">
+              Generate executive-ready reports with findings, risk summaries, STRIDE mapping, and mitigation steps.
             </p>
+            <div className="flex flex-wrap gap-1.5 mt-auto">
+              {["STRIDE", "AI Summary", "Mitigations"].map((tag) => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20 tracking-wide">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-6 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
+            <div className="w-10 h-10 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <h3 className="text-[15px] font-bold mb-2 text-[#1d1d1d]">Contextual Risk Intelligence</h3>
+            <p className="text-[#8a8178] leading-relaxed font-medium text-[13px] mb-4">
+              Connect findings together, reduce false positives, and separate confirmed issues from hardening advice.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-auto">
+              {["Risk Scoring", "False Positive Control", "Context Analysis"].map((tag) => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20 tracking-wide">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-6 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
+            <div className="w-10 h-10 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+              <Shield className="w-5 h-5" />
+            </div>
+            <h3 className="text-[15px] font-bold mb-2 text-[#1d1d1d]">STRIDE Threat Modeling</h3>
+            <p className="text-[#8a8178] leading-relaxed font-medium text-[13px] mb-4">
+              Map confirmed and potential risks into STRIDE categories for clearer security impact analysis.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-auto">
+              {["STRIDE", "Confirmed Threats", "Potential Scenarios"].map((tag) => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20 tracking-wide">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-[rgba(255,250,244,0.85)] backdrop-blur-sm border border-[#e7ddd1] rounded-2xl p-6 hover:bg-[#ffffff] hover:border-[#d9cdbf] transition-all shadow-sm hover:shadow-md flex flex-col items-start group">
+            <div className="w-10 h-10 rounded-xl bg-[#edf8f3] text-[#0f9d76] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+              <Microscope className="w-5 h-5" />
+            </div>
+            <h3 className="text-[15px] font-bold mb-2 text-[#1d1d1d]">Static Malware Analysis</h3>
+            <p className="text-[#8a8178] leading-relaxed font-medium text-[13px] mb-4">
+              Analyze suspicious files using static feature extraction and AI-based malware classification to identify potential threats without executing the file.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-auto">
+              {["Static Analysis", "Feature Extraction", "Malware Classification"].map((tag) => (
+                <span key={tag} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#edf8f3] text-[#0f9d76] border border-[#0f9d76]/20 tracking-wide">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
         </div>
+
       </main>
+
+      {/* ── Additional Landing Sections ── */}
+      <LandingSections />
 
       {/* ── Footer ── */}
       <footer className="relative z-20 border-t border-[#e7ddd1] py-10 bg-[#fffaf4]">

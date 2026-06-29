@@ -9,7 +9,7 @@ import {
   ShieldAlert, ShieldCheck, Activity, Search, AlertTriangle,
   Terminal, Server, Globe, FileKey, Layers, Radar, CheckCircle2,
   XCircle, Copy, Code, ArrowRight, Zap, Target, ChevronDown, ChevronUp, ExternalLink,
-  Eye, EyeOff, Lock, Unlock, Command
+  Eye, EyeOff, Lock, Unlock, Command, Check
 } from "lucide-react";
 
 // --- Types ---
@@ -542,9 +542,9 @@ export default function WebsiteScannerPage() {
                 PENETRATION TESTING
               </span>
             </div>
-            <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Enterprise Penetration Testing Module</h1>
+            <h1 className="text-2xl font-black text-[#1d1d1d] tracking-tight">Web Application Penetration Testing</h1>
             <p className="text-[#4f4a45] mt-1 max-w-xl text-sm leading-relaxed font-medium">
-              Browser-verified vulnerability assessment and intelligence gathering.
+              Run safe web application security tests, verify vulnerabilities, analyze exposed attack surfaces, and generate actionable penetration testing insights.
             </p>
           </div>
         </div>
@@ -729,7 +729,21 @@ export default function WebsiteScannerPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+              {/* Scanner Modules Header */}
+              <div className="mb-4 flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
+                    <Layers className="w-4.5 h-4.5 text-[#0f9d76]" /> Scanner Modules
+                  </h3>
+                  <p className="text-[11px] text-[#8a8178]">Select the scanning engines to deploy against target</p>
+                </div>
+                <span className="text-[11px] font-bold bg-[#edf8f3] text-[#0f9d76] px-2.5 py-1 rounded-full border border-[#0f9d76]/20">
+                  {selectedTests.length} of {defaultTests.length} Selected
+                </span>
+              </div>
+
+              {/* Main Scanner Modules Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 {defaultTests.map(test => {
                   const isSelected = selectedTests.includes(test.id);
                   const Icon = test.icon;
@@ -741,187 +755,290 @@ export default function WebsiteScannerPage() {
                           toggleTest(test.id);
                         }
                       }}
-                      className={`p-4 rounded-xl border text-left cursor-pointer transition-all duration-180 hover:-translate-y-[1px] active:scale-[0.97] motion-reduce:transition-colors motion-reduce:hover:transform-none shadow-sm group ${isScanning ? "opacity-60 cursor-not-allowed" : ""
-                        } ${isSelected
-                          ? "bg-[#edf8f3] border-[#0f9d76]"
-                          : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3] hover:border-[#0f9d76]"
-                        }`}
+                      className={`p-5 rounded-2xl border text-left cursor-pointer transition-all duration-200 hover:-translate-y-[3px] active:scale-[0.98] flex flex-col justify-between h-full group ${
+                        isScanning ? "opacity-60 cursor-not-allowed" : ""
+                      } ${
+                        isSelected
+                          ? "bg-gradient-to-br from-[#edf8f3] to-[#dcf5e7] border-[#0f9d76] shadow-[0_4px_16px_rgba(15,157,118,0.08),_inset_0_1px_2px_rgba(255,255,255,0.7)] hover:shadow-[0_6px_20px_rgba(15,157,118,0.12)]"
+                          : "bg-[#ffffff] border-[#e7ddd1] hover:bg-[#edf8f3]/30 hover:border-[#0f9d76]/30 hover:shadow-md"
+                      }`}
                     >
-                      <Icon className={`w-5 h-5 mb-2 transition-colors ${isSelected ? "text-[#0f9d76]" : "text-[#4f4a45] group-hover:text-[#0f9d76]"}`} />
-                      <div className={`font-medium text-sm mb-1 transition-colors ${isSelected ? "text-[#0f9d76] font-bold" : "text-[#1d1d1d] group-hover:text-[#0f9d76]"}`}>
-                        {test.label}
+                      <div className="flex flex-col h-full justify-between">
+                        <div>
+                          {/* Card Icon & Checkbox Badge */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className={`p-2 rounded-xl border transition-all duration-200 ${
+                              isSelected
+                                ? "bg-white border-[#0f9d76]/30 text-[#0f9d76] shadow-sm"
+                                : "bg-[#ffffff] border-[#e7ddd1] text-[#4f4a45] group-hover:border-[#0f9d76]/20 group-hover:text-[#0f9d76]"
+                            }`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            
+                            <div className="relative w-5 h-5 flex items-center justify-center">
+                              {/* Outer ring for double-ring aesthetic */}
+                              <div className={`absolute inset-0 rounded-full border transition-all duration-300 ${
+                                isSelected 
+                                  ? "border-[#0f9d76]/40 scale-125" 
+                                  : "border-[#e7ddd1] group-hover:border-[#0f9d76]/40"
+                              }`} />
+                              
+                              {/* Inner spring-animated badge */}
+                              <AnimatePresence mode="wait">
+                                {isSelected ? (
+                                  <motion.div
+                                    key="selected-badge"
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0, opacity: 0 }}
+                                    transition={{ type: "spring", stiffness: 450, damping: 22 }}
+                                    className="absolute inset-0.5 rounded-full bg-[#0f9d76] flex items-center justify-center shadow-[0_2px_5px_rgba(15,157,118,0.25),_inset_0_1px_1px_rgba(255,255,255,0.4)]"
+                                  >
+                                    <Check className="w-3.5 h-3.5 text-white stroke-[3px]" />
+                                  </motion.div>
+                                ) : (
+                                  <motion.div
+                                    key="unselected-badge"
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0.8, opacity: 0 }}
+                                    className="absolute inset-0.5 rounded-full bg-transparent"
+                                  />
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </div>
+
+                          {/* Card Content */}
+                          <div className={`font-bold text-sm mb-1.5 transition-colors ${
+                            isSelected ? "text-[#0a5c44]" : "text-[#1d1d1d] group-hover:text-[#0f9d76]"
+                          }`}>
+                            {test.label}
+                          </div>
+                          <p className={`text-[11px] leading-relaxed transition-colors ${
+                            isSelected ? "text-[#326f5e]" : "text-[#8a8178]"
+                          }`}>
+                            {test.desc}
+                          </p>
+                        </div>
                       </div>
-                      <div className={`text-[10px] line-clamp-1 transition-colors ${isSelected ? "text-[#0b7d5d]" : "text-[#8a8178]"}`}>{test.desc}</div>
-
-                      {test.id === "sqli" && isSelected && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${isSelected ? "opacity-100" : "opacity-50"
-                            }`}
-                        >
-                          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced SQLI Checks</div>
-
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">
-                                SQLMap Verification
-                              </div>
-                              <div className="text-[10px] text-[var(--text-muted)]">
-                                Confirm findings using sqlmap API
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isScanning) {
-                                  setEnableSqlmap(!enableSqlmap);
-                                }
-                              }}
-                              disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${enableSqlmap ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                                }`}
-                            >
-                              <span
-                                className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${enableSqlmap ? "translate-x-4" : "translate-x-0"
-                                  }`}
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {test.id === "auth_security" && isSelected && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className={`mt-3 pt-3 border-t border-[var(--border-soft)] space-y-3 ${isSelected ? "opacity-100" : "opacity-50"
-                            }`}
-                        >
-                          <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Advanced Auth Checks</div>
-
-                          {/* Browser Auth Analysis */}
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Browser Auth Analysis</div>
-                              <div className="text-[10px] text-[var(--text-muted)]">Inspect storage, cookies, network auth signals</div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isScanning) setAuthBrowserAnalysis(!authBrowserAnalysis);
-                              }}
-                              disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authBrowserAnalysis ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                                }`}
-                            >
-                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authBrowserAnalysis ? "translate-x-4" : "translate-x-0"}`} />
-                            </button>
-                          </div>
-
-                          {/* Authorized Auth Flow Checks */}
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Authorized Auth Flow Checks</div>
-                              <div className="text-[10px] text-[var(--text-muted)]">Uses supplied auth/session for safe GET/HEAD checks only</div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isScanning) {
-                                  const next = !authorizedAuthMode;
-                                  setAuthorizedAuthMode(next);
-                                  if (!next) {
-                                    setAuthLifecycleChecks(false);
-                                    setAuthzTransitionChecks(false);
-                                    setSessionCookie("");
-                                  }
-                                }
-                              }}
-                              disabled={isScanning}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authorizedAuthMode ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                                }`}
-                            >
-                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authorizedAuthMode ? "translate-x-4" : "translate-x-0"}`} />
-                            </button>
-                          </div>
-
-                          {/* Authorized Warning */}
-                          {authorizedAuthMode && (
-                            <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-2 rounded-lg text-[10px] leading-tight flex items-start gap-2">
-                              <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-                              <span>Authorized checks may use supplied authenticated cookies/session and will only perform safe GET/HEAD requests unless explicitly configured.</span>
-                            </div>
-                          )}
-
-                          {/* Session Cookie Option */}
-                          {authorizedAuthMode && (
-                            <div className="flex flex-col gap-1 mt-1 border-b border-[var(--border-soft)] pb-3">
-                              <label className="text-[11px] font-medium text-[var(--text-secondary)]">Session Cookie</label>
-                              <input
-                                type="text"
-                                value={sessionCookie}
-                                onChange={(e) => setSessionCookie(e.target.value)}
-                                placeholder="session=abc123xyz; csrftoken=..."
-                                className="w-full bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-lg px-3 py-1.5 text-[10px] text-[var(--text-primary)] placeholder-slate-600 focus:outline-none focus:border-[var(--primary)] transition-colors"
-                                disabled={isScanning}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <div className="text-[10px] text-[var(--text-muted)]">Used for authenticated GET/HEAD authorization checks.</div>
-                            </div>
-                          )}
-
-                          {/* Token Lifecycle Checks */}
-                          <div className={`flex items-center justify-between gap-3 ${authorizedAuthMode ? "" : "opacity-50"}`}>
-                            <div>
-                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">Token Lifecycle Checks</div>
-                              <div className="text-[10px] text-[var(--text-muted)]">Logout invalidation and refresh-token rotation checks</div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isScanning && authorizedAuthMode) setAuthLifecycleChecks(!authLifecycleChecks);
-                              }}
-                              disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authLifecycleChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                                }`}
-                            >
-                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authLifecycleChecks ? "translate-x-4" : "translate-x-0"}`} />
-                            </button>
-                          </div>
-
-                          {/* AuthZ Transition Checks */}
-                          <div className={`flex items-center justify-between gap-3 ${authorizedAuthMode ? "" : "opacity-50"}`}>
-                            <div>
-                              <div className="text-[11px] font-medium text-[var(--text-secondary)]">AuthZ Transition Checks</div>
-                              <div className="text-[10px] text-[var(--text-muted)]">Compare unauthenticated vs authenticated protected routes</div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isScanning && authorizedAuthMode) setAuthzTransitionChecks(!authzTransitionChecks);
-                              }}
-                              disabled={isScanning || !authorizedAuthMode}
-                              className={`relative h-5 w-9 shrink-0 rounded-full shadow-sm transition-colors duration-180 ${authzTransitionChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
-                                }`}
-                            >
-                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authzTransitionChecks ? "translate-x-4" : "translate-x-0"}`} />
-                            </button>
-                          </div>
-
-                        </div>
-                      )}
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Advanced Checks Section */}
+              <div className="mt-8 pt-6 border-t border-[var(--border-soft)] space-y-4">
+                <div className="flex items-center gap-2">
+                  <Command className="w-4.5 h-4.5 text-[#0f9d76]" />
+                  <h3 className="text-sm font-semibold text-[var(--text-secondary)]">Advanced Checks</h3>
+                </div>
+
+                <div className="bg-[#ffffff] border border-[#e7ddd1] rounded-2xl p-5 shadow-sm space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* SQL Injection Advanced Checks */}
+                    <div className={`space-y-4 transition-all duration-200 ${
+                      selectedTests.includes("sqli") 
+                        ? "opacity-100" 
+                        : "opacity-40 cursor-not-allowed select-none"
+                    }`}>
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#e7ddd1]/60">
+                        <Server className="w-4 h-4 text-[#0f9d76]" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#1d1d1d]">SQL Injection Engine</span>
+                        {!selectedTests.includes("sqli") && (
+                          <span className="text-[9px] font-bold bg-[#8a8178]/10 text-[#8a8178] px-2 py-0.5 rounded ml-auto">
+                            Requires SQL Injection Module
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-start justify-between gap-4 p-3 hover:bg-[#edf8f3]/10 rounded-xl transition-all duration-200">
+                        <div className="space-y-0.5">
+                          <div className="text-xs font-semibold text-[#1d1d1d]">SQLMap Verification</div>
+                          <p className="text-[11px] text-[#8a8178] leading-relaxed">
+                            Deploy sqlmap API to run deep validation and attempt safe exploitation checks.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isScanning && selectedTests.includes("sqli")) {
+                              setEnableSqlmap(!enableSqlmap);
+                            }
+                          }}
+                          disabled={isScanning || !selectedTests.includes("sqli")}
+                          className={`relative h-5 w-9 shrink-0 rounded-full shadow-inner transition-colors duration-180 ${
+                            enableSqlmap ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                          } ${isScanning || !selectedTests.includes("sqli") ? "cursor-not-allowed" : "cursor-pointer"}`}
+                        >
+                          <span
+                            className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${
+                              enableSqlmap ? "translate-x-4" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Auth Security Advanced Checks */}
+                    <div className={`space-y-4 transition-all duration-200 ${
+                      selectedTests.includes("auth_security") 
+                        ? "opacity-100" 
+                        : "opacity-40 cursor-not-allowed select-none"
+                    }`}>
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#e7ddd1]/60">
+                        <ShieldCheck className="w-4 h-4 text-[#0f9d76]" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#1d1d1d]">Auth Security Engine</span>
+                        {!selectedTests.includes("auth_security") && (
+                          <span className="text-[9px] font-bold bg-[#8a8178]/10 text-[#8a8178] px-2 py-0.5 rounded ml-auto">
+                            Requires Auth Security Module
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Browser Auth Analysis */}
+                        <div className="flex items-start justify-between gap-4 p-3 hover:bg-[#edf8f3]/10 rounded-xl transition-all duration-200">
+                          <div className="space-y-0.5">
+                            <div className="text-xs font-semibold text-[#1d1d1d]">Browser Auth Analysis</div>
+                            <p className="text-[11px] text-[#8a8178] leading-relaxed">
+                              Inspect browser storage, secure attributes, cookies, and network credentials.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isScanning && selectedTests.includes("auth_security")) {
+                                setAuthBrowserAnalysis(!authBrowserAnalysis);
+                              }
+                            }}
+                            disabled={isScanning || !selectedTests.includes("auth_security")}
+                            className={`relative h-5 w-9 shrink-0 rounded-full shadow-inner transition-colors duration-180 ${
+                              authBrowserAnalysis ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                            } ${isScanning || !selectedTests.includes("auth_security") ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          >
+                            <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authBrowserAnalysis ? "translate-x-4" : "translate-x-0"}`} />
+                          </button>
+                        </div>
+
+                        {/* Authorized Auth Flow Checks */}
+                        <div className="flex items-start justify-between gap-4 p-3 hover:bg-[#edf8f3]/10 rounded-xl transition-all duration-200">
+                          <div className="space-y-0.5">
+                            <div className="text-xs font-semibold text-[#1d1d1d]">Authorized Auth Flow Checks</div>
+                            <p className="text-[11px] text-[#8a8178] leading-relaxed">
+                              Inject supplied cookies to discover authenticated paths using read-only checks.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isScanning && selectedTests.includes("auth_security")) {
+                                const next = !authorizedAuthMode;
+                                setAuthorizedAuthMode(next);
+                                if (!next) {
+                                  setAuthLifecycleChecks(false);
+                                  setAuthzTransitionChecks(false);
+                                  setSessionCookie("");
+                                }
+                              }
+                            }}
+                            disabled={isScanning || !selectedTests.includes("auth_security")}
+                            className={`relative h-5 w-9 shrink-0 rounded-full shadow-inner transition-colors duration-180 ${
+                              authorizedAuthMode ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                            } ${isScanning || !selectedTests.includes("auth_security") ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          >
+                            <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authorizedAuthMode ? "translate-x-4" : "translate-x-0"}`} />
+                          </button>
+                        </div>
+
+                        {/* Authorized warning details */}
+                        {authorizedAuthMode && selectedTests.includes("auth_security") && (
+                          <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-xl text-[11px] leading-relaxed flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
+                            <span>Warning: Authorized scans leverage the supplied active session cookies to check privilege boundaries.</span>
+                          </div>
+                        )}
+
+                        {/* Session Cookie Option */}
+                        {authorizedAuthMode && selectedTests.includes("auth_security") && (
+                          <div className="flex flex-col gap-1.5 p-3.5 bg-[#f8f3eb]/50 border border-[#e7ddd1] rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                            <label className="text-[10px] font-bold text-[#1d1d1d] uppercase tracking-wider">Session Cookie</label>
+                            <input
+                              type="text"
+                              value={sessionCookie}
+                              onChange={(e) => setSessionCookie(e.target.value)}
+                              placeholder="session=abc123xyz; csrftoken=..."
+                              className="w-full bg-[#ffffff] border border-[#e7ddd1] rounded-lg px-3 py-2 text-xs text-[#1d1d1d] placeholder-slate-400 focus:outline-none focus:border-[#0f9d76] transition-colors"
+                              disabled={isScanning}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="text-[10px] text-[#8a8178]">Inject this cookie to perform authorized privilege boundary verification.</div>
+                          </div>
+                        )}
+
+                        {/* Token Lifecycle Checks */}
+                        <div className={`flex items-start justify-between gap-4 p-3 hover:bg-[#edf8f3]/10 rounded-xl transition-all duration-200 ${
+                          authorizedAuthMode ? "opacity-100" : "opacity-40 cursor-not-allowed select-none pointer-events-none"
+                        }`}>
+                          <div className="space-y-0.5">
+                            <div className="text-xs font-semibold text-[#1d1d1d]">Token Lifecycle Checks</div>
+                            <p className="text-[11px] text-[#8a8178] leading-relaxed">
+                              Test authorization timeouts, logout invalidations, and tokens lifecycle rotation.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isScanning && selectedTests.includes("auth_security") && authorizedAuthMode) {
+                                setAuthLifecycleChecks(!authLifecycleChecks);
+                              }
+                            }}
+                            disabled={isScanning || !selectedTests.includes("auth_security") || !authorizedAuthMode}
+                            className={`relative h-5 w-9 shrink-0 rounded-full shadow-inner transition-colors duration-180 ${
+                              authLifecycleChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                            } ${isScanning || !selectedTests.includes("auth_security") || !authorizedAuthMode ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          >
+                            <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authLifecycleChecks ? "translate-x-4" : "translate-x-0"}`} />
+                          </button>
+                        </div>
+
+                        {/* AuthZ Transition Checks */}
+                        <div className={`flex items-start justify-between gap-4 p-3 hover:bg-[#edf8f3]/10 rounded-xl transition-all duration-200 ${
+                          authorizedAuthMode ? "opacity-100" : "opacity-40 cursor-not-allowed select-none pointer-events-none"
+                        }`}>
+                          <div className="space-y-0.5">
+                            <div className="text-xs font-semibold text-[#1d1d1d]">AuthZ Transition Checks</div>
+                            <p className="text-[11px] text-[#8a8178] leading-relaxed">
+                              Validate authorization boundaries by comparing public and privileged route responses.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isScanning && selectedTests.includes("auth_security") && authorizedAuthMode) {
+                                setAuthzTransitionChecks(!authzTransitionChecks);
+                              }
+                            }}
+                            disabled={isScanning || !selectedTests.includes("auth_security") || !authorizedAuthMode}
+                            className={`relative h-5 w-9 shrink-0 rounded-full shadow-inner transition-colors duration-180 ${
+                              authzTransitionChecks ? "bg-[#0f9d76]" : "bg-[#d9cdbf]"
+                            } ${isScanning || !selectedTests.includes("auth_security") || !authorizedAuthMode ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          >
+                            <span className={`absolute top-[2px] left-[2px] h-4 w-4 rounded-full bg-white transition-transform duration-180 shadow-sm ${authzTransitionChecks ? "translate-x-4" : "translate-x-0"}`} />
+                          </button>
+                        </div>
+
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
             </form>
           </div>

@@ -639,60 +639,385 @@ export default function AdminInvestigationWorkspace() {
                                 </div>
                             )}
 
-                            {activeTab === "threat_model" && (
-                                <div className="bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm overflow-hidden">
-                                    <div className="px-6 py-4 border-b border-[#E6DDD2] bg-[#FAF7F1]">
-                                        <h3 className="font-semibold text-[#1F2933]">STRIDE Threat Vectors</h3>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm">
-                                            <thead>
-                                                <tr className="border-b border-[#E6DDD2] text-[#7C6F64] font-semibold bg-[#FAF7F1]">
-                                                    <th className="py-3 px-4 w-40">STRIDE Category</th>
-                                                    <th className="py-3 px-4">Threat Scenario</th>
-                                                    <th className="py-3 px-4 w-32">Severity</th>
-                                                    <th className="py-3 px-4">Remediation</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {(!investigation.final_result?.stride?.stride_threats ||
-                                                    investigation.final_result.stride.stride_threats.length === 0) ? (
-                                                    <tr>
-                                                        <td colSpan={4} className="py-12 text-center text-[#7C6F64]">
-                                                            No STRIDE threats generated.
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    investigation.final_result.stride.stride_threats.map((t, idx) => (
-                                                        <tr key={t.stride_id || idx} className="hover:bg-[#FAF7F1] border-b border-[#E6DDD2]">
-                                                            <td className="py-4 px-4">
-                                                                <span className="text-[10px] bg-[#2F80ED]/10 border border-[#2F80ED]/20 text-[#2F80ED] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                                                                    {t.category}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-4 px-4 text-[#1F2933] text-xs leading-relaxed">
-                                                                {t.attack_scenario?.split("[Evidence Tracing]")[0].trim()}
-                                                            </td>
-                                                            <td className="py-4 px-4">
-                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                                                                    (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
-                                                                        ? "border-[#EF4444]/25 bg-[#EF4444]/10 text-[#EF4444]"
-                                                                        : "border-orange-500/25 bg-orange-500/10 text-orange-600"
-                                                                }`}>
-                                                                    {t.severity}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-4 px-4 text-xs text-[#7C6F64] leading-relaxed">
-                                                                {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations}
-                                                            </td>
+                            {activeTab === "threat_model" && (() => {
+                                const allThreats = investigation.final_result?.stride?.stride_threats || [];
+
+                                const isConfirmed = (t: any) => {
+                                    const status = (t.status || "").toLowerCase();
+                                    const evidenceType = (t.evidence_type || "").toLowerCase();
+                                    const classification = (t.classification || "").toLowerCase();
+                                    const confidence = (t.confidence || "").toLowerCase();
+
+                                    return (
+                                        status === "confirmed" ||
+                                        evidenceType === "vulnerability" ||
+                                        classification === "vulnerability" ||
+                                        confidence === "verified" ||
+                                        confidence === "high"
+                                    );
+                                };
+
+                                const confirmedThreats = allThreats.filter(isConfirmed);
+                                const potentialScenarios = allThreats.filter((t: any) => !isConfirmed(t));
+
+                                const parseScenario = (scenarioStr: string) => {
+                                    const parts = (scenarioStr || "").split("[Evidence Tracing]");
+                                    const mainDesc = parts[0].trim();
+                                    const evidence = parts.slice(1).join("[Evidence Tracing]").trim();
+                                    return { mainDesc, evidence };
+                                };
+
+                                const groupThreats = (threatsList: any[]) => {
+                                    const map = new Map<string, any>();
+                                    threatsList.forEach((t) => {
+                                        const { mainDesc } = parseScenario(t.attack_scenario);
+                                        const key = `${mainDesc}::${t.affected_asset || ""}`;
+                                        if (!map.has(key)) {
+                                            map.set(key, {
+                                                ...t,
+                                                categories: [t.category],
+                                                originalThreats: [t],
+                                            });
+                                        } else {
+                                            const existing = map.get(key);
+                                            existing.originalThreats.push(t);
+                                            if (!existing.categories.includes(t.category)) {
+                                                existing.categories.push(t.category);
+                                            }
+                                            const severityOrder: Record<string, number> = {
+                                                info: 0, low: 1, medium: 2, high: 3, critical: 4
+                                            };
+                                            const tSev = (t.severity || "info").toLowerCase();
+                                            const eSev = (existing.severity || "info").toLowerCase();
+                                            if ((severityOrder[tSev] ?? 0) > (severityOrder[eSev] ?? 0)) {
+                                                existing.severity = t.severity;
+                                            }
+                                            const existingMitigations = Array.isArray(existing.mitigations) 
+                                                ? existing.mitigations 
+                                                : [existing.mitigations];
+                                            const newMitigations = Array.isArray(t.mitigations) 
+                                                ? t.mitigations 
+                                                : [t.mitigations];
+                                            newMitigations.forEach((m: string) => {
+                                                if (m && !existingMitigations.includes(m)) {
+                                                    existingMitigations.push(m);
+                                                }
+                                            });
+                                            existing.mitigations = existingMitigations;
+                                        }
+                                    });
+                                    return Array.from(map.values());
+                                };
+
+                                const groupedConfirmed = groupThreats(confirmedThreats);
+                                const groupedPotential = groupThreats(potentialScenarios);
+
+                                // ── Summary Metrics ──
+                                const uniqueCategories = new Set(allThreats.map((t: any) => t.category)).size;
+                                const getHighestRisk = () => {
+                                    const severities = allThreats.map((t: any) => (t.severity || "").toLowerCase());
+                                    if (severities.includes("critical")) return "Critical";
+                                    if (severities.includes("high")) return "High";
+                                    if (severities.includes("medium")) return "Medium";
+                                    if (severities.includes("low")) return "Low";
+                                    return "Info";
+                                };
+
+                                const getShortWhyGenerated = (t: any) => {
+                                    const whyStr = t.why_generated || "";
+                                    const notConfStr = t.why_not_confirmed || "";
+                                    const text = (whyStr || notConfStr).trim();
+                                    
+                                    if (!text) {
+                                        return "Generated from correlated security hardening findings.";
+                                    }
+                                    
+                                    if (text.toLowerCase().includes("csp") || text.toLowerCase().includes("content-security-policy")) {
+                                        return "Generated from hardening evidence related to Content-Security-Policy.";
+                                    }
+                                    
+                                    if (text.toLowerCase().includes("cors") || text.toLowerCase().includes("cross-origin")) {
+                                        return "Generated from hardening evidence related to CORS policy.";
+                                    }
+
+                                    if (text.toLowerCase().includes("security header") || text.toLowerCase().includes("x-frame-options") || text.toLowerCase().includes("x-content-type-options")) {
+                                        return "Generated from correlated security header hardening recommendations.";
+                                    }
+
+                                    if (text.toLowerCase().includes("auth") || text.toLowerCase().includes("jwt") || text.toLowerCase().includes("session")) {
+                                        return "Generated from authorization boundary indicators.";
+                                    }
+
+                                    const sentence = text.split(/[.!?]/)[0].trim();
+                                    if (sentence && sentence.length > 5 && !sentence.includes("{") && !sentence.includes("[")) {
+                                        const cleanText = sentence + ".";
+                                        return cleanText.length > 85 ? cleanText.slice(0, 82) + "..." : cleanText;
+                                    }
+
+                                    return "Generated from correlated security hardening findings.";
+                                };
+
+                                return (
+                                    <div className="space-y-6">
+                                        {/* Header Summary Row */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {/* Confirmed Threats Card */}
+                                            <div className="p-5 bg-white border border-[#E6DDD2] rounded-[20px] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                                                <div>
+                                                    <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
+                                                        Confirmed Threats
+                                                    </span>
+                                                    <div className="text-3xl font-black text-[#EF4444] mt-1">
+                                                        {confirmedThreats.length}
+                                                    </div>
+                                                </div>
+                                                <p className="text-[11px] text-[#7C6F64] mt-2">
+                                                    Active vulnerabilities verified by scan evidence.
+                                                </p>
+                                            </div>
+
+                                            {/* Potential Scenarios Card */}
+                                            <div className="p-5 bg-white border border-[#E6DDD2] rounded-[20px] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                                                <div>
+                                                    <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
+                                                        Potential Scenarios
+                                                    </span>
+                                                    <div className="text-3xl font-black text-[#F59E0B] mt-1">
+                                                        {potentialScenarios.length}
+                                                    </div>
+                                                </div>
+                                                <p className="text-[11px] text-[#7C6F64] mt-2">
+                                                    Architectural hardening and security advisories.
+                                                </p>
+                                            </div>
+
+                                            {/* Highest Risk Card */}
+                                            <div className="p-5 bg-white border border-[#E6DDD2] rounded-[20px] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                                                <div>
+                                                    <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
+                                                        Highest Threat Risk
+                                                    </span>
+                                                    <div className={`text-3xl font-black mt-1 ${
+                                                        getHighestRisk() === "Critical" || getHighestRisk() === "High" ? "text-[#EF4444]" : "text-[#10B981]"
+                                                    }`}>
+                                                        {getHighestRisk()}
+                                                    </div>
+                                                </div>
+                                                <p className="text-[11px] text-[#7C6F64] mt-2">
+                                                    Maximum threat level detected on target.
+                                                </p>
+                                            </div>
+
+                                            {/* STRIDE Categories Card */}
+                                            <div className="p-5 bg-white border border-[#E6DDD2] rounded-[20px] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                                                <div>
+                                                    <span className="text-[10px] text-[#7C6F64] font-bold uppercase tracking-wider block">
+                                                        STRIDE Mappings
+                                                    </span>
+                                                    <div className="text-3xl font-black text-[#10B981] mt-1">
+                                                        {uniqueCategories} / 6
+                                                    </div>
+                                                </div>
+                                                <p className="text-[11px] text-[#7C6F64] mt-2">
+                                                    Standard security threat model categories.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Section 1: Confirmed Threats */}
+                                        <div className="bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-[#E6DDD2] bg-[#FAF7F1]">
+                                                <h3 className="font-semibold text-[#1F2933]">Confirmed Threats</h3>
+                                                <p className="text-xs text-[#7C6F64] mt-0.5">Security vulnerabilities requiring immediate remediation action</p>
+                                            </div>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-[#E6DDD2] text-[#7C6F64] font-semibold bg-[#FAF7F1]">
+                                                            <th className="py-3 px-4 w-40">STRIDE Category</th>
+                                                            <th className="py-3 px-4">Threat Description</th>
+                                                            <th className="py-3 px-4 w-32">Risk Level</th>
+                                                            <th className="py-3 px-4 w-60">Evidence</th>
+                                                            <th className="py-3 px-4">Recommended Mitigation</th>
                                                         </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-[#E6DDD2]/40">
+                                                        {groupedConfirmed.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={5} className="py-12 text-center text-[#7C6F64] font-medium">
+                                                                    No confirmed threats found. Potential hardening scenarios are listed below.
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            groupedConfirmed.map((t: any, idx: number) => {
+                                                                const { mainDesc, evidence } = parseScenario(t.attack_scenario);
+                                                                return (
+                                                                    <tr key={t.stride_id || idx} className="hover:bg-[#FAF7F1] transition-colors duration-150">
+                                                                        <td className="py-4 px-4 vertical-top">
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex flex-wrap gap-1.5">
+                                                                                    {t.categories.map((cat: string, cIdx: number) => (
+                                                                                        <span key={cIdx} className="inline-block text-[10px] bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                                                                            {cat}
+                                                                                        </span>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 font-semibold text-[#1F2933] text-xs leading-relaxed max-w-sm vertical-top">
+                                                                            <p className="font-normal text-[#7C6F64]">{mainDesc}</p>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 vertical-top">
+                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                                                                (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
+                                                                                    ? "border-[#EF4444]/25 bg-[#EF4444]/10 text-[#EF4444]"
+                                                                                    : (t.severity ?? "").toLowerCase() === "medium"
+                                                                                        ? "border-orange-500/25 bg-orange-500/10 text-orange-600"
+                                                                                        : "border-[#10B981]/25 bg-[#10B981]/10 text-[#10B981]"
+                                                                            }`}>
+                                                                                {t.severity}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 text-xs text-[#7C6F64] vertical-top">
+                                                                            {evidence ? (
+                                                                                <details className="group">
+                                                                                    <summary className="text-[11px] text-[#10B981] hover:text-[#10B981]/80 cursor-pointer select-none font-semibold outline-none flex items-center gap-1">
+                                                                                        <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
+                                                                                        View Technical Evidence
+                                                                                    </summary>
+                                                                                    <pre className="mt-1.5 p-2.5 rounded bg-[#FAF7F1]/80 border border-[#E6DDD2] text-[10px] text-[#7C6F64] font-mono overflow-x-auto max-w-md whitespace-pre-wrap leading-relaxed">
+                                                                                        {evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}
+                                                                                    </pre>
+                                                                                </details>
+                                                                            ) : (
+                                                                                <span className="text-[#7C6F64] italic">No trace log available</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="py-4 px-4 text-xs text-[#7C6F64] leading-relaxed font-sans max-w-xs vertical-top">
+                                                                            {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations || "N/A"}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        {/* Section 2: Potential Scenarios */}
+                                        <div className="bg-white rounded-[20px] border border-[#E6DDD2] shadow-sm overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-[#E6DDD2] bg-[#FAF7F1]">
+                                                <h3 className="font-semibold text-[#1F2933]">Potential Scenarios</h3>
+                                                <p className="text-xs text-[#7C6F64] mt-0.5">Architectural hardening opportunities and defensive recommendations</p>
+                                            </div>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-[#E6DDD2] text-[#7C6F64] font-semibold bg-[#FAF7F1]">
+                                                            <th className="py-3 px-4 w-40">STRIDE Category</th>
+                                                            <th className="py-3 px-4">Scenario Description</th>
+                                                            <th className="py-3 px-4 w-32">Advisory Risk</th>
+                                                            <th className="py-3 px-4 w-60">Why Generated</th>
+                                                            <th className="py-3 px-4">Recommended Hardening</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-[#E6DDD2]/40">
+                                                        {groupedPotential.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={5} className="py-12 text-center text-[#7C6F64] font-medium">
+                                                                    No potential hardening scenarios generated.
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            groupedPotential.map((t: any, idx: number) => {
+                                                                const { mainDesc, evidence } = parseScenario(t.attack_scenario);
+                                                                return (
+                                                                    <tr key={t.stride_id || idx} className="hover:bg-[#FAF7F1] transition-colors duration-150">
+                                                                        <td className="py-4 px-4 vertical-top">
+                                                                            <div className="space-y-2">
+                                                                                <div className="flex flex-wrap gap-1.5">
+                                                                                    {t.categories.map((cat: string, cIdx: number) => (
+                                                                                        <span key={cIdx} className="inline-block text-[10px] bg-[#F59E0B]/10 border border-[#F59E0B]/20 text-[#F59E0B] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                                                                            {cat}
+                                                                                        </span>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 font-semibold text-[#1F2933] text-xs leading-relaxed max-w-sm vertical-top">
+                                                                            <p className="font-normal text-[#7C6F64]">{mainDesc}</p>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 vertical-top">
+                                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                                                                (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
+                                                                                    ? "border-[#F59E0B]/25 bg-[#F59E0B]/10 text-[#F59E0B]"
+                                                                                    : (t.severity ?? "").toLowerCase() === "medium"
+                                                                                        ? "border-[#3B82F6]/25 bg-[#3B82F6]/10 text-[#3B82F6]"
+                                                                                        : "border-[#10B981]/25 bg-[#10B981]/10 text-[#10B981]"
+                                                                            }`}>
+                                                                                {t.severity || "Low"}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 text-xs text-[#7C6F64] max-w-xs leading-relaxed vertical-top">
+                                                                            <div className="line-clamp-2" title={getShortWhyGenerated(t)}>
+                                                                                {getShortWhyGenerated(t)}
+                                                                            </div>
+                                                                            <div className="mt-2">
+                                                                                <details className="group">
+                                                                                    <summary className="text-[11px] text-[#10B981] hover:text-[#10B981]/80 cursor-pointer select-none font-semibold outline-none flex items-center gap-1">
+                                                                                        <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
+                                                                                        View Technical Evidence
+                                                                                    </summary>
+                                                                                    <div className="mt-2 p-3 rounded bg-[#FAF7F1]/80 border border-[#E6DDD2] text-[10px] text-[#7C6F64] font-mono overflow-x-auto max-w-md whitespace-pre-wrap leading-relaxed space-y-1">
+                                                                                        <div>
+                                                                                            <span className="text-[#1F2933] font-semibold">Finding ID:</span> {t.related_findings?.join(", ") || t.stride_id || "N/A"}
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <span className="text-[#1F2933] font-semibold">Source Module:</span> {t.source_module || "pentest_engine_module"}
+                                                                                        </div>
+                                                                                        {t.related_findings && t.related_findings.length > 0 && (
+                                                                                            <div>
+                                                                                                <span className="text-[#1F2933] font-semibold">Related Findings:</span> {t.related_findings.join(", ")}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div>
+                                                                                            <span className="text-[#1F2933] font-semibold">Confidence:</span> {t.confidence || "advisory"}
+                                                                                        </div>
+                                                                                        {t.why_generated && (
+                                                                                            <div>
+                                                                                                <span className="text-[#1F2933] font-semibold">Why Generated:</span> {t.why_generated}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {t.why_not_confirmed && (
+                                                                                            <div>
+                                                                                                <span className="text-[#1F2933] font-semibold">Why Not Confirmed:</span> {t.why_not_confirmed}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {evidence && (
+                                                                                            <div className="mt-2 pt-2 border-t border-[#E6DDD2]">
+                                                                                                <span className="text-[#1F2933] font-semibold block mb-1">Raw Evidence:</span>
+                                                                                                <pre className="whitespace-pre-wrap font-mono leading-relaxed">{evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}</pre>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </details>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-4 px-4 text-xs text-[#7C6F64] leading-relaxed font-sans max-w-xs vertical-top">
+                                                                            {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations || "N/A"}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             {activeTab === "ai_summary" && (
                                 <div className="space-y-6">

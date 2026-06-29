@@ -121,6 +121,7 @@ class InvestigationOrchestrator:
         auth_lifecycle_checks: bool = False,
         authz_transition_checks: bool = False,
         session_cookie: Optional[str] = None,
+        auth_config: Optional[Dict[str, Any]] = None,
         enable_strict_correlation_hardening: bool = True,
     ) -> None:
         """
@@ -160,6 +161,67 @@ class InvestigationOrchestrator:
             if await self._check_cancelled(investigation_id, pipeline_state):
                 return
 
+            auth_enabled = False
+            login_success = False
+            cookies_count = 0
+            session_reused_by_modules = False
+            scan_scope = "unauthenticated"
+            session_cookie_str = session_cookie
+
+            if auth_config and auth_config.get("mode") == "auto_login":
+                auth_enabled = True
+                
+                # Map frontend fields to backend AuthManager expected schema
+                auth_config["type"] = "form_login"
+                if auth_config.get("security_level"):
+                    auth_config["extra_fields"] = {
+                        "security": auth_config["security_level"],
+                        "security_level": auth_config["security_level"]
+                    }
+
+                from app.services.pentest.tools.auth_manager import AuthManager
+                from app.services.pentest.models import ScanConfig, UserRole
+                import httpx
+                
+                temp_config = ScanConfig(target=investigation.get("target"), auth_config=auth_config)
+                async with httpx.AsyncClient(verify=False) as temp_client:
+                    auth_manager = AuthManager(temp_config, temp_client)
+                    login_success = await auth_manager.login(role=UserRole.USER)
+                    cookies_count = len(temp_client.cookies)
+                    if login_success:
+                        session_cookie_str = temp_config.session_cookie or ""
+                        cookies_count = len([c for c in session_cookie_str.split(";") if c.strip()]) if session_cookie_str else 0
+                        
+                        print("[AUTH MANAGER RETURN SHAPE]")
+                        print(f"login_success = {login_success}")
+                        print(f"has_cookies_attr = {hasattr(temp_client, 'cookies')}")
+                        print(f"has_session_cookie = {hasattr(temp_config, 'session_cookie')}")
+                        print(f"has_session_cookie_str = {bool(session_cookie_str)}")
+                        print(f"cookie_header_present = {bool(session_cookie_str)}")
+                        print(f"cookies_count = {cookies_count}")
+                        print(f"cookie_header_length = {len(session_cookie_str)}")
+                        
+                        if session_cookie_str:
+                            session_reused_by_modules = True
+                            scan_scope = "authenticated"
+                        else:
+                            scan_scope = "authenticated_session_missing"
+                            session_reused_by_modules = False
+                            cookies_count = 0
+                    else:
+                        print("[INVESTIGATION] Authenticated scan requested but login failed.")
+                        scan_scope = "unauthenticated_partial"
+                        session_reused_by_modules = False
+                        cookies_count = 0
+
+            pipeline_state["scan_scope"] = scan_scope
+            
+            log_output = f"[INVESTIGATION AUTH CONTEXT]\nauth_enabled = {auth_enabled}\n"
+            if auth_enabled and auth_config and "login_url" in auth_config:
+                log_output += f"login_url = {auth_config['login_url']}\n"
+            log_output += f"login_success = {login_success}\ncookies_count = {cookies_count}\nsession_reused_by_modules = {session_reused_by_modules}\nscan_scope = {scan_scope}\n"
+            print(log_output, flush=True)
+
             # 1. Run scanner
             print(f"[ORCHESTRATOR] Launching scanner for target: {investigation.get('target')}")
             raw_output = await ScannerAdapter.run_scan(
@@ -171,7 +233,8 @@ class InvestigationOrchestrator:
                 authorized_auth_mode=authorized_auth_mode,
                 auth_lifecycle_checks=auth_lifecycle_checks,
                 authz_transition_checks=authz_transition_checks,
-                session_cookie=session_cookie,
+                session_cookie=session_cookie_str,
+                investigation_id=investigation_id,
             )
             
             # Temporary debug logging for analysis

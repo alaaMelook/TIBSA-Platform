@@ -533,83 +533,377 @@ export default function LiveInvestigationWorkspace() {
               )}
 
               {/* Tab: Threat Model */}
-              {activeTab === "threat_model" && (
-                <div className="space-y-6">
-                  {/* STRIDE Matrix */}
-                  <Card title="STRIDE Threat Vectors" description="Auto-generated threats mapped to standard categories">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
-                            <th className="py-3 px-4 w-40">STRIDE Category</th>
-                            <th className="py-3 px-4">Threat Description</th>
-                            <th className="py-3 px-4 w-32">Risk Level</th>
-                            <th className="py-3 px-4">Recommended Mitigation</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/[0.04]">
-                          {(!investigation.final_result?.stride?.stride_threats ||
-                            investigation.final_result.stride.stride_threats.length === 0) ? (
-                            <tr>
-                              <td colSpan={4} className="py-12 text-center text-[var(--text-muted)]">
-                                No STRIDE threats generated for this workspace scan.
-                              </td>
+              {activeTab === "threat_model" && (() => {
+                const allThreats = investigation.final_result?.stride?.stride_threats || [];
+
+                const isConfirmed = (t: any) => {
+                  const status = (t.status || "").toLowerCase();
+                  const evidenceType = (t.evidence_type || "").toLowerCase();
+                  const classification = (t.classification || "").toLowerCase();
+                  const confidence = (t.confidence || "").toLowerCase();
+
+                  return (
+                    status === "confirmed" ||
+                    evidenceType === "vulnerability" ||
+                    classification === "vulnerability" ||
+                    confidence === "verified" ||
+                    confidence === "high"
+                  );
+                };
+
+                const confirmedThreats = allThreats.filter(isConfirmed);
+                const potentialScenarios = allThreats.filter((t: any) => !isConfirmed(t));
+
+                const parseScenario = (scenarioStr: string) => {
+                  const parts = (scenarioStr || "").split("[Evidence Tracing]");
+                  const mainDesc = parts[0].trim();
+                  const evidence = parts.slice(1).join("[Evidence Tracing]").trim();
+                  return { mainDesc, evidence };
+                };
+
+                const groupThreats = (threatsList: any[]) => {
+                  const map = new Map<string, any>();
+                  threatsList.forEach((t) => {
+                    const { mainDesc } = parseScenario(t.attack_scenario);
+                    const key = `${mainDesc}::${t.affected_asset || ""}`;
+                    if (!map.has(key)) {
+                      map.set(key, {
+                        ...t,
+                        categories: [t.category],
+                        originalThreats: [t],
+                      });
+                    } else {
+                      const existing = map.get(key);
+                      existing.originalThreats.push(t);
+                      if (!existing.categories.includes(t.category)) {
+                        existing.categories.push(t.category);
+                      }
+                      const severityOrder: Record<string, number> = {
+                        info: 0, low: 1, medium: 2, high: 3, critical: 4
+                      };
+                      const tSev = (t.severity || "info").toLowerCase();
+                      const eSev = (existing.severity || "info").toLowerCase();
+                      if ((severityOrder[tSev] ?? 0) > (severityOrder[eSev] ?? 0)) {
+                        existing.severity = t.severity;
+                      }
+                      const existingMitigations = Array.isArray(existing.mitigations) 
+                        ? existing.mitigations 
+                        : [existing.mitigations];
+                      const newMitigations = Array.isArray(t.mitigations) 
+                        ? t.mitigations 
+                        : [t.mitigations];
+                      newMitigations.forEach((m: string) => {
+                        if (m && !existingMitigations.includes(m)) {
+                          existingMitigations.push(m);
+                        }
+                      });
+                      existing.mitigations = existingMitigations;
+                    }
+                  });
+                  return Array.from(map.values());
+                };
+
+                const groupedConfirmed = groupThreats(confirmedThreats);
+                const groupedPotential = groupThreats(potentialScenarios);
+
+                // ── Summary Metrics ──
+                const uniqueCategories = new Set(allThreats.map((t: any) => t.category)).size;
+                const getHighestRisk = () => {
+                  const severities = allThreats.map((t: any) => (t.severity || "").toLowerCase());
+                  if (severities.includes("critical")) return "Critical";
+                  if (severities.includes("high")) return "High";
+                  if (severities.includes("medium")) return "Medium";
+                  if (severities.includes("low")) return "Low";
+                  return "Info";
+                };
+
+                const getShortWhyGenerated = (t: any) => {
+                  const whyStr = t.why_generated || "";
+                  const notConfStr = t.why_not_confirmed || "";
+                  const text = (whyStr || notConfStr).trim();
+                  
+                  if (!text) {
+                    return "Generated from correlated security hardening findings.";
+                  }
+                  
+                  if (text.toLowerCase().includes("csp") || text.toLowerCase().includes("content-security-policy")) {
+                    return "Generated from hardening evidence related to Content-Security-Policy.";
+                  }
+                  
+                  if (text.toLowerCase().includes("cors") || text.toLowerCase().includes("cross-origin")) {
+                    return "Generated from hardening evidence related to CORS policy.";
+                  }
+
+                  if (text.toLowerCase().includes("security header") || text.toLowerCase().includes("x-frame-options") || text.toLowerCase().includes("x-content-type-options")) {
+                    return "Generated from correlated security header hardening recommendations.";
+                  }
+
+                  if (text.toLowerCase().includes("auth") || text.toLowerCase().includes("jwt") || text.toLowerCase().includes("session")) {
+                    return "Generated from authorization boundary indicators.";
+                  }
+
+                  const sentence = text.split(/[.!?]/)[0].trim();
+                  if (sentence && sentence.length > 5 && !sentence.includes("{") && !sentence.includes("[")) {
+                    const cleanText = sentence + ".";
+                    return cleanText.length > 85 ? cleanText.slice(0, 82) + "..." : cleanText;
+                  }
+
+                  return "Generated from correlated security hardening findings.";
+                };
+
+                return (
+                  <div className="space-y-6">
+                    {/* Header Summary Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Confirmed Threats Card */}
+                      <Card className="!p-4 bg-[var(--bg-card)] border border-red-500/10 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
+                            Confirmed Threats
+                          </span>
+                          <div className="text-3xl font-black text-red-500 mt-1">
+                            {confirmedThreats.length}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-[var(--text-muted)] mt-2">
+                          Active vulnerabilities verified by scan evidence.
+                        </p>
+                      </Card>
+
+                      {/* Potential Scenarios Card */}
+                      <Card className="!p-4 bg-[var(--bg-card)] border border-amber-500/10 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
+                            Potential Scenarios
+                          </span>
+                          <div className="text-3xl font-black text-amber-500 mt-1">
+                            {potentialScenarios.length}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-[var(--text-muted)] mt-2">
+                          Architectural hardening and security advisories.
+                        </p>
+                      </Card>
+
+                      {/* Highest Risk Card */}
+                      <Card className="!p-4 bg-[var(--bg-card)] border border-[var(--border-soft)] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
+                            Highest Threat Risk
+                          </span>
+                          <div className={`text-3xl font-black mt-1 ${
+                            getHighestRisk() === "Critical" || getHighestRisk() === "High" ? "text-red-500" : "text-[var(--primary)]"
+                          }`}>
+                            {getHighestRisk()}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-[var(--text-muted)] mt-2">
+                          Maximum threat level detected on target.
+                        </p>
+                      </Card>
+
+                      {/* STRIDE Categories Card */}
+                      <Card className="!p-4 bg-[var(--bg-card)] border border-[var(--border-soft)] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">
+                            STRIDE Mappings
+                          </span>
+                          <div className="text-3xl font-black text-[var(--primary)] mt-1">
+                            {uniqueCategories} / 6
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-[var(--text-muted)] mt-2">
+                          Standard security threat model categories.
+                        </p>
+                      </Card>
+                    </div>
+
+                    {/* Section 1: Confirmed Threats */}
+                    <Card title="Confirmed Threats" description="Security vulnerabilities requiring immediate remediation action">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead>
+                            <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
+                              <th className="py-3 px-4 w-40">STRIDE Category</th>
+                              <th className="py-3 px-4">Threat Description</th>
+                              <th className="py-3 px-4 w-32">Risk Level</th>
+                              <th className="py-3 px-4 w-60">Evidence</th>
+                              <th className="py-3 px-4">Recommended Mitigation</th>
                             </tr>
-                          ) : (
-                            investigation.final_result.stride.stride_threats.map((t, idx) => (
-                              <tr key={t.stride_id || idx} className="hover:bg-[var(--bg-elevated)]">
-                                <td className="py-4 px-4">
-                                  <span className="text-[10px] bg-[var(--primary)]/10 border border-[var(--primary)] text-[var(--primary)] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                                    {t.category}
-                                  </span>
-                                </td>
-                                <td className="py-4 px-4 font-semibold text-[var(--text-primary)]">
-                                  {(() => {
-                                    const parts = (t.attack_scenario || "").split("[Evidence Tracing]");
-                                    const mainDesc = parts[0].trim();
-                                    const evidence = parts.slice(1).join("[Evidence Tracing]").trim();
-                                    return (
-                                      <div className="space-y-1.5 font-normal">
-                                        <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
-                                          {mainDesc}
-                                        </p>
-                                        {evidence && (
-                                          <details className="group mt-2">
-                                            <summary className="text-[11px] text-[var(--primary)]/80 hover:text-[var(--primary)] cursor-pointer select-none font-medium outline-none flex items-center gap-1">
-                                              <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
-                                              View Technical Evidence
-                                            </summary>
-                                            <pre className="mt-1.5 p-2.5 rounded bg-[var(--bg-page)]/50 border border-[var(--border-soft)] text-[10px] text-[var(--text-muted)] font-mono overflow-x-auto max-w-xl whitespace-pre-wrap leading-relaxed">
-                                              {evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}
-                                            </pre>
-                                          </details>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-                                </td>
-                                <td className="py-4 px-4">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${(t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
-                                      ? "border-red-500/25 bg-red-500/10 text-red-400"
-                                      : (t.severity ?? "").toLowerCase() === "medium"
-                                        ? "border-orange-500/25 bg-orange-500/10 text-orange-400"
-                                        : "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
-                                    }`}>
-                                    {t.severity}
-                                  </span>
-                                </td>
-                                <td className="py-4 px-4 text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
-                                  {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations}
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.04]">
+                            {groupedConfirmed.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="py-12 text-center text-[var(--text-muted)] font-medium">
+                                  No confirmed threats found. Potential hardening scenarios are listed below.
                                 </td>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
-                </div>
-              )}
+                            ) : (
+                              groupedConfirmed.map((t: any, idx: number) => {
+                                const { mainDesc, evidence } = parseScenario(t.attack_scenario);
+                                return (
+                                  <tr key={t.stride_id || idx} className="hover:bg-[var(--bg-elevated)] transition-colors duration-150">
+                                    <td className="py-4 px-4 vertical-top">
+                                      <div className="space-y-2">
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {t.categories.map((cat: string, cIdx: number) => (
+                                            <span key={cIdx} className="inline-block text-[10px] bg-red-500/10 border border-red-500/20 text-red-500 font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                              {cat}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-4 font-semibold text-[var(--text-primary)] text-xs leading-relaxed max-w-sm vertical-top">
+                                      <p className="font-normal text-[var(--text-secondary)]">{mainDesc}</p>
+                                    </td>
+                                    <td className="py-4 px-4 vertical-top">
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                        (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
+                                          ? "border-red-500/25 bg-red-500/10 text-red-400"
+                                          : (t.severity ?? "").toLowerCase() === "medium"
+                                            ? "border-orange-500/25 bg-orange-500/10 text-orange-400"
+                                            : "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+                                      }`}>
+                                        {t.severity}
+                                      </span>
+                                    </td>
+                                    <td className="py-4 px-4 text-xs text-[var(--text-secondary)] vertical-top">
+                                      {evidence ? (
+                                        <details className="group">
+                                          <summary className="text-[11px] text-[var(--primary)]/80 hover:text-[var(--primary)] cursor-pointer select-none font-semibold outline-none flex items-center gap-1">
+                                            <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
+                                            View Technical Evidence
+                                          </summary>
+                                          <pre className="mt-1.5 p-2.5 rounded bg-[var(--bg-page)]/50 border border-[var(--border-soft)] text-[10px] text-[var(--text-muted)] font-mono overflow-x-auto max-w-md whitespace-pre-wrap leading-relaxed">
+                                            {evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}
+                                          </pre>
+                                        </details>
+                                      ) : (
+                                        <span className="text-[var(--text-muted)] italic">No trace log available</span>
+                                      )}
+                                    </td>
+                                    <td className="py-4 px-4 text-xs text-[var(--text-secondary)] leading-relaxed font-sans max-w-xs vertical-top">
+                                      {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations || "N/A"}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+
+                    {/* Section 2: Potential Scenarios */}
+                    <Card title="Potential Scenarios" description="Architectural hardening opportunities and defensive recommendations">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead>
+                            <tr className="border-b border-[var(--border-strong)] text-[var(--text-muted)] font-semibold bg-[var(--bg-card)]/10">
+                              <th className="py-3 px-4 w-40">STRIDE Category</th>
+                              <th className="py-3 px-4">Scenario Description</th>
+                              <th className="py-3 px-4 w-32">Advisory Risk</th>
+                              <th className="py-3 px-4 w-60">Why Generated</th>
+                              <th className="py-3 px-4">Recommended Hardening</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.04]">
+                            {groupedPotential.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="py-12 text-center text-[var(--text-muted)] font-medium">
+                                  No potential hardening scenarios generated.
+                                </td>
+                              </tr>
+                            ) : (
+                              groupedPotential.map((t: any, idx: number) => {
+                                const { mainDesc, evidence } = parseScenario(t.attack_scenario);
+                                return (
+                                  <tr key={t.stride_id || idx} className="hover:bg-[var(--bg-elevated)] transition-colors duration-150">
+                                    <td className="py-4 px-4 vertical-top">
+                                      <div className="space-y-2">
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {t.categories.map((cat: string, cIdx: number) => (
+                                            <span key={cIdx} className="inline-block text-[10px] bg-amber-500/10 border border-amber-500/20 text-amber-600 font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                                              {cat}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-4 font-semibold text-[var(--text-primary)] text-xs leading-relaxed max-w-sm vertical-top">
+                                      <p className="font-normal text-[var(--text-secondary)]">{mainDesc}</p>
+                                    </td>
+                                    <td className="py-4 px-4 vertical-top">
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                                        (t.severity ?? "").toLowerCase() === "high" || (t.severity ?? "").toLowerCase() === "critical"
+                                          ? "border-amber-500/25 bg-amber-500/10 text-amber-600"
+                                          : (t.severity ?? "").toLowerCase() === "medium"
+                                            ? "border-blue-500/25 bg-blue-500/10 text-blue-400"
+                                            : "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+                                      }`}>
+                                        {t.severity || "Low"}
+                                      </span>
+                                    </td>
+                                    <td className="py-4 px-4 text-xs text-[var(--text-secondary)] max-w-xs leading-relaxed vertical-top">
+                                      <div className="line-clamp-2" title={getShortWhyGenerated(t)}>
+                                        {getShortWhyGenerated(t)}
+                                      </div>
+                                      <div className="mt-2">
+                                        <details className="group">
+                                          <summary className="text-[11px] text-[var(--primary)]/80 hover:text-[var(--primary)] cursor-pointer select-none font-semibold outline-none flex items-center gap-1">
+                                            <span className="inline-block transition-transform duration-200 group-open:rotate-90">▶</span>
+                                            View Technical Evidence
+                                          </summary>
+                                          <div className="mt-2 p-3 rounded bg-[var(--bg-page)]/50 border border-[var(--border-soft)] text-[10px] text-[var(--text-muted)] font-mono overflow-x-auto max-w-md whitespace-pre-wrap leading-relaxed space-y-1">
+                                            <div>
+                                              <span className="text-[var(--text-primary)] font-semibold">Finding ID:</span> {t.related_findings?.join(", ") || t.stride_id || "N/A"}
+                                            </div>
+                                            <div>
+                                              <span className="text-[var(--text-primary)] font-semibold">Source Module:</span> {t.source_module || "pentest_engine_module"}
+                                            </div>
+                                            {t.related_findings && t.related_findings.length > 0 && (
+                                              <div>
+                                                <span className="text-[var(--text-primary)] font-semibold">Related Findings:</span> {t.related_findings.join(", ")}
+                                              </div>
+                                            )}
+                                            <div>
+                                              <span className="text-[var(--text-primary)] font-semibold">Confidence:</span> {t.confidence || "advisory"}
+                                            </div>
+                                            {t.why_generated && (
+                                              <div>
+                                                <span className="text-[var(--text-primary)] font-semibold">Why Generated:</span> {t.why_generated}
+                                              </div>
+                                            )}
+                                            {t.why_not_confirmed && (
+                                              <div>
+                                                <span className="text-[var(--text-primary)] font-semibold">Why Not Confirmed:</span> {t.why_not_confirmed}
+                                              </div>
+                                            )}
+                                            {evidence && (
+                                              <div className="mt-2 pt-2 border-t border-[var(--border-soft)]">
+                                                <span className="text-[var(--text-primary)] font-semibold block mb-1">Raw Evidence:</span>
+                                                <pre className="whitespace-pre-wrap font-mono leading-relaxed">{evidence.startsWith("-") || evidence.startsWith(":") ? evidence.replace(/^[:\s\-]+/, "") : evidence}</pre>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </details>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-4 text-xs text-[var(--text-secondary)] leading-relaxed font-sans max-w-xs vertical-top">
+                                      {Array.isArray(t.mitigations) ? t.mitigations.join("; ") : t.mitigations || "N/A"}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  </div>
+                );
+              })()}
 
               {/* Tab: AI Summary */}
               {activeTab === "ai_summary" && (

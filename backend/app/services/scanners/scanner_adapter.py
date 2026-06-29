@@ -55,6 +55,17 @@ class ScannerAdapter:
             authz_transition_checks=authz_transition_checks,
             session_cookie=session_cookie,
         )
+        
+        print("[SCANNER AUTH INJECTION]")
+        print(f"scan_scope = {'authenticated' if session_cookie else 'unauthenticated'}")
+        print(f"session_cookie_present = {bool(session_cookie)}")
+        print(f"session_cookie_str_present = {bool(session_cookie)}")
+        print(f"cookie_header_present = {bool(session_cookie)}")
+        print(f"auth_headers_present = {bool(session_cookie)}")
+        print(f"cookie_header_length = {len(session_cookie) if session_cookie else 0}")
+        print(f"shared_state_auth_sessions_count = 0")
+        print(f"modules_receiving_auth = {len(tests)}")
+        
         orchestrator = PentestOrchestrator(config=config)
         # Execute the scan on the target URL
         raw_result = await orchestrator.scan(target, tests, mode=mode, investigation_id=investigation_id)

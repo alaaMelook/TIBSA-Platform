@@ -242,45 +242,6 @@ export function Sidebar() {
 
             </div>
 
-            {/* ── Admin / User Switcher ── */}
-            {isAdmin && (
-                <div className="pt-4 border-t border-[var(--border-soft)]">
-                    <Link
-                        href={isAdminSection ? "/dashboard" : "/admin"}
-                        className={`flex items-center text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors sidebar-btn ${isCollapsed ? "justify-center p-2" : "gap-2 px-3 py-2"
-                            }`}
-                        title={isCollapsed ? (isAdminSection ? "TIBSA Shield" : "TIBSA SOC Nexus") : undefined}
-                    >
-                        {isCollapsed ? (
-                            isAdminSection ? (
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                                </svg>
-                            ) : (
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
-                            )
-                        ) : (
-                            isAdminSection ? (
-                                <>
-                                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                                    </svg>
-                                    TIBSA Shield
-                                </>
-                            ) : (
-                                <>
-                                    TIBSA SOC Nexus
-                                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                    </svg>
-                                </>
-                            )
-                        )}
-                    </Link>
-                </div>
-            )}
         </aside>
     );
 }
